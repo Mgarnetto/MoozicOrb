@@ -1,4 +1,5 @@
 ﻿using MoozicOrb.Api.Models;
+using System.Collections.Generic;
 
 namespace MoozicOrb.Api.Services.Interfaces
 {
@@ -6,13 +7,11 @@ namespace MoozicOrb.Api.Services.Interfaces
     {
         long CreateDirectMessage(int senderId, int receiverId, string text);
 
-        IEnumerable<MessageDto> GetDirectMessages(
-            int userId,
-            int otherUserId,
-            long? sinceMessageId,
-            int limit
-        );
+        IEnumerable<DirectMessageDto> GetDirectMessages(int userId1, int userId2);
 
-        MessageDto GetDirectMessage(long messageId);
+        DirectMessageDto GetDirectMessage(long messageId);
     }
 }
+
+
+

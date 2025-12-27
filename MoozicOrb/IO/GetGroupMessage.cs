@@ -1,63 +1,54 @@
 ﻿using System.Data;
-using MySql.Data.MySqlClient;
 using MoozicOrb.Api.Models;
 
 namespace MoozicOrb.IO
 {
     public class GetGroupMessages
     {
-        public GetGroupMessages()
-        {
-            // Default constructor
-        }
+        public GetGroupMessages() { }
 
-        public object[] GetMessagesByGroupId(long group_id)
+        public object[] GetMessagesByGroupId(long groupId)
         {
-            string queryString = $"SELECT * FROM messages WHERE group_id = {group_id}";
+            string queryString = $"SELECT * FROM group_messages WHERE group_id = {groupId} ORDER BY timestamp ASC";
             Query query = new Query();
             DataTable dt = query.Run(queryString);
 
-            return GetObj(dt); 
+            return MapDataTable(dt);
         }
 
-        public void GetMyMessages(int userID, int senderID)
+        public object[] GetMessageById(long groupId, long messageId)
         {
-            string queryString = $"SELECT * FROM messages WHERE senderID = {senderID} and receiverID = {userID}";
+            string queryString = $"SELECT * FROM group_messages WHERE group_id = {groupId} AND message_id = {messageId}";
             Query query = new Query();
             DataTable dt = query.Run(queryString);
 
-            
+            return MapDataTable(dt);
         }
 
-        public object[] GetObj(DataTable dt)
+        private object[] MapDataTable(DataTable dt)
         {
-            int size = dt.Rows.Count;
-            int it = 0;
-            GroupMessage[] messageArray = new GroupMessage[size];
+            if (dt == null || dt.Rows.Count == 0) return new object[0];
 
-            try
+            GroupMessageDto[] messages = new GroupMessageDto[dt.Rows.Count];
+            int i = 0;
+
+            foreach (DataRow row in dt.Rows)
             {
-                foreach (DataRow row in dt.Rows)
+                messages[i++] = new GroupMessageDto
                 {
-                    messageArray[it] = new GroupMessage();
-
-                    messageArray[it].MessageId = long.Parse(row["message_id"].ToString());
-                    messageArray[it].GroupId = long.Parse(row["group_id"].ToString());
-                    messageArray[it].SenderId = int.Parse(row["sender_id"].ToString());
-                    messageArray[it].MessageText = row["message_text"].ToString();
-                    messageArray[it].MessageDeleted = bool.Parse(row["is_deleted"].ToString());
-                    
-                    messageArray[it].Timestamp = (DateTime)row["DateTime"];
-
-                    it++;
-                }
-
-                return messageArray;
+                    MessageId = long.Parse(row["message_id"].ToString()),
+                    GroupId = long.Parse(row["group_id"].ToString()),
+                    SenderId = int.Parse(row["sender_id"].ToString()),
+                    Text = row["message_text"].ToString(),
+                    Timestamp = (DateTime)row["timestamp"],
+                    SenderName = "",             // hydrate in service/controller
+                    SenderProfilePicUrl = ""     // hydrate in service/controller
+                };
             }
-            catch (Exception ex)
-            {
-                return null;
-            }
+
+            return messages;
         }
     }
 }
+
+

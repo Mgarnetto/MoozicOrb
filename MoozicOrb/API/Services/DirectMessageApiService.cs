@@ -1,43 +1,52 @@
 ﻿using MoozicOrb.Api.Models;
 using MoozicOrb.Api.Services.Interfaces;
 using MoozicOrb.IO;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace MoozicOrb.Api.Services
 {
     public class DirectMessageApiService : IDirectMessageApiService
     {
+        private readonly GetDirectMessages _getDirectMessages;
+        private readonly InsertDirectMessage _insertDirectMessage;
+
+        public DirectMessageApiService()
+        {
+            _getDirectMessages = new GetDirectMessages();
+            _insertDirectMessage = new InsertDirectMessage();
+        }
+
         public long CreateDirectMessage(int senderId, int receiverId, string text)
         {
-            var message = new DirectMessage
-            {
-                SenderId = senderId,
-                ReceiverId = receiverId,
-                MessageText = text,
-                Timestamp = DateTime.UtcNow
-            };
-
-            // DB INSERT via IO
-            return new InsertDirectMessage().Insert(message.SenderId, message.ReceiverId, message.MessageText);
+            // No domain model needed here — IO already accepts primitives
+            return _insertDirectMessage.Insert(senderId, receiverId, text);
         }
 
-        public IEnumerable<MessageDto> GetDirectMessages(
-            int userId,
-            int otherUserId,
-            long? sinceMessageId,
-            int limit)
+        public IEnumerable<DirectMessageDto> GetDirectMessages(int userId1, int userId2)
         {
-            // DB SELECT via IO
-            //return new GetDirectMessages()
-            //    .Fetch(userId, otherUserId, sinceMessageId, limit);
-            return null;
+            var messages = _getDirectMessages.GetMessagesBetweenUsers(userId1, userId2);
+
+            if (messages == null || messages.Length == 0)
+                return Enumerable.Empty<DirectMessageDto>();
+
+            return messages
+                .Cast<DirectMessageDto>()
+                .OrderBy(m => m.Timestamp);
         }
 
-        public MessageDto GetDirectMessage(long messageId)
+        public DirectMessageDto GetDirectMessage(long messageId)
         {
-            // DB SELECT single
-            //return new GetDirectMessages()
-            //    .FetchSingle(messageId);
-            return null;
+            var messages = _getDirectMessages.GetMessageById(messageId);
+
+            if (messages == null || messages.Length == 0)
+                return null;
+
+            return messages[0] as DirectMessageDto;
         }
     }
 }
+
+
+

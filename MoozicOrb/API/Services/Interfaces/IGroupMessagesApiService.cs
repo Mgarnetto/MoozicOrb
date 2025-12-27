@@ -1,4 +1,5 @@
 ﻿using MoozicOrb.Api.Models;
+using System.Collections.Generic;
 
 namespace MoozicOrb.Api.Services.Interfaces
 {
@@ -6,12 +7,9 @@ namespace MoozicOrb.Api.Services.Interfaces
     {
         long CreateGroupMessage(long groupId, int senderId, string text);
 
-        IEnumerable<MessageDto> GetGroupMessages(
-            long groupId,
-            long? sinceMessageId,
-            int limit
-        );
+        IEnumerable<GroupMessageDto> GetGroupMessages(long groupId);
 
-        MessageDto GetGroupMessage(long groupId, long messageId);
+        GroupMessageDto GetGroupMessage(long groupId, long messageId);
     }
 }
+

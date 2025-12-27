@@ -1,62 +1,59 @@
-﻿using System;
-using System.Data;
-using MySql.Data.MySqlClient;
+﻿using System.Data;
+using MoozicOrb.Api.Models;
 
 namespace MoozicOrb.IO
 {
     public class GetDirectMessages
     {
-        public GetDirectMessages()
+        public GetDirectMessages() { }
+
+        public object[] GetMessagesBetweenUsers(int userId1, int userId2)
         {
-            // Default constructor
+            string queryString = $@"
+                SELECT * FROM direct_messages
+                WHERE (sender_id = {userId1} AND receiver_id = {userId2})
+                   OR (sender_id = {userId2} AND receiver_id = {userId1})
+                ORDER BY timestamp ASC";
+
+            Query query = new Query();
+            DataTable dt = query.Run(queryString);
+
+            return MapDataTable(dt);
         }
 
-        //public Message[] GetMessagesByUser(int userID)
-        //{
-        //    string queryString = $"SELECT * FROM messages WHERE receiverID = {userID}";
-        //    Query query = new Query();
-        //    DataTable dt = query.Run(queryString);
+        public object[] GetMessageById(long messageId)
+        {
+            string queryString = $"SELECT * FROM direct_messages WHERE message_id = {messageId}";
+            Query query = new Query();
+            DataTable dt = query.Run(queryString);
 
-        //    return GetObj(dt);
-        //}
+            return MapDataTable(dt);
+        }
 
-        //public Message[] GetMyMessages(int userID, int senderID)
-        //{
-        //    string queryString = $"SELECT * FROM messages WHERE senderID = {senderID} and receiverID = {userID}";
-        //    Query query = new Query();
-        //    DataTable dt = query.Run(queryString);
+        private object[] MapDataTable(DataTable dt)
+        {
+            if (dt == null || dt.Rows.Count == 0) return new object[0];
 
-        //    return GetObj(dt);
-        //}
+            DirectMessageDto[] messages = new DirectMessageDto[dt.Rows.Count];
+            int i = 0;
 
-        //public Message[] GetObj(DataTable dt)
-        //{
-        //    int size = dt.Rows.Count;
-        //    int it = 0;
-        //    Message[] messageArray = new Message[size];
+            foreach (DataRow row in dt.Rows)
+            {
+                messages[i++] = new DirectMessageDto
+                {
+                    MessageId = long.Parse(row["message_id"].ToString()),
+                    SenderId = int.Parse(row["sender_id"].ToString()),
+                    ReceiverId = int.Parse(row["receiver_id"].ToString()),
+                    Text = row["message_text"].ToString(),
+                    Timestamp = (DateTime)row["timestamp"],
+                    SenderName = "",             // hydrate in service/controller
+                    SenderProfilePicUrl = ""     // hydrate in service/controller
+                };
+            }
 
-        //    try
-        //    {
-        //        foreach (DataRow row in dt.Rows)
-        //        {
-        //            int messageID = int.Parse(row["messageID"].ToString());
-        //            int senderID = int.Parse(row["senderID"].ToString());
-        //            int receiverID = int.Parse(row["receiverID"].ToString());
-        //            int readMessage = int.Parse(row["readMessage"].ToString());
-        //            int sent = int.Parse(row["sent"].ToString());
-        //            int deleted = int.Parse(row["deleted"].ToString());
-        //            string messageText = row["message"].ToString();
-        //            DateTime dateTime = (DateTime)row["DateTime"];
-
-        //            messageArray[it] = new Message(messageID, senderID, receiverID, readMessage, sent, deleted, messageText, dateTime);
-        //            it++;
-        //        }
-        //        return messageArray;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return null;
-        //    }
-        //}
+            return messages;
+        }
     }
 }
+
+

@@ -1,22 +1,22 @@
 ﻿using System;
 using MySql.Data.MySqlClient;
 
-namespace MoozicOrb.IO { 
+namespace MoozicOrb.IO
+{
     public class InsertDirectMessage
     {
-        public InsertDirectMessage()
+        public InsertDirectMessage() { }
+
+        // Insert a new direct message and return the auto-increment ID
+        public long Insert(int senderId, int receiverId, string messageText)
         {
-            // Default constructor
-        }
-
-        public long Insert(int sender_id, int receiver_id, string message_text)
-        {
-
-
-            string queryString = "USE moozicorb; INSERT INTO messages (sender_id, receiver_id, message_text, message_read, message_deleted, timestamp) " +
-                                   "VALUES (" + sender_id + ", " + receiver_id + ", '" + message_text + "', " + 0 + ", " + 0 + ", " +
-                                   " '" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "' );" +
-                                   "SELECT LAST_INSERT_ID();";
+            string queryString = @"
+                USE moozicorb;
+                INSERT INTO messages 
+                    (sender_id, receiver_id, message_text, message_read, message_deleted, timestamp)
+                VALUES
+                    (@senderId, @receiverId, @messageText, 0, 0, @timestamp);
+                SELECT LAST_INSERT_ID();";
 
             using (MySqlConnection connection = new MySqlConnection(DBConn1.ConnectionString))
             {
@@ -24,27 +24,20 @@ namespace MoozicOrb.IO {
 
                 using (MySqlCommand command = new MySqlCommand(queryString, connection))
                 {
-                    //command.Parameters.AddWithValue("@senderID", message.senderID);
-                    //command.Parameters.AddWithValue("@receiverID", message.receiverID);
-                    //command.Parameters.AddWithValue("@readMessage", message.readMessage);
-                    //command.Parameters.AddWithValue("@sent", message.sent);
-                    //command.Parameters.AddWithValue("@deleted", message.deleted);
-                    //command.Parameters.AddWithValue("@messageText", message.messageText);
-                    //command.Parameters.AddWithValue("@DateTime", message.DateTime);
+                    command.Parameters.AddWithValue("@senderId", senderId);
+                    command.Parameters.AddWithValue("@receiverId", receiverId);
+                    command.Parameters.AddWithValue("@messageText", messageText);
+                    command.Parameters.AddWithValue("@timestamp", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
 
-                    // Execute the query and return the auto-incremented ID
                     try
                     {
-                        long a = Convert.ToInt64(command.ExecuteScalar());
-                        return a;
+                        return Convert.ToInt64(command.ExecuteScalar());
                     }
                     catch (Exception ex)
                     {
-                        string msg = ex.Message.ToString();
-                        int a = 0;
+                        // Log exception if necessary
+                        return 0;
                     }
-
-                    return 0;
                 }
             }
         }

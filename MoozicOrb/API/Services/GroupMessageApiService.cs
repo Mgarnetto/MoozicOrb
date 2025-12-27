@@ -1,42 +1,52 @@
 ﻿using MoozicOrb.Api.Models;
 using MoozicOrb.Api.Services.Interfaces;
 using MoozicOrb.IO;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace MoozicOrb.Api.Services
 {
     public class GroupMessageApiService : IGroupMessageApiService
     {
+        private readonly GetGroupMessages _getGroupMessages;
+        private readonly InsertGroupMessage _insertGroupMessage;
+
+        public GroupMessageApiService()
+        {
+            _getGroupMessages = new GetGroupMessages();
+            _insertGroupMessage = new InsertGroupMessage();
+        }
+
         public long CreateGroupMessage(long groupId, int senderId, string text)
         {
-            var message = new GroupMessage
-            {
-                GroupId = groupId,
-                SenderId = senderId,
-                MessageText = text,
-                Timestamp = DateTime.UtcNow
-            };
-
-            // DB INSERT via IO
-            return new InsertGroupMessage().Insert(message.GroupId, message.SenderId, message.MessageText);
+            // Pass primitives directly — IO already expects this
+            return _insertGroupMessage.Insert(groupId, senderId, text);
         }
 
-        public IEnumerable<MessageDto> GetGroupMessages(
-            long groupId,
-            long? sinceMessageId,
-            int limit)
+        public IEnumerable<GroupMessageDto> GetGroupMessages(long groupId)
         {
-            // DB SELECT via IO
-            //return new GetGroupMessages()
-            //    .Fetch(groupId, sinceMessageId, limit);
-            return Enumerable.Empty<MessageDto>(); 
+            var messages = _getGroupMessages.GetMessagesByGroupId(groupId);
+
+            if (messages == null || messages.Length == 0)
+                return Enumerable.Empty<GroupMessageDto>();
+
+            return messages
+                .Cast<GroupMessageDto>()
+                .OrderBy(m => m.Timestamp);
         }
 
-        public MessageDto GetGroupMessage(long groupId, long messageId)
+        public GroupMessageDto GetGroupMessage(long groupId, long messageId)
         {
-            // DB SELECT single
-            //return new GetGroupMessages()
-            //    .FetchSingle(groupId, messageId);
-            return null;
+            var messages = _getGroupMessages.GetMessageById(groupId, messageId);
+
+            if (messages == null || messages.Length == 0)
+                return null;
+
+            return messages[0] as GroupMessageDto;
         }
     }
 }
+
+
+
