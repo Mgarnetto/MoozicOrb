@@ -29,6 +29,8 @@ namespace MoozicOrb.Api.Controllers
         [HttpGet("{userId1}/{userId2}")]
         public ActionResult<IEnumerable<DirectMessageDto>> GetMessages(int userId1, int userId2, int? limit = null)
         {
+            // need to check auth to ensure user is part of this DM
+
             var messages = _service.GetDirectMessages(userId1, userId2);
 
             if (limit.HasValue)
@@ -48,6 +50,8 @@ namespace MoozicOrb.Api.Controllers
         [HttpGet("{messageId}")]
         public ActionResult<DirectMessageDto> GetMessage(long messageId)
         {
+            // need to check auth to ensure user is part of this DM
+
             var message = _service.GetDirectMessage(messageId);
             if (message == null) return NotFound();
 

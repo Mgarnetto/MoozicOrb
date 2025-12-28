@@ -11,4 +11,10 @@
     <PackageReference Include="MySql.Data" Version="9.5.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Audio\" />
+    <Folder Include="Images\" />
+    <Folder Include="Video\" />
+  </ItemGroup>
+
 </Project>

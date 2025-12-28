@@ -22,6 +22,8 @@ builder.Services.AddScoped<IDirectMessageApiService, DirectMessageApiService>();
 
 
 builder.Services.AddSingleton<IUserIdProvider, SignalRUserIdProvider>();
+builder.Services.AddHttpContextAccessor();
+
 
 var app = builder.Build();
 

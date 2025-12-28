@@ -29,6 +29,8 @@ namespace MoozicOrb.Api.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<GroupMessageDto>> GetMessages(long groupId, int? limit = null)
         {
+            // need to check auth to ensure user is part of this group
+
             var messages = _service.GetGroupMessages(groupId);
 
             if (limit.HasValue)
@@ -48,6 +50,8 @@ namespace MoozicOrb.Api.Controllers
         [HttpGet("{messageId}")]
         public ActionResult<GroupMessageDto> GetMessage(long groupId, long messageId)
         {
+            // need to check auth to ensure user is part of this group
+
             var message = _service.GetGroupMessage(groupId, messageId);
             if (message == null) return NotFound();
 
