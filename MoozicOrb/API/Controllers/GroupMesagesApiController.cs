@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using MoozicOrb.Api.Models;
 using MoozicOrb.Api.Services.Interfaces;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace MoozicOrb.Api.Controllers
 {
@@ -63,9 +64,9 @@ namespace MoozicOrb.Api.Controllers
 
         // POST create a new message
         [HttpPost]
-        public ActionResult CreateMessage(long groupId, [FromBody] dynamic body)
+        public ActionResult CreateMessage(long groupId, [FromBody] JsonElement body)
         {
-            int senderId = 1; // TODO: get from auth context
+            int senderId = 1; // TODO: auth
             string text = body.GetProperty("text").GetString();
 
             var messageId = _service.CreateGroupMessage(groupId, senderId, text);
