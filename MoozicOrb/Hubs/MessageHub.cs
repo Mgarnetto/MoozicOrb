@@ -94,5 +94,14 @@ public class MessageHub : Hub
 
         int sdfs = 9; // break point
     }
+
+    public Task JoinGroup(long groupId)
+    {
+        return Groups.AddToGroupAsync(
+            Context.ConnectionId,
+            $"group-{groupId}"
+        );
+    }
+
 }
 

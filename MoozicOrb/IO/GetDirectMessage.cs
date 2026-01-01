@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using MoozicOrb.Api.Models;
 
 namespace MoozicOrb.IO
@@ -7,13 +8,22 @@ namespace MoozicOrb.IO
     {
         public GetDirectMessages() { }
 
-        public object[] GetMessagesBetweenUsers(int userId1, int userId2)
+        // ----------------------------------------------------
+        // THREAD BETWEEN TWO USERS
+        // ----------------------------------------------------
+        public DirectMessageDto[] GetMessagesBetweenUsers(int userId1, int userId2)
         {
             string queryString = $@"
-                SELECT * FROM direct_messages
-                WHERE (sender_id = {userId1} AND receiver_id = {userId2})
-                   OR (sender_id = {userId2} AND receiver_id = {userId1})
-                ORDER BY timestamp ASC";
+                SELECT *
+                FROM messages
+                WHERE
+                    message_deleted = 0
+                AND (
+                        (sender_id = {userId1} AND receiver_id = {userId2})
+                     OR (sender_id = {userId2} AND receiver_id = {userId1})
+                    )
+                ORDER BY timestamp ASC
+            ";
 
             Query query = new Query();
             DataTable dt = query.Run(queryString);
@@ -21,18 +31,51 @@ namespace MoozicOrb.IO
             return MapDataTable(dt);
         }
 
-        public object[] GetMessageById(long messageId)
+        // ----------------------------------------------------
+        // SINGLE MESSAGE BY ID
+        // ----------------------------------------------------
+        public DirectMessageDto[] GetMessageById(long messageId)
         {
-            string queryString = $"SELECT * FROM direct_messages WHERE message_id = {messageId}";
+            string queryString = $@"
+                SELECT *
+                FROM messages
+                WHERE message_id = {messageId}
+                LIMIT 1
+            ";
+
             Query query = new Query();
             DataTable dt = query.Run(queryString);
 
             return MapDataTable(dt);
         }
 
-        private object[] MapDataTable(DataTable dt)
+        // ----------------------------------------------------
+        // ALL DMS FOR USER (LOGIN / INBOX)
+        // ----------------------------------------------------
+        public DirectMessageDto[] GetAllMessagesForUser(int userId)
         {
-            if (dt == null || dt.Rows.Count == 0) return new object[0];
+            string queryString = $@"
+                SELECT *
+                FROM messages
+                WHERE
+                    message_deleted = 0
+                AND (sender_id = {userId} OR receiver_id = {userId})
+                ORDER BY timestamp ASC
+            ";
+
+            Query query = new Query();
+            DataTable dt = query.Run(queryString);
+
+            return MapDataTable(dt);
+        }
+
+        // ----------------------------------------------------
+        // MAP
+        // ----------------------------------------------------
+        private DirectMessageDto[] MapDataTable(DataTable dt)
+        {
+            if (dt == null || dt.Rows.Count == 0)
+                return Array.Empty<DirectMessageDto>();
 
             DirectMessageDto[] messages = new DirectMessageDto[dt.Rows.Count];
             int i = 0;
@@ -41,13 +84,15 @@ namespace MoozicOrb.IO
             {
                 messages[i++] = new DirectMessageDto
                 {
-                    MessageId = long.Parse(row["message_id"].ToString()),
-                    SenderId = int.Parse(row["sender_id"].ToString()),
-                    ReceiverId = int.Parse(row["receiver_id"].ToString()),
+                    MessageId = Convert.ToInt64(row["message_id"]),
+                    SenderId = Convert.ToInt32(row["sender_id"]),
+                    ReceiverId = Convert.ToInt32(row["receiver_id"]),
                     Text = row["message_text"].ToString(),
-                    Timestamp = (DateTime)row["timestamp"],
-                    SenderName = "",             // hydrate in service/controller
-                    SenderProfilePicUrl = ""     // hydrate in service/controller
+                    Timestamp = Convert.ToDateTime(row["timestamp"]),
+
+                    // hydrated later
+                    SenderName = null,
+                    SenderProfilePicUrl = null
                 };
             }
 
@@ -55,5 +100,4 @@ namespace MoozicOrb.IO
         }
     }
 }
-
 

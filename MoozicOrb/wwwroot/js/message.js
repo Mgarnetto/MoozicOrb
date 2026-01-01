@@ -1,47 +1,95 @@
-﻿const messageconn = new signalR.HubConnectionBuilder()
+﻿const GROUP_ID = 9;
+let lastMessageId = 0;
+
+const messageconn = new signalR.HubConnectionBuilder()
     .withUrl("/MessageHub")
     .withAutomaticReconnect()
     .build();
 
-messageconn.start().catch(console.error);
+// -----------------------------
+// START CONNECTION
+// -----------------------------
+messageconn.start()
+    .then(() => {
+        console.log("SignalR connected");
 
-// ---- RECEIVE GROUP ----
-messageconn.on("OnGroupMessage", m => {
-    $(`#group-${m.groupId} .messages`)
-        .append(render(m.senderId, m.text, m.timestamp));
+        // Join SignalR group
+        messageconn.invoke("JoinGroup", GROUP_ID);
+
+        // Pull all existing messages
+        loadGroupMessages();
+    })
+    .catch(console.error);
+
+// -----------------------------
+// SIGNALR NOTIFY → PULL SINGLE
+// -----------------------------
+messageconn.on("OnGroupMessage", data => {
+    if (data.groupId !== GROUP_ID) return;
+
+    if (data.messageId <= lastMessageId) return;
+
+    fetch(`/api/groups/${GROUP_ID}/messages/${data.messageId}`)
+        .then(r => r.json())
+        .then(m => {
+            appendMessage(m);
+            lastMessageId = m.messageId;
+        });
 });
 
-// ---- RECEIVE DIRECT ----
-messageconn.on("OnDirectMessage", m => {
-    const chatUser =
-        m.senderId === CURRENT_USER_ID
-            ? m.receiverId
-            : m.senderId;
+// -----------------------------
+// LOAD ALL (ON CONNECT)
+// -----------------------------
+function loadGroupMessages() {
+    fetch(`/api/groups/${GROUP_ID}/messages`)
+        .then(r => r.json())
+        .then(messages => {
+            const container = $(`#group-${GROUP_ID} .messages`);
+            container.empty();
 
-    $(`#dm-${chatUser} .messages`)
-        .append(render(m.senderId, m.text, m.timestamp));
-});
+            messages.forEach(m => {
+                appendMessage(m);
+                lastMessageId = Math.max(lastMessageId, m.messageId);
+            });
 
-// ---- SEND ----
+            container.scrollTop(container[0].scrollHeight);
+        });
+}
+
+// -----------------------------
+// SEND GROUP MESSAGE (ONLY ONE)
+// -----------------------------
 $(document).on("click", ".send-group", function () {
-    const groupId = parseInt($(this).data("group-id"));
-    const text = $(`#group-${groupId} input`).val();
+    const groupId = $(this).data("group-id");
+    const input = $(`#group-${groupId} .group-text`);
+    const text = input.val();
 
-    messageconn.invoke("SendGroupMessage", groupId, text);
+    if (!text) return;
+
+    fetch(`/api/groups/${groupId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+    })
+        .then(r => {
+            if (!r.ok) throw "POST failed";
+            input.val("");
+        })
+        .catch(console.error);
 });
 
-$(document).on("click", ".send-direct", function () {
-    const receiverId = parseInt($(this).data("receiver-id"));
-    const text = $(`#dm-${receiverId} input`).val();
-
-    messageconn.invoke("SendDirectMessage", receiverId, text);
-});
-
-function sendDirect(userId) {
-    const text = $(`#dm-${userId} input`).val();
-    messageconn.invoke("SendDirectMessage", userId, text);
+// -----------------------------
+// RENDER
+// -----------------------------
+function appendMessage(m) {
+    $(`#group-${GROUP_ID} .messages`).append(`
+        <div class="mb-1">
+            <strong>${m.senderName ?? m.senderId}</strong>:
+            ${m.text}
+            <span class="text-muted small ms-2">
+                ${m.timestamp}
+            </span>
+        </div>
+    `);
 }
 
-function render(sender, text, time) {
-    return `<div><b>${sender}</b> ${time}: ${text}</div>`;
-}

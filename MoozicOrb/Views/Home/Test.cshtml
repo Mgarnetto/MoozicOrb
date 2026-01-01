@@ -1,129 +1,22 @@
-﻿@{Layout = "";}
+﻿
+<div class="container py-4">
+    <h3 class="mb-4">Group Chat</h3>
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Group Chat Test</title>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <div id="group-9" class="group-chat card mb-4" data-group-id="9">
+        <div class="card-header bg-primary text-white">
+            Group #9
+        </div>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #111;
-            color: #eee;
-        }
+        <div class="card-body messages" style="height:300px; overflow-y:auto;">
+            <!-- messages load here -->
+        </div>
 
-        #chatContainer {
-            width: 400px;
-            height: 600px;
-            border: 1px solid #444;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-            border-bottom: 1px solid #444;
-        }
-
-        .msg {
-            margin-bottom: 8px;
-            padding: 6px;
-            background: #222;
-            border-radius: 4px;
-        }
-
-        #inputRow {
-            display: flex;
-        }
-
-        #messageInput {
-            flex: 1;
-            padding: 8px;
-            border: none;
-            outline: none;
-        }
-
-        #sendBtn {
-            width: 80px;
-            border: none;
-            background: #3a7;
-            color: black;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-
-    <h3>Group Chat Test</h3>
-
-    <div id="chatContainer">
-        <div id="messages"></div>
-
-        <div id="inputRow">
-            <input id="messageInput" placeholder="Type message..." />
-            <button id="sendBtn">Send</button>
+        <div class="card-footer d-flex gap-2">
+            <input type="text" class="form-control" placeholder="Type message...">
+            <button class="btn btn-primary send-group" data-group-id="9">
+                Send
+            </button>
         </div>
     </div>
+</div>
 
-    <script>
-        $(document).ready(function () {
-
-            const groupId = 9;
-
-            function loadMessages() {
-                $.ajax({
-                    url: `/api/groups/${groupId}/messages`,
-                    method: "GET",
-                    success: function (data) {
-                        $("#messages").empty();
-
-                        data.forEach(m => {
-                            $("#messages").append(`
-                                <div class="msg">
-                                    <div>${m.text}</div>
-                                    <small>${new Date(m.timestamp).toLocaleTimeString()}</small>
-                                </div>
-                            `);
-                        });
-
-                        $("#messages").scrollTop($("#messages")[0].scrollHeight);
-                    },
-                    error: function (err) {
-                        console.error("GET failed", err);
-                    }
-                });
-            }
-
-            $("#sendBtn").on("click", function () {
-                const text = $("#messageInput").val().trim();
-                if (!text) return;
-
-                $.ajax({
-                    url: `/api/groups/${groupId}/messages`,
-                    method: "POST",
-                    contentType: "application/json",
-                    data: JSON.stringify({ text }),
-                    success: function () {
-                        $("#messageInput").val("");
-                        loadMessages();
-                    },
-                    error: function (err) {
-                        console.error("POST failed", err);
-                    }
-                });
-            });
-
-            // initial load
-            loadMessages();
-
-            // polling (temporary)
-            setInterval(loadMessages, 5000);
-        });
-    </script>
-
-
-</body>
-</html>

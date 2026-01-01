@@ -42,7 +42,7 @@ app.UseRouting();
 
 app.UseAuthorization();
 
-app.MapHub<SyncHub>("SyncHub");
+app.MapHub<GroupHub>("GroupHub");
 app.MapHub<MessageHub>("MessageHub");
 
 app.MapControllerRoute(
