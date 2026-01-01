@@ -18,6 +18,10 @@ namespace MoozicOrb.Controllers
             return View();
         }
 
+        public IActionResult Mainpage()
+        {
+            return View();
+        }
         public IActionResult Test()
         {
             return View();

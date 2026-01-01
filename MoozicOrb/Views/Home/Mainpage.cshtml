@@ -1,0 +1,1021 @@
+﻿@{
+    Layout = "_LayoutMainpage";
+}
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <header class="site-header">
+        <nav class="navbar" aria-label="Main navigation">
+            <button class="navbar__toggler" aria-controls="sidebar-navigation" aria-expanded="false" label="Toggle navigation">
+                <span class="hamburger-menu" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </span>
+                <span class="sr-only">Toggle navigation menu</span>
+            </button>
+
+            <a class="navbar__logo-container" href="/">
+                <span class="navbar__logo">Moozic</span>
+                <div class="earth-logo"></div>
+                <span class="navbar__logo-rb">rb</span>
+            </a>
+
+            <div class="navbar__auth-buttons">
+                <a href="#" class="btn btn--primary">Login</a>
+            </div>
+        </nav>
+    </header>
+
+    <aside class="sidebar" id="sidebar-navigation">
+        <div class="sidebar__profile">
+            <img src="https://placehold.jp/150x150.png" class="sidebar__profile-image" alt="User profile image">
+            <div class="sidebar__follow-info">
+                <span class="sidebar__follow-count">Followers</span>
+                <span class="sidebar__follow-count">Following</span>
+            </div>
+            <div class="sidebar__profile-actions">
+                <button type="button" class="btn btn--secondary">Profile Edit</button>
+                <button type="button" class="btn btn--success">SAVE</button>
+            </div>
+        </div>
+
+        <div class="sidebar__search">
+            <label for="search-bar" class="sr-only">Search</label>
+            <input type="search" id="search-bar" class="search-bar" placeholder="Search..." style="font-weight:600;font-size:15px">
+            <i class="fa fa-search search-icon" aria-hidden="true"></i>
+        </div>
+
+        <nav class="sidebar__nav">
+            <ul role="list">
+                <li><a href="/" class="active" aria-current="page">Home</a></li>
+                <li><a href="/messages">Messages</a></li>
+                <li class="has-submenu">
+                    <a href="#discover" aria-expanded="false">Discover <i class="fa fa-chevron-right submenu-icon" aria-hidden="true"></i></a>
+                    <ul class="submenu" role="list">
+                        <li><a href="/discover/artists">Artists</a></li>
+                        <li><a href="/discover/genres">Genres</a></li>
+                        <li><a href="/discover/new-releases">New Releases</a></li>
+                    </ul>
+                </li>
+                <li><a href="/playlist">Playlist</a></li>
+                <li><a href="/radioorb">RadioOrb</a></li>
+                <li><a href="/mission-statement">About Us</a></li>
+                <li><a href="/toa">Support</a></li>
+                <li><a href="/toa">TOA</a></li>
+                <li><a href="/advertising-info">Advertising Info</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <main id="main-content">
+        <section class="announcement-banner" aria-live="polite">
+            <p class="announcement-banner__text">Welcome to MoozicOrb.com! Find Your Favorite Artist by Map or Genre... Join Now</p>
+        </section>
+
+        <section class="content-section" aria-labelledby="top-artist-heading">
+            <h1 id="top-artist-heading" class="section-title"><span>Top Artist</span></h1>
+            <div class="scroll-container">
+                <ul class="image-list" id="artist-img-list">
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Image of an artist" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Image of an artist" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Image of an artist" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Image of an artist" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Image of an artist" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Image of an artist" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="content-section" aria-labelledby="map-genre-heading">
+            <h1 id="map-genre-heading" class="section-title">
+                <span>By Map or Genre</span>
+            </h1>
+            <div class="search-container">
+                <input type="text" id="genre-search" placeholder="Search for a genre...">
+            </div>
+            <div class="swipeable-container">
+                <div class="genre-list">
+                    <a href="#" class="genre-item">Acid-House</a>
+                    <a href="#" class="genre-item">Acid Breaks</a>
+                    <a href="#" class="genre-item">Acid House</a>
+                    <a href="#" class="genre-item">Acid Jazz</a>
+                    <a href="#" class="genre-item">Acid Techno</a>
+                    <a href="#" class="genre-item">Acid Trance</a>
+                    <a href="#" class="genre-item">Acousmatic Music</a>
+                    <a href="#" class="genre-item">Acoustic Blues</a>
+                    <a href="#" class="genre-item">African Blues</a>
+                    <a href="#" class="genre-item">African Heavy Metal</a>
+                    <a href="#" class="genre-item">African Hip Hop</a>
+                    <a href="#" class="genre-item">Afro-Beat</a>
+                    <a href="#" class="genre-item">Afro-Cuban Jazz</a>
+                    <a href="#" class="genre-item">Afro-House</a>
+                    <a href="#" class="genre-item">Afro-Pop</a>
+                    <a href="#" class="genre-item">Alternative Country</a>
+                    <a href="#" class="genre-item">Alternative Dance</a>
+                    <a href="#" class="genre-item">Alternative Rap</a>
+                    <a href="#" class="genre-item">Alternative Rock</a>
+                    <a href="#" class="genre-item">Americana</a>
+                    <a href="#" class="genre-item">American Folk Revival</a>
+                    <a href="#" class="genre-item">Anison</a>
+                    <a href="#" class="genre-item">Anti-Folk</a>
+                    <a href="#" class="genre-item">Apala</a>
+                    <a href="#" class="genre-item">Art Punk</a>
+                    <a href="#" class="genre-item">Australian Country</a>
+                    <a href="#" class="genre-item">Avant-Garde</a>
+                    <a href="#" class="genre-item">Avant-Garde Jazz</a>
+                    <a href="#" class="genre-item">Baggy</a>
+                    <a href="#" class="genre-item">Baila</a>
+                    <a href="#" class="genre-item">Baithak Gana</a>
+                    <a href="#" class="genre-item">Bakersfield Sound</a>
+                    <a href="#" class="genre-item">Balearic Beat</a>
+                    <a href="#" class="genre-item">Ballet</a>
+                    <a href="#" class="genre-item">Baltimore Club</a>
+                    <a href="#" class="genre-item">Baroque</a>
+                    <a href="#" class="genre-item">Bass</a>
+                    <a href="#" class="genre-item">Bassline</a>
+                    <a href="#" class="genre-item">Bebop</a>
+                    <a href="#" class="genre-item">Benga</a>
+                    <a href="#" class="genre-item">Bhangra</a>
+                    <a href="#" class="genre-item">Bhojpuri</a>
+                    <a href="#" class="genre-item">Big Band</a>
+                    <a href="#" class="genre-item">Big Beat</a>
+                    <a href="#" class="genre-item">Bikutsi</a>
+                    <a href="#" class="genre-item">Bluegrass</a>
+                    <a href="#" class="genre-item">Blue Note</a>
+                    <a href="#" class="genre-item">Blues Country</a>
+                    <a href="#" class="genre-item">Blues Rock</a>
+                    <a href="#" class="genre-item">Blues Shouter</a>
+                    <a href="#" class="genre-item">Bongo Flava</a>
+                    <a href="#" class="genre-item">Bounce</a>
+                    <a href="#" class="genre-item">Bouncy House</a>
+                    <a href="#" class="genre-item">Bouncy Techno</a>
+                    <a href="#" class="genre-item">Breakbeat / Breakstep</a>
+                    <a href="#" class="genre-item">Breakbeat Hardcore</a>
+                    <a href="#" class="genre-item">Breakcore</a>
+                    <a href="#" class="genre-item">Brick City Club</a>
+                    <a href="#" class="genre-item">British Blues</a>
+                    <a href="#" class="genre-item">British Dance Band</a>
+                    <a href="#" class="genre-item">British Folk Revival</a>
+                    <a href="#" class="genre-item">Britpunk</a>
+                    <a href="#" class="genre-item">Broken Beat</a>
+                    <a href="#" class="genre-item">Brostep</a>
+                    <a href="#" class="genre-item">Bubblegum Dance</a>
+                    <a href="#" class="genre-item">C-Pop</a>
+                    <a href="#" class="genre-item">Cajun</a>
+                    <a href="#" class="genre-item">Cajun Fiddle Tunes</a>
+                    <a href="#" class="genre-item">Calypso</a>
+                    <a href="#" class="genre-item">Canadian Blues</a>
+                    <a href="#" class="genre-item">Cantata</a>
+                    <a href="#" class="genre-item">Cantopop</a>
+                    <a href="#" class="genre-item">Cape Jazz</a>
+                    <a href="#" class="genre-item">Caribbean</a>
+                    <a href="#" class="genre-item">Carnatic</a>
+                    <a href="#" class="genre-item">CCM</a>
+                    <a href="#" class="genre-item">Celtic</a>
+                    <a href="#" class="genre-item">Celtic Folk</a>
+                    <a href="#" class="genre-item">Chamber Jazz</a>
+                    <a href="#" class="genre-item">Chamber Music</a>
+                    <a href="#" class="genre-item">Chant</a>
+                    <a href="#" class="genre-item">Chap Hop</a>
+                    <a href="#" class="genre-item">Chicago Blues</a>
+                    <a href="#" class="genre-item">Chicago Hip Hop</a>
+                    <a href="#" class="genre-item">Chicago House</a>
+                    <a href="#" class="genre-item">Chicano</a>
+                    <a href="#" class="genre-item">Chill Out</a>
+                    <a href="#" class="genre-item">Chillstep</a>
+                    <a href="#" class="genre-item">Chillwave</a>
+                    <a href="#" class="genre-item">Chimurenga</a>
+                    <a href="#" class="genre-item">Choral</a>
+                    <a href="#" class="genre-item">Christian</a>
+                    <a href="#" class="genre-item">Christian Country</a>
+                    <a href="#" class="genre-item">Christian Hip Hop</a>
+                    <a href="#" class="genre-item">Christian Metal</a>
+                    <a href="#" class="genre-item">Christian Pop</a>
+                    <a href="#" class="genre-item">Christian Rap</a>
+                    <a href="#" class="genre-item">Christian Rock</a>
+                    <a href="#" class="genre-item">Chutney</a>
+                    <a href="#" class="genre-item">Chutney Soca</a>
+                    <a href="#" class="genre-item">CityPop</a>
+                    <a href="#" class="genre-item">Classic</a>
+                    <a href="#" class="genre-item">Classical Crossover</a>
+                    <a href="#" class="genre-item">Classic Blues</a>
+                    <a href="#" class="genre-item">Classic Christian</a>
+                    <a href="#" class="genre-item">Classic Country</a>
+                    <a href="#" class="genre-item">Classic Female Blues</a>
+                    <a href="#" class="genre-item">Classic Trance</a>
+                    <a href="#" class="genre-item">Close Harmony</a>
+                    <a href="#" class="genre-item">Club / Club Dance</a>
+                    <a href="#" class="genre-item">College Rock</a>
+                    <a href="#" class="genre-item">Compas</a>
+                    <a href="#" class="genre-item">Concerto</a>
+                    <a href="#" class="genre-item">Congo</a>
+                    <a href="#" class="genre-item">Conjunto</a>
+                    <a href="#" class="genre-item">Conjunto Progressive</a>
+                    <a href="#" class="genre-item">Conscious Hip Hop</a>
+                    <a href="#" class="genre-item">Contemporary Bluegrass</a>
+                    <a href="#" class="genre-item">Contemporary Blues</a>
+                    <a href="#" class="genre-item">Contemporary Celtic</a>
+                    <a href="#" class="genre-item">Contemporary Classical</a>
+                    <a href="#" class="genre-item">Contemporary Country</a>
+                    <a href="#" class="genre-item">Contemporary Folk</a>
+                    <a href="#" class="genre-item">Contemporary Gospel</a>
+                    <a href="#" class="genre-item">Contemporary Jazz</a>
+                    <a href="#" class="genre-item">Contemporary R&B</a>
+                    <a href="#" class="genre-item">Continental Jazz</a>
+                    <a href="#" class="genre-item">Cool Jazz</a>
+                    <a href="#" class="genre-item">Country-Rap</a>
+                    <a href="#" class="genre-item">Country Blues</a>
+                    <a href="#" class="genre-item">Country Gospel</a>
+                    <a href="#" class="genre-item">Country Pop</a>
+                    <a href="#" class="genre-item">Country Rap</a>
+                    <a href="#" class="genre-item">Country Rock</a>
+                    <a href="#" class="genre-item">Country Soul</a>
+                    <a href="#" class="genre-item">Cowpunk</a>
+                    <a href="#" class="genre-item">Crossover Jazz</a>
+                    <a href="#" class="genre-item">Crossover Thrash</a>
+                    <a href="#" class="genre-item">Crunk</a>
+                    <a href="#" class="genre-item">Crunkcore</a>
+                    <a href="#" class="genre-item">Crust Punk</a>
+                    <a href="#" class="genre-item">Cumbia Rap</a>
+                    <a href="#" class="genre-item">Dance-Punk</a>
+                    <a href="#" class="genre-item">Dance-Rock</a>
+                    <a href="#" class="genre-item">Dangdut</a>
+                    <a href="#" class="genre-item">Dansband</a>
+                    <a href="#" class="genre-item">Dark Blues</a>
+                    <a href="#" class="genre-item">Darkcore</a>
+                    <a href="#" class="genre-item">Dark Jazz</a>
+                    <a href="#" class="genre-item">Dark Psy</a>
+                    <a href="#" class="genre-item">Dark Psytrance</a>
+                    <a href="#" class="genre-item">Darkside Jungle</a>
+                    <a href="#" class="genre-item">Darkstep</a>
+                    <a href="#" class="genre-item">Dark Wave</a>
+                    <a href="#" class="genre-item">Deep House</a>
+                    <a href="#" class="genre-item">Delta Blues</a>
+                    <a href="#" class="genre-item">Detroit Blues</a>
+                    <a href="#" class="genre-item">Detroit Hip Hop</a>
+                    <a href="#" class="genre-item">Detroit Techno</a>
+                    <a href="#" class="genre-item">Digital Hardcore</a>
+                    <a href="#" class="genre-item">Dirty South</a>
+                    <a href="#" class="genre-item">Diva House</a>
+                    <a href="#" class="genre-item">Dixieland</a>
+                    <a href="#" class="genre-item">Doom Blues</a>
+                    <a href="#" class="genre-item">Doomcore</a>
+                    <a href="#" class="genre-item">Doom Metal</a>
+                    <a href="#" class="genre-item">Downtempo</a>
+                    <a href="#" class="genre-item">Dream Trance</a>
+                    <a href="#" class="genre-item">Drinking Songs</a>
+                    <a href="#" class="genre-item">Drone</a>
+                    <a href="#" class="genre-item">Drumfunk</a>
+                    <a href="#" class="genre-item">Drumstep</a>
+                    <a href="#" class="genre-item">Dub Music</a>
+                    <a href="#" class="genre-item">Dubstep</a>
+                    <a href="#" class="genre-item">Dubstyle</a>
+                    <a href="#" class="genre-item">Dubtronica</a>
+                    <a href="#" class="genre-item">Dutch House</a>
+                    <a href="#" class="genre-item">Early Jazz</a>
+                    <a href="#" class="genre-item">Early Music</a>
+                    <a href="#" class="genre-item">East Coast</a>
+                    <a href="#" class="genre-item">EDM</a>
+                    <a href="#" class="genre-item">Electric Blues</a>
+                    <a href="#" class="genre-item">Electro</a>
+                    <a href="#" class="genre-item">Electro-Grime</a>
+                    <a href="#" class="genre-item">Electro-swing</a>
+                    <a href="#" class="genre-item">Electroacoustic</a>
+                    <a href="#" class="genre-item">Electro Backbeat</a>
+                    <a href="#" class="genre-item">Electroclash</a>
+                    <a href="#" class="genre-item">Electro House</a>
+                    <a href="#" class="genre-item">Electronic</a>
+                    <a href="#" class="genre-item">Electronica</a>
+                    <a href="#" class="genre-item">Electronic Dance</a>
+                    <a href="#" class="genre-item">Electronicore</a>
+                    <a href="#" class="genre-item">Electronic Rock</a>
+                    <a href="#" class="genre-item">Electropop</a>
+                    <a href="#" class="genre-item">Electropunk</a>
+                    <a href="#" class="genre-item">Electro Swing</a>
+                    <a href="#" class="genre-item">Enka</a>
+                    <a href="#" class="genre-item">Entechno</a>
+                    <a href="#" class="genre-item">Ethereal Wave</a>
+                    <a href="#" class="genre-item">Ethio-jazz</a>
+                    <a href="#" class="genre-item">Ethnic Electronica</a>
+                    <a href="#" class="genre-item">Ethno-Jazz</a>
+                    <a href="#" class="genre-item">Eurobeat</a>
+                    <a href="#" class="genre-item">Eurodance</a>
+                    <a href="#" class="genre-item">European Free Jazz</a>
+                    <a href="#" class="genre-item">Experimental Rock</a>
+                    <a href="#" class="genre-item">Expressionist</a>
+                    <a href="#" class="genre-item">Fann At-Tanbura</a>
+                    <a href="#" class="genre-item">Field Recording</a>
+                    <a href="#" class="genre-item">Fijiri</a>
+                    <a href="#" class="genre-item">Filk</a>
+                    <a href="#" class="genre-item">Filmi</a>
+                    <a href="#" class="genre-item">Folk Blues</a>
+                    <a href="#" class="genre-item">Folk Music</a>
+                    <a href="#" class="genre-item">Folk Punk</a>
+                    <a href="#" class="genre-item">Folktronica</a>
+                    <a href="#" class="genre-item">France</a>
+                    <a href="#" class="genre-item">Franco-Country</a>
+                    <a href="#" class="genre-item">Freak Folk</a>
+                    <a href="#" class="genre-item">Free Jazz</a>
+                    <a href="#" class="genre-item">Freestyle House</a>
+                    <a href="#" class="genre-item">Freestyle Music</a>
+                    <a href="#" class="genre-item">Freestyle Rap</a>
+                    <a href="#" class="genre-item">Free Tekno</a>
+                    <a href="#" class="genre-item">French House</a>
+                    <a href="#" class="genre-item">French Pop</a>
+                    <a href="#" class="genre-item">Fuji Music</a>
+                    <a href="#" class="genre-item">Funky House</a>
+                    <a href="#" class="genre-item">Fusion</a>
+                    <a href="#" class="genre-item">Future Garage</a>
+                    <a href="#" class="genre-item">G-Funk</a>
+                    <a href="#" class="genre-item">Gabber</a>
+                    <a href="#" class="genre-item">Gangsta Rap</a>
+                    <a href="#" class="genre-item">Garage</a>
+                    <a href="#" class="genre-item">Genge</a>
+                    <a href="#" class="genre-item">German Folk</a>
+                    <a href="#" class="genre-item">German Pop</a>
+                    <a href="#" class="genre-item">Ghetto House</a>
+                    <a href="#" class="genre-item">Ghettotech</a>
+                    <a href="#" class="genre-item">Glam Rock</a>
+                    <a href="#" class="genre-item">Glitch</a>
+                    <a href="#" class="genre-item">Glitch Hop</a>
+                    <a href="#" class="genre-item">Glitch Pop</a>
+                    <a href="#" class="genre-item">Gnawa</a>
+                    <a href="#" class="genre-item">Goa Trance</a>
+                    <a href="#" class="genre-item">Golden Age</a>
+                    <a href="#" class="genre-item">Gospel</a>
+                    <a href="#" class="genre-item">Gospel Blues</a>
+                    <a href="#" class="genre-item">Goth Rock</a>
+                    <a href="#" class="genre-item">Gothic Metal</a>
+                    <a href="#" class="genre-item">Grime</a>
+                    <a href="#" class="genre-item">Grind Core</a>
+                    <a href="#" class="genre-item">Grunge</a>
+                    <a href="#" class="genre-item">Grunk</a>
+                    <a href="#" class="genre-item">Gypsy Jazz</a>
+                    <a href="#" class="genre-item">Hair Metal</a>
+                    <a href="#" class="genre-item">Hardcore Hip Hop</a>
+                    <a href="#" class="genre-item">Hardcore Punk</a>
+                    <a href="#" class="genre-item">Hardcore Rap</a>
+                    <a href="#" class="genre-item">Hard Dance</a>
+                    <a href="#" class="genre-item">Hard Nrg</a>
+                    <a href="#" class="genre-item">Hard Rock</a>
+                    <a href="#" class="genre-item">Hardstep</a>
+                    <a href="#" class="genre-item">Hard Trance</a>
+                    <a href="#" class="genre-item">Harmonica Blues</a>
+                    <a href="#" class="genre-item">Hellbilly Music</a>
+                    <a href="#" class="genre-item">Hi-Nrg</a>
+                    <a href="#" class="genre-item">Hi-NRG / Eurodance</a>
+                    <a href="#" class="genre-item">High Classical</a>
+                    <a href="#" class="genre-item">Highlife</a>
+                    <a href="#" class="genre-item">Hill Country Blues</a>
+                    <a href="#" class="genre-item">Hindustani</a>
+                    <a href="#" class="genre-item">Hip-Hop/Rap</a>
+                    <a href="#" class="genre-item">Hip House</a>
+                    <a href="#" class="genre-item">Hokum Blues</a>
+                    <a href="#" class="genre-item">Hong Kong Pop</a>
+                    <a href="#" class="genre-item">Honky Tonk</a>
+                    <a href="#" class="genre-item">House</a>
+                    <a href="#" class="genre-item">Hyphy</a>
+                    <a href="#" class="genre-item">Hyponagogic</a>
+                    <a href="#" class="genre-item">IDM</a>
+                    <a href="#" class="genre-item">Impressionist</a>
+                    <a href="#" class="genre-item">Indian Ghazal</a>
+                    <a href="#" class="genre-item">Indian Pop</a>
+                    <a href="#" class="genre-item">Indie</a>
+                    <a href="#" class="genre-item">Indie Pop</a>
+                    <a href="#" class="genre-item">Indie Rock</a>
+                    <a href="#" class="genre-item">Indietronica</a>
+                    <a href="#" class="genre-item">Indo Jazz</a>
+                    <a href="#" class="genre-item">Industrial Folk</a>
+                    <a href="#" class="genre-item">Industrial Hip Hop</a>
+                    <a href="#" class="genre-item">Instrumentalists</a>
+                    <a href="#" class="genre-item">Instrumental Country</a>
+                    <a href="#" class="genre-item">Instrumental Hip Hop</a>
+                    <a href="#" class="genre-item">Isicathamiya</a>
+                    <a href="#" class="genre-item">Italo Dance</a>
+                    <a href="#" class="genre-item">Italo House</a>
+                    <a href="#" class="genre-item">Jù</a>
+                    <a href="#" class="genre-item">J-Pop</a>
+                    <a href="#" class="genre-item">J-Punk</a>
+                    <a href="#" class="genre-item">J-Rock</a>
+                    <a href="#" class="genre-item">J-Ska</a>
+                    <a href="#" class="genre-item">J-Synth</a>
+                    <a href="#" class="genre-item">Jackin House</a>
+                    <a href="#" class="genre-item">Jam Bands</a>
+                    <a href="#" class="genre-item">Japanese Pop</a>
+                    <a href="#" class="genre-item">Jazz</a>
+                    <a href="#" class="genre-item">Jazz-Funk</a>
+                    <a href="#" class="genre-item">Jazz-Fusion</a>
+                    <a href="#" class="genre-item">Jazz Blues</a>
+                    <a href="#" class="genre-item">Jazz Rap</a>
+                    <a href="#" class="genre-item">Jazz Rock</a>
+                    <a href="#" class="genre-item">Jit</a>
+                    <a href="#" class="genre-item">Jump-Up</a>
+                    <a href="#" class="genre-item">Jump Blues</a>
+                    <a href="#" class="genre-item">Jumpstyle</a>
+                    <a href="#" class="genre-item">Jungle</a>
+                    <a href="#" class="genre-item">K-Pop</a>
+                    <a href="#" class="genre-item">Kansas City Blues</a>
+                    <a href="#" class="genre-item">Kansas City Jazz</a>
+                    <a href="#" class="genre-item">Kapuka</a>
+                    <a href="#" class="genre-item">Kayōkyoku</a>
+                    <a href="#" class="genre-item">Khaliji</a>
+                    <a href="#" class="genre-item">Kizomba</a>
+                    <a href="#" class="genre-item">Klezmer</a>
+                    <a href="#" class="genre-item">Korean Pop</a>
+                    <a href="#" class="genre-item">Kuduro</a>
+                    <a href="#" class="genre-item">Kwaito</a>
+                    <a href="#" class="genre-item">Kwela</a>
+                    <a href="#" class="genre-item">Laptronica</a>
+                    <a href="#" class="genre-item">Latin House</a>
+                    <a href="#" class="genre-item">Latin Jazz</a>
+                    <a href="#" class="genre-item">Latin Rap</a>
+                    <a href="#" class="genre-item">Lavani</a>
+                    <a href="#" class="genre-item">Lingala</a>
+                    <a href="#" class="genre-item">Liquid Dub</a>
+                    <a href="#" class="genre-item">Liquid Funk</a>
+                    <a href="#" class="genre-item">Live Coding</a>
+                    <a href="#" class="genre-item">Live Electronics</a>
+                    <a href="#" class="genre-item">Liwa</a>
+                    <a href="#" class="genre-item">Lo-fi</a>
+                    <a href="#" class="genre-item">Louisiana Blues</a>
+                    <a href="#" class="genre-item">Low Bap</a>
+                    <a href="#" class="genre-item">Lubbock Sound</a>
+                    <a href="#" class="genre-item">Luk Krung</a>
+                    <a href="#" class="genre-item">Luk Thung</a>
+                    <a href="#" class="genre-item">Lyrical Hip Hop</a>
+                    <a href="#" class="genre-item">M-Base Jazz</a>
+                    <a href="#" class="genre-item">Madchester</a>
+                    <a href="#" class="genre-item">Mafioso Rap</a>
+                    <a href="#" class="genre-item">Mainstream Jazz</a>
+                    <a href="#" class="genre-item">Makina</a>
+                    <a href="#" class="genre-item">Makossa</a>
+                    <a href="#" class="genre-item">Mallsoft</a>
+                    <a href="#" class="genre-item">Maloya</a>
+                    <a href="#" class="genre-item">Mambo</a>
+                    <a href="#" class="genre-item">Mandopop</a>
+                    <a href="#" class="genre-item">Manila Sound</a>
+                    <a href="#" class="genre-item">Marrabenta</a>
+                    <a href="#" class="genre-item">Mass Requiem</a>
+                    <a href="#" class="genre-item">Math Metal</a>
+                    <a href="#" class="genre-item">Math Rock</a>
+                    <a href="#" class="genre-item">Mbalax</a>
+                    <a href="#" class="genre-item">Mbaqanga</a>
+                    <a href="#" class="genre-item">Mbube</a>
+                    <a href="#" class="genre-item">Medieval</a>
+                    <a href="#" class="genre-item">Memphis Blues</a>
+                    <a href="#" class="genre-item">Merengue</a>
+                    <a href="#" class="genre-item">Merenrap</a>
+                    <a href="#" class="genre-item">Metal</a>
+                    <a href="#" class="genre-item">Metal Core</a>
+                    <a href="#" class="genre-item">Middle East</a>
+                    <a href="#" class="genre-item">Midwest Hip Hop</a>
+                    <a href="#" class="genre-item">Minimal</a>
+                    <a href="#" class="genre-item">Minimal House</a>
+                    <a href="#" class="genre-item">Minimalism</a>
+                    <a href="#" class="genre-item">Minimal Techno</a>
+                    <a href="#" class="genre-item">Modal Jazz</a>
+                    <a href="#" class="genre-item">Modern Blues</a>
+                    <a href="#" class="genre-item">Modern Classical</a>
+                    <a href="#" class="genre-item">Modern Composition</a>
+                    <a href="#" class="genre-item">Moombahton</a>
+                    <a href="#" class="genre-item">Morlam</a>
+                    <a href="#" class="genre-item">Morna</a>
+                    <a href="#" class="genre-item">Motswako</a>
+                    <a href="#" class="genre-item">Museve</a>
+                    <a href="#" class="genre-item">Musique Concrè</a>
+                    <a href="#" class="genre-item">Nashville Sound</a>
+                    <a href="#" class="genre-item">Negro Spiritual</a>
+                    <a href="#" class="genre-item">Neo-Bop</a>
+                    <a href="#" class="genre-item">Neo-Swing</a>
+                    <a href="#" class="genre-item">Neofolk</a>
+                    <a href="#" class="genre-item">Neotraditional Country</a>
+                    <a href="#" class="genre-item">Nerdcore</a>
+                    <a href="#" class="genre-item">Neurofunk</a>
+                    <a href="#" class="genre-item">New Beat</a>
+                    <a href="#" class="genre-item">New Jack Swing</a>
+                    <a href="#" class="genre-item">New Jersey Hip Hop</a>
+                    <a href="#" class="genre-item">New Mex</a>
+                    <a href="#" class="genre-item">New Orlean Blues</a>
+                    <a href="#" class="genre-item">New Rave</a>
+                    <a href="#" class="genre-item">New School Hip Hop</a>
+                    <a href="#" class="genre-item">New Wave</a>
+                    <a href="#" class="genre-item">Noise Rock</a>
+                    <a href="#" class="genre-item">Nortec</a>
+                    <a href="#" class="genre-item">Nu Jazz</a>
+                    <a href="#" class="genre-item">Nu Skool Breaks</a>
+                    <a href="#" class="genre-item">NY Blues</a>
+                    <a href="#" class="genre-item">Ode</a>
+                    <a href="#" class="genre-item">Oldschool Jungle</a>
+                    <a href="#" class="genre-item">Old School Rap</a>
+                    <a href="#" class="genre-item">Onkyokei</a>
+                    <a href="#" class="genre-item">Opera</a>
+                    <a href="#" class="genre-item">Oratorio</a>
+                    <a href="#" class="genre-item">Orchestral</a>
+                    <a href="#" class="genre-item">Orchestral Jazz</a>
+                    <a href="#" class="genre-item">Orchestral Uplifting</a>
+                    <a href="#" class="genre-item">Organum</a>
+                    <a href="#" class="genre-item">Outlaw Country</a>
+                    <a href="#" class="genre-item">Palm-Wine</a>
+                    <a href="#" class="genre-item">Piano Blues</a>
+                    <a href="#" class="genre-item">Piedmont Blues</a>
+                    <a href="#" class="genre-item">Pinoy Pop</a>
+                    <a href="#" class="genre-item">Piphat</a>
+                    <a href="#" class="genre-item">Polka</a>
+                    <a href="#" class="genre-item">Pop Sunda</a>
+                    <a href="#" class="genre-item">Post-Bop</a>
+                    <a href="#" class="genre-item">Post Punk</a>
+                    <a href="#" class="genre-item">Post Rock</a>
+                    <a href="#" class="genre-item">Praise</a>
+                    <a href="#" class="genre-item">Prog-Rock</a>
+                    <a href="#" class="genre-item">Prog Trance</a>
+                    <a href="#" class="genre-item">Progressive</a>
+                    <a href="#" class="genre-item">Progressive Bluegrass</a>
+                    <a href="#" class="genre-item">Progressive Folk</a>
+                    <a href="#" class="genre-item">Progressive House</a>
+                    <a href="#" class="genre-item">Progressive Metal</a>
+                    <a href="#" class="genre-item">Progressive Rock</a>
+                    <a href="#" class="genre-item">Protovapor</a>
+                    <a href="#" class="genre-item">Psy-Trance</a>
+                    <a href="#" class="genre-item">Psybreaks</a>
+                    <a href="#" class="genre-item">Psychedelic</a>
+                    <a href="#" class="genre-item">Psychedelic Folk</a>
+                    <a href="#" class="genre-item">Psychobill</a>
+                    <a href="#" class="genre-item">Psyprog</a>
+                    <a href="#" class="genre-item">Punk</a>
+                    <a href="#" class="genre-item">Punk Blues</a>
+                    <a href="#" class="genre-item">Punk Jazz</a>
+                    <a href="#" class="genre-item">Qawwali</a>
+                    <a href="#" class="genre-item">Raï</a>
+                    <a href="#" class="genre-item">Raggacore</a>
+                    <a href="#" class="genre-item">Ragga Jungle</a>
+                    <a href="#" class="genre-item">Ragini</a>
+                    <a href="#" class="genre-item">Ragtime</a>
+                    <a href="#" class="genre-item">Ragtime Blues</a>
+                    <a href="#" class="genre-item">Rap</a>
+                    <a href="#" class="genre-item">Rave Music</a>
+                    <a href="#" class="genre-item">Reactionary Bluegrass</a>
+                    <a href="#" class="genre-item">Rebetika</a>
+                    <a href="#" class="genre-item">Red Dirt</a>
+                    <a href="#" class="genre-item">Regstep</a>
+                    <a href="#" class="genre-item">Renaissance</a>
+                    <a href="#" class="genre-item">Rhythm Blues</a>
+                    <a href="#" class="genre-item">Rock & Roll</a>
+                    <a href="#" class="genre-item">Romantic (early period)</a>
+                    <a href="#" class="genre-item">Romantic (later period)</a>
+                    <a href="#" class="genre-item">Roots Rock</a>
+                    <a href="#" class="genre-item">Sakara</a>
+                    <a href="#" class="genre-item">Sambass</a>
+                    <a href="#" class="genre-item">Sawt</a>
+                    <a href="#" class="genre-item">Schranz</a>
+                    <a href="#" class="genre-item">Sega</a>
+                    <a href="#" class="genre-item">Seggae</a>
+                    <a href="#" class="genre-item">Semba</a>
+                    <a href="#" class="genre-item">Senegal</a>
+                    <a href="#" class="genre-item">Sertanejo</a>
+                    <a href="#" class="genre-item">Shoegaze</a>
+                    <a href="#" class="genre-item">Singer/Songwriter</a>
+                    <a href="#" class="genre-item">Ska Jazz</a>
+                    <a href="#" class="genre-item">Skiffle</a>
+                    <a href="#" class="genre-item">Skweee</a>
+                    <a href="#" class="genre-item">Smooth Jazz</a>
+                    <a href="#" class="genre-item">Soca</a>
+                    <a href="#" class="genre-item">Sonata</a>
+                    <a href="#" class="genre-item">Soukous</a>
+                    <a href="#" class="genre-item">Soul Blues</a>
+                    <a href="#" class="genre-item">Soul Jazz</a>
+                    <a href="#" class="genre-item">Sound Art</a>
+                    <a href="#" class="genre-item">Soundscape Composition</a>
+                    <a href="#" class="genre-item">Southeast Asia</a>
+                    <a href="#" class="genre-item">South Africa</a>
+                    <a href="#" class="genre-item">South America</a>
+                    <a href="#" class="genre-item">Southern Gospel</a>
+                    <a href="#" class="genre-item">Southern Rock</a>
+                    <a href="#" class="genre-item">Space Rock</a>
+                    <a href="#" class="genre-item">Spazzcore</a>
+                    <a href="#" class="genre-item">Speed Garage</a>
+                    <a href="#" class="genre-item">St. Louis Blues</a>
+                    <a href="#" class="genre-item">St. Louis Hip Hop</a>
+                    <a href="#" class="genre-item">Steampunk</a>
+                    <a href="#" class="genre-item">Stoner Metal</a>
+                    <a href="#" class="genre-item">Straight-Ahead Jazz</a>
+                    <a href="#" class="genre-item">String Quartet</a>
+                    <a href="#" class="genre-item">Sung Poetry</a>
+                    <a href="#" class="genre-item">Suomisaundi</a>
+                    <a href="#" class="genre-item">Surf</a>
+                    <a href="#" class="genre-item">Swamp Blues</a>
+                    <a href="#" class="genre-item">Swing</a>
+                    <a href="#" class="genre-item">Swing House</a>
+                    <a href="#" class="genre-item">Swing Jazz</a>
+                    <a href="#" class="genre-item">Symphonic</a>
+                    <a href="#" class="genre-item">Symphony</a>
+                    <a href="#" class="genre-item">Synthcore</a>
+                    <a href="#" class="genre-item">Synthpop</a>
+                    <a href="#" class="genre-item">Synthpunk</a>
+                    <a href="#" class="genre-item">T-Pop</a>
+                    <a href="#" class="genre-item">Taarab</a>
+                    <a href="#" class="genre-item">Taiwanese Pop</a>
+                    <a href="#" class="genre-item">Tape Music</a>
+                    <a href="#" class="genre-item">Tech House</a>
+                    <a href="#" class="genre-item">Technical Death Metal</a>
+                    <a href="#" class="genre-item">Techno</a>
+                    <a href="#" class="genre-item">Techno-Dnb</a>
+                    <a href="#" class="genre-item">Techno-Folk</a>
+                    <a href="#" class="genre-item">Technopop</a>
+                    <a href="#" class="genre-item">Techstep</a>
+                    <a href="#" class="genre-item">Tech Trance</a>
+                    <a href="#" class="genre-item">Tecno Brega</a>
+                    <a href="#" class="genre-item">Terrorcore</a>
+                    <a href="#" class="genre-item">Tex-Mex</a>
+                    <a href="#" class="genre-item">Texas Blues</a>
+                    <a href="#" class="genre-item">Texas County</a>
+                    <a href="#" class="genre-item">Thai Pop</a>
+                    <a href="#" class="genre-item">Thrash Metal</a>
+                    <a href="#" class="genre-item">Time Lord Rock</a>
+                    <a href="#" class="genre-item">Toytown Techno</a>
+                    <a href="#" class="genre-item">Traditional Bluegrass</a>
+                    <a href="#" class="genre-item">Traditional Celtic</a>
+                    <a href="#" class="genre-item">Traditional Country</a>
+                    <a href="#" class="genre-item">Traditional Gospel</a>
+                    <a href="#" class="genre-item">Trad Jazz</a>
+                    <a href="#" class="genre-item">Trance</a>
+                    <a href="#" class="genre-item">Trap</a>
+                    <a href="#" class="genre-item">Tribal House</a>
+                    <a href="#" class="genre-item">Trip-hop</a>
+                    <a href="#" class="genre-item">Trip Hop</a>
+                    <a href="#" class="genre-item">Tropical House</a>
+                    <a href="#" class="genre-item">Truck-Driving Country</a>
+                    <a href="#" class="genre-item">Turbofolk</a>
+                    <a href="#" class="genre-item">Turntablism</a>
+                    <a href="#" class="genre-item">Twelve-tone</a>
+                    <a href="#" class="genre-item">Twin Cities Hip Hop</a>
+                    <a href="#" class="genre-item">UK Garage</a>
+                    <a href="#" class="genre-item">Uk Hardcore</a>
+                    <a href="#" class="genre-item">UK Hard House</a>
+                    <a href="#" class="genre-item">Underground Rap</a>
+                    <a href="#" class="genre-item">Uplifting Trance</a>
+                    <a href="#" class="genre-item">Urban Blues</a>
+                    <a href="#" class="genre-item">Urban Cowboy</a>
+                    <a href="#" class="genre-item">US Garage</a>
+                    <a href="#" class="genre-item">Vandeville</a>
+                    <a href="#" class="genre-item">Vaporhop</a>
+                    <a href="#" class="genre-item">Vaportrap</a>
+                    <a href="#" class="genre-item">Vaporwave</a>
+                    <a href="#" class="genre-item">Vektroid</a>
+                    <a href="#" class="genre-item">Vocal House</a>
+                    <a href="#" class="genre-item">Vocal Trance</a>
+                    <a href="#" class="genre-item">West Coast Blues</a>
+                    <a href="#" class="genre-item">West Coast Jazz</a>
+                    <a href="#" class="genre-item">West Coast Rap</a>
+                    <a href="#" class="genre-item">Western Swing</a>
+                    <a href="#" class="genre-item">Worship</a>
+                    <a href="#" class="genre-item">Zouglou</a>
+                    <a href="#" class="genre-item">Zydeco</a>
+                </div>
+            </div>
+
+            <div class="image-display">
+                <div id="chartdiv"></div>
+
+                <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+                <script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+                <script src="https://cdn.amcharts.com/lib/5/geodata/worldLow.js"></script>
+                <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+                <script src="script.js"></script>
+            </div>
+        </section>
+
+        <section class="content-section" aria-labelledby="top-producers-heading">
+            <h1 id="top-producers-heading" class="section-title"><span>Top Producers</span></h1>
+            <div class="scroll-container">
+                <ul class="image-list" id="producer-img-list">
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Image of a music producer" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Image of a music producer" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Image of a music producer" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Image of a music producer" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Image of a music producer" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Image of a music producer" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="content-section" aria-labelledby="top-videos-heading">
+            <h1 id="top-videos-heading" class="section-title"><span>Top Videos</span></h1>
+            <div class="scroll-container">
+                <ul class="image-list" id="video-img-list">
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a top video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a top video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a top video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a top video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a top video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a top video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="ad-container" aria-label="Advertisement">
+            <h2 class="sr-only">Advertisement Space</h2>
+            <div class="ad-banner">
+                <img class="ad-banner__image" src="https://picsum.photos/600/200" alt="Advertisement banner" loading="lazy" width="600" height="200">
+            </div>
+        </section>
+
+        <section class="content-section" aria-labelledby="most-viewed-heading">
+            <h1 id="most-viewed-heading" class="section-title"><span>Most Viewed</span></h1>
+            <div class="scroll-container">
+                <ul class="image-list" id="most-viewed-img-list">
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a most viewed item" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a most viewed item" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a most viewed item" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a most viewed item" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a most viewed item" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a most viewed item" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="content-section" aria-labelledby="tutorials-heading">
+            <h1 id="tutorials-heading" class="section-title"><span>Tutorials</span></h1>
+            <div class="scroll-container">
+                <ul class="image-list" id="tutorial-img-list">
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a tutorial video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a tutorial video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a tutorial video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a tutorial video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a tutorial video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of a tutorial video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="content-section" aria-labelledby="interviews-heading">
+            <h1 id="interviews-heading" class="section-title"><span>Interviews</span></h1>
+            <div class="scroll-container">
+                <ul class="image-list" id="interview-img-list">
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of an interview video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of an interview video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of an interview video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of an interview video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of an interview video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                    <li>
+                        <img src="https://images.pexels.com/photos/34950/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
+                             alt="Thumbnail of an interview video" loading="lazy" width="300" height="200">
+                        <input type="text" value="Your Title Here" class="title-text-display" readonly>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="ad-container" aria-label="Advertisement">
+            <h2 class="sr-only">Advertisement Space</h2>
+            <div class="ad-banner">
+                <img class="ad-banner__image" src="https://picsum.photos/600/200" alt="Advertisement banner" loading="lazy" width="600" height="200">
+            </div>
+        </section>
+
+        <section class="events-calendar-section" aria-labelledby="events-calendar-heading">
+            <h2 id="events-calendar-heading" class="sr-only">Events Calendar</h2>
+            <div class="calendar-container">
+                <button type="button" class="collapsible" aria-expanded="false" aria-controls="calendar-content">
+                    Events Calendar
+                    <span class="collapsible-icon">▼</span>
+                </button>
+
+                <div class="collapsible-content" id="calendar-content">
+                    <div class="calendar-display">
+                        <div class="month-navigation">
+                            <button class="nav-button prev" aria-label="Previous month">
+                                <span>&lt;</span>
+                            </button>
+                            <div class="date-display" aria-live="polite">December 2015</div>
+                            <button class="nav-button next" aria-label="Next month">
+                                <span>&gt;</span>
+                            </button>
+                        </div>
+                        <div class="weekdays" role="rowgroup">
+                            <div role="columnheader">Sun</div>
+                            <div role="columnheader">Mon</div>
+                            <div role="columnheader">Tue</div>
+                            <div role="columnheader">Wed</div>
+                            <div role="columnheader">Thu</div>
+                            <div role="columnheader">Fri</div>
+                            <div role="columnheader">Sat</div>
+                        </div>
+                        <div class="days" role="grid">
+                        </div>
+                        <div class="calendar-controls">
+                            <div class="goto-date">
+                                <label for="date-input" class="sr-only">Go to date (MM/YYYY)</label>
+                                <input type="text" id="date-input" placeholder="mm/yyyy" class="date-input" aria-label="Enter month and year to go to">
+                                <button class="goto-btn btn btn--secondary">Go</button>
+                            </div>
+                            <button class="today-btn btn btn--secondary">Today</button>
+                        </div>
+                    </div>
+
+                    <div class="event-details">
+                        <div class="current-day-display">
+                            <div class="event-day" aria-live="polite">Wed</div>
+                            <div class="event-date" aria-live="polite">12th December 2022</div>
+                        </div>
+                        <div class="events-list">
+                        </div>
+                        <div class="add-event-wrapper">
+                            <div class="add-event-header">
+                                <h3 class="add-event-title">Add Event</h3>
+                            </div>
+                            <form class="add-event-form">
+                                <div class="form-group">
+                                    <label for="event-title" class="sr-only">Event Title</label>
+                                    <input type="text" id="event-title" placeholder="Title:" class="event-name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="event-description" class="sr-only">Event Description</label>
+                                    <input type="text" id="event-description" placeholder="Description" class="event-name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="event-location" class="sr-only">Event Location</label>
+                                    <input type="text" id="event-location" placeholder="Location:" class="event-name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="add-event-date" class="sr-only">Add Event Date</label>
+                                    <input type="text" id="add-event-date" placeholder="Date:" class="event-name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="event-time-from" class="sr-only">Event Time From</label>
+                                    <input type="text" id="event-time-from" placeholder="Event Time From" class="event-time-from" aria-describedby="time-format-hint">
+                                </div>
+                                <div class="form-group">
+                                    <label for="event-time-to" class="sr-only">Event Time To</label>
+                                    <input type="text" id="event-time-to" placeholder="Event Time To" class="event-time-to" aria-describedby="time-format-hint">
+                                </div>
+                                <span id="time-format-hint" class="sr-only">Please use a 12-hour or 24-hour time format, for example, 9:00 AM or 14:30.</span>
+                                <div class="form-group">
+                                    <label for="event-contact" class="sr-only">Contact Information</label>
+                                    <input type="text" id="event-contact" placeholder="Contact:" class="event-name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="event-images">Pictures:</label>
+                                    <input type="file" id="event-images" name="event-images" accept="image/*" multiple>
+                                </div>
+                                <div class="form-group">
+                                    <label for="event-videos">Videos:</label>
+                                    <input type="file" id="event-videos" name="event-videos" accept="video/*" multiple>
+                                </div>
+                                <div class="form-group">
+                                    <label for="event-tickets" class="sr-only">Ticket Link</label>
+                                    <input type="url" id="event-tickets" name="event-tickets" placeholder="Ticket Link or URL">
+                                </div>
+                                <div class="add-event-footer">
+                                    <button type="submit" class="add-event-btn btn btn--primary">Add Event</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+
+    <script src="script.js" defer></script>
+
