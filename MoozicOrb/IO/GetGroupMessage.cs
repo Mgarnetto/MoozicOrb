@@ -9,13 +9,22 @@ namespace MoozicOrb.IO
 
         public object[] GetMessagesByGroupId(long groupId)
         {
-            string queryString = $"SELECT * FROM group_messages WHERE group_id = {groupId} ORDER BY timestamp ASC";
-            Query query = new Query();
-            DataTable dt = query.Run(queryString);
+            try
+            {
+                string queryString = $"SELECT * FROM group_messages WHERE group_id = {groupId} ORDER BY timestamp ASC";
+                Query query = new Query();
+                DataTable dt = query.Run(queryString);
 
-            return MapDataTable(dt);
+                return MapDataTable(dt);
+
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (you can replace this with your logging mechanism)
+                Console.WriteLine($"An error occurred while fetching group messages: {ex.Message}");
+                return new object[0];
+            }
         }
-
         public object[] GetMessageById(long groupId, long messageId)
         {
             string queryString = $"SELECT * FROM group_messages WHERE group_id = {groupId} AND message_id = {messageId}";

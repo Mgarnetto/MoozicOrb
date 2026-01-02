@@ -9,7 +9,7 @@
     --color-accent-yellow: rgb(255, 255, 55);
     --navbar-height: 60px;
     --sidebar-width: 300px;
-    --transition-speed-fast: 0.25s;
+    l --transition-speed-fast: 0.25s;
     --transition-speed-normal: 0.5s;
     --transition-speed-slow: 0.8s;
 }
@@ -196,21 +196,22 @@ body {
 
 .btn {
     padding: 3px 8px;
-    border-radius: 25px;
+    border-radius: 16px;
     text-decoration: none;
-    font-size: 1.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    font-size: 1.3rem;
     cursor: pointer;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .btn--primary {
     background: var(--color-primary);
-    color: #000000;
-    border: 1px solid var(--color-primary);
+    color: #DCDCDC;
+    border: 3px solid #000000;
 }
 
     .btn--primary:hover {
-        background-color: #bb1111;
+        background-color: #ffffff;
     }
 
 /* --- Sidebar Navigation --- */
@@ -292,7 +293,7 @@ body {
     font-size: 1rem;
     background-color: #000000;
     color: #ffffff;
-    border: 1px solid #ffffff;
+    border: 1px solid #000000;
 }
 
     .btn--success:hover {
@@ -448,6 +449,7 @@ main {
     height: 400px; /* Adjust height as needed */
     max-width: 100%;
     background-color: #000000;
+    border-radius: 10px;
 }
 
 .title-text-display {
@@ -625,6 +627,7 @@ Descriptive class names like `image-display` and `ad-banner` make the purpose of
 .image-display {
     text-align: center;
     margin-bottom: 30px;
+    border-radius: 20px;
 }
 
 .image-display__map,
@@ -936,8 +939,8 @@ Descriptive class names like `image-display` and `ad-banner` make the purpose of
 }
 
 .add-event-footer {
-    background-color: #808080;
-    border-radius: 5px;
+    background-color: #000000;
+    border-radius: 6px;
     margin-top: 15px;
 }
 
@@ -966,7 +969,7 @@ Descriptive class names like `image-display` and `ad-banner` make the purpose of
     color: var(--color-gray-medium);
     border: 1px solid #444;
     background-color: #222;
-    padding: 10px;
+    padding: 12px;
     border-radius: 5px;
 }
 
