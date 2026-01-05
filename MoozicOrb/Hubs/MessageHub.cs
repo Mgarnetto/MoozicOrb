@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using MoozicOrb.Models;
-using MoozicOrb.Services;
+using MoozicOrb.Services; 
+using MoozicOrb.Services.Interfaces;
 
 namespace MoozicOrb.Hubs;
 

@@ -12,8 +12,12 @@ namespace MoozicOrb.Models
         public string MiddleName { get; set; }
         public string LastName { get; set; }
 
+        public string ProfilePic { get; set; }
+
         // Comma-delimited group IDs: "12,19,44"
         public string UserGroups { get; set; }
+
+        public bool IsArtist { get; set; }
 
         public HashSet<long> GetGroupIds()
         {
