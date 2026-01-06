@@ -1,19 +1,16 @@
-﻿using System.Threading.Tasks;
+﻿namespace MoozicOrb.Services.Interfaces;
 
-namespace Moozicorb.Services.Interfaces
+public interface IStreamSessionService
 {
-    public interface IStreamSessionService
-    {
-        Task StartStreamAsync(int streamId);
+    Task RegisterConnectionAsync(
+        string streamId,
+        int userId,
+        string connectionId,
+        bool isBroadcaster
+    );
 
-        Task EndStreamAsync(int streamId);
-
-        Task JoinStreamAsync(int streamId, int userId);
-
-        Task LeaveStreamAsync(int streamId, int userId);
-
-        Task<bool> IsStreamLiveAsync(int streamId);
-
-        Task<int> GetListenerCountAsync(int streamId);
-    }
+    Task RemoveConnectionAsync(string streamId, int userId);
+    Task RemoveConnectionByConnectionIdAsync(string connectionId);
+    Task RefreshHeartbeatAsync(string streamId, int userId);
 }
+

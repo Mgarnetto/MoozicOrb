@@ -48,7 +48,12 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>    
     <script src="~/microsoft-signalr/signalr.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/message.js" asp-append-version="true"></script> 
+    <script src="~/js/message.js" asp-append-version="true"></script>
+    <script src="~/js/streamService.js" asp-append-version="true"></script>
+    <script>
+        // init stream 9
+        StreamService.init("9");
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -1,25 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿namespace MoozicOrb.Services.Interfaces;
 
-namespace Moozicorb.Services.Interfaces
+public interface IRedisStreamStateService
 {
-    public interface IRedisStreamStateService
-    {
-        Task<bool> IsStreamLiveAsync(int streamId);
+    Task AddListenerAsync(string streamId, int userId);
+    Task RemoveListenerAsync(string streamId, int userId);
+    Task<bool> IsListenerAsync(string streamId, int userId);
 
-        Task SetStreamLiveAsync(int streamId, TimeSpan ttl);
+    Task SetBroadcasterAsync(string streamId, int userId);
+    Task<int?> GetBroadcasterAsync(string streamId);
 
-        Task EndStreamAsync(int streamId);
-
-        Task AddListenerAsync(int streamId, int userId);
-
-        Task RemoveListenerAsync(int streamId, int userId);
-
-        Task<int> GetListenerCountAsync(int streamId);
-
-        Task<IEnumerable<int>> GetListenersAsync(int streamId);
-
-        Task TouchStreamAsync(int streamId, TimeSpan ttl);
-    }
+    Task RefreshTTLAsync(string streamId);
 }

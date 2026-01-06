@@ -1,68 +1,52 @@
 ﻿using StackExchange.Redis;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Moozicorb.Services.Interfaces;
+using MoozicOrb.Services.Interfaces;
 
-namespace Moozicorb.Services
+namespace MoozicOrb.Services;
+
+public class RedisStreamStateService : IRedisStreamStateService
 {
-    public class RedisStreamStateService : IRedisStreamStateService
+    private readonly IDatabase _db;
+    private static readonly TimeSpan TTL = TimeSpan.FromMinutes(1);
+
+    public RedisStreamStateService(IConnectionMultiplexer redis)
     {
-        private readonly IDatabase _redis;
+        _db = redis.GetDatabase();
+    }
 
-        public RedisStreamStateService(IConnectionMultiplexer redis)
-        {
-            _redis = redis.GetDatabase();
-        }
+    private static string Listeners(string streamId) => $"stream:{streamId}:listeners";
+    private static string Broadcaster(string streamId) => $"stream:{streamId}:broadcaster";
 
-        private static string StreamKey(int streamId) => $"stream:{streamId}";
-        private static string ListenerKey(int streamId) => $"stream:{streamId}:listeners";
+    public async Task AddListenerAsync(string streamId, int userId)
+    {
+        await _db.SetAddAsync(Listeners(streamId), userId);
+        await RefreshTTLAsync(streamId);
+    }
 
-        public async Task<bool> IsStreamLiveAsync(int streamId)
-        {
-            return await _redis.KeyExistsAsync(StreamKey(streamId));
-        }
+    public async Task RemoveListenerAsync(string streamId, int userId)
+    {
+        await _db.SetRemoveAsync(Listeners(streamId), userId);
+    }
 
-        public async Task SetStreamLiveAsync(int streamId, TimeSpan ttl)
-        {
-            await _redis.StringSetAsync(StreamKey(streamId), "live", ttl);
-        }
+    public Task<bool> IsListenerAsync(string streamId, int userId)
+    {
+        return _db.SetContainsAsync(Listeners(streamId), userId);
+    }
 
-        public async Task EndStreamAsync(int streamId)
-        {
-            await _redis.KeyDeleteAsync(new RedisKey[]
-            {
-                StreamKey(streamId),
-                ListenerKey(streamId)
-            });
-        }
+    public async Task SetBroadcasterAsync(string streamId, int userId)
+    {
+        await _db.StringSetAsync(Broadcaster(streamId), userId, TTL);
+    }
 
-        public async Task AddListenerAsync(int streamId, int userId)
-        {
-            await _redis.SetAddAsync(ListenerKey(streamId), userId);
-        }
+    public async Task<int?> GetBroadcasterAsync(string streamId)
+    {
+        var value = await _db.StringGetAsync(Broadcaster(streamId));
+        return value.HasValue ? (int)value : null;
+    }
 
-        public async Task RemoveListenerAsync(int streamId, int userId)
-        {
-            await _redis.SetRemoveAsync(ListenerKey(streamId), userId);
-        }
-
-        public async Task<int> GetListenerCountAsync(int streamId)
-        {
-            return (int)await _redis.SetLengthAsync(ListenerKey(streamId));
-        }
-
-        public async Task<IEnumerable<int>> GetListenersAsync(int streamId)
-        {
-            var values = await _redis.SetMembersAsync(ListenerKey(streamId));
-            return values.Select(v => (int)v);
-        }
-
-        public async Task TouchStreamAsync(int streamId, TimeSpan ttl)
-        {
-            await _redis.KeyExpireAsync(StreamKey(streamId), ttl);
-            await _redis.KeyExpireAsync(ListenerKey(streamId), ttl);
-        }
+    public async Task RefreshTTLAsync(string streamId)
+    {
+        await _db.KeyExpireAsync(Listeners(streamId), TTL);
+        await _db.KeyExpireAsync(Broadcaster(streamId), TTL);
     }
 }
+

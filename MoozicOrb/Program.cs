@@ -1,12 +1,10 @@
 using Microsoft.AspNetCore.SignalR;
-using Moozicorb.Services;
-using Moozicorb.Services.Interfaces;
+using MoozicOrb.Services;
+using MoozicOrb.Services.Interfaces;
 using MoozicOrb.Api.Services;
 using MoozicOrb.Api.Services.Interfaces;
 using MoozicOrb.Hubs;
 using MoozicOrb.Infrastructure;
-using MoozicOrb.Services;
-using MoozicOrb.Services.Interfaces;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -68,6 +66,7 @@ app.UseAuthorization();
 
 app.MapHub<GroupHub>("/GroupHub");
 app.MapHub<MessageHub>("/MessageHub");
+app.MapHub<StreamHub>("/StreamHub");
 
 app.MapControllerRoute(
     name: "default",
