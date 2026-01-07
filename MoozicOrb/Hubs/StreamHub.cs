@@ -1,46 +1,44 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using MoozicOrb.Services.Interfaces;
+using System.Threading.Tasks;
 
-namespace MoozicOrb.Hubs;
-
-public class StreamHub : Hub
+namespace MoozicOrb.Hubs
 {
-    private readonly IStreamSessionService _streamSessions;
-
-    public StreamHub(IStreamSessionService streamSessions)
+    public class StreamHub : Hub
     {
-        _streamSessions = streamSessions;
-    }
+        private const int USER_ID = 1; // dummy user
 
-    public async Task JoinStream(string streamId, int userId, bool isBroadcaster)
-    {
-        await Groups.AddToGroupAsync(Context.ConnectionId, streamId);
+        public StreamHub() { }
 
-        await _streamSessions.RegisterConnectionAsync(
-            streamId,
-            userId,
-            Context.ConnectionId,
-            isBroadcaster
-        );
-    }
+        // Minimal JoinStream for testing
+        public async Task JoinStream(string streamId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(streamId))
+                    throw new System.ArgumentException("streamId cannot be null or empty");
 
-    public async Task LeaveStream(string streamId, int userId)
-    {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, streamId);
-        await _streamSessions.RemoveConnectionAsync(streamId, userId);
-    }
+                // Add to SignalR group (does not fail)
+                await Groups.AddToGroupAsync(Context.ConnectionId, $"stream:{streamId}");
 
-    public Task Heartbeat(string streamId, int userId)
-    {
-        return _streamSessions.RefreshHeartbeatAsync(streamId, userId);
-    }
+                // Notify the caller that they joined successfully
+                await Clients.Caller.SendAsync("JoinedStream", new { streamId, userId = USER_ID });
 
-    public override async Task OnDisconnectedAsync(Exception? exception)
-    {
-        await _streamSessions.RemoveConnectionByConnectionIdAsync(
-            Context.ConnectionId
-        );
+                // Optional: log
+                System.Console.WriteLine($"User {USER_ID} joined stream {streamId}");
+            }
+            catch (System.Exception ex)
+            {
+                System.Console.WriteLine($"Error in JoinStream: {ex.Message}");
+                throw; // Let SignalR report error to JS
+            }
+        }
 
-        await base.OnDisconnectedAsync(exception);
+        public override async Task OnDisconnectedAsync(System.Exception exception)
+        {
+            // Nothing risky here, safe
+            System.Console.WriteLine($"Connection {Context.ConnectionId} disconnected");
+            await base.OnDisconnectedAsync(exception);
+        }
     }
 }
+

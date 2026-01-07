@@ -1,13 +1,11 @@
-﻿// streamservice.js
+﻿// StreamService.js
 (() => {
-
     const StreamService = {
         connection: null,
         streamId: null,
 
         init(streamId) {
             this.streamId = streamId;
-
             this.connection = new signalR.HubConnectionBuilder()
                 .withUrl("/StreamHub")
                 .withAutomaticReconnect()
@@ -24,47 +22,53 @@
         },
 
         registerHandlers() {
-            this.connection.on("StreamStarted", data => {
-                console.log("Stream started:", data);
-                this.onStreamStarted(data);
+            this.connection.on("StreamStarted", data => this.onStreamStarted(data));
+            this.connection.on("StreamStopped", data => this.onStreamStopped(data));
+
+            this.connection.on("JoinedStream", data => {
+                console.log("Joined stream:", data);
             });
 
-            this.connection.on("StreamStopped", data => {
-                console.log("Stream stopped:", data);
-                this.onStreamStopped(data);
+            // NEW: update HTML when listener joins/leaves
+            this.connection.on("StreamStatusUpdate", data => {
+                const statusEl = document.getElementById("stream-status");
+                if (!statusEl) return;
+
+                let text = "OFFLINE";
+                if (data.broadcaster) text = `LIVE (user ${data.broadcaster})`;
+
+                text += ` - ${data.listenerCount} listener${data.listenerCount !== 1 ? 's' : ''}`;
+                statusEl.innerText = text;
             });
         },
 
         joinStream() {
+            if (!this.streamId) return;
             this.connection.invoke("JoinStream", this.streamId)
                 .catch(err => console.error(err));
         },
 
         startStream() {
-            fetch(`/api/stream/start/${this.streamId}`, {
-                method: "POST"
-            });
+            if (!this.streamId) return;
+            fetch(`/api/stream/start/${this.streamId}`, { method: "POST" });
         },
 
         stopStream() {
-            fetch(`/api/stream/stop/${this.streamId}`, {
-                method: "POST"
-            });
+            if (!this.streamId) return;
+            fetch(`/api/stream/stop/${this.streamId}`, { method: "POST" });
         },
 
-        // ---- UI hooks (safe to override later) ----
         onStreamStarted(data) {
-            document.getElementById("stream-status").innerText =
-                `LIVE (started by user ${data.startedBy})`;
+            const status = document.getElementById("stream-status");
+            if (status) status.innerText = `LIVE (started by user ${data.startedBy})`;
         },
 
         onStreamStopped(data) {
-            document.getElementById("stream-status").innerText =
-                "OFFLINE";
+            const status = document.getElementById("stream-status");
+            if (status) status.innerText = "OFFLINE";
         }
     };
 
-    // expose ONE safe symbol
     window.StreamService = StreamService;
-
 })();
+

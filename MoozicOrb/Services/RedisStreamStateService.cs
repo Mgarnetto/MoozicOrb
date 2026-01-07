@@ -48,5 +48,11 @@ public class RedisStreamStateService : IRedisStreamStateService
         await _db.KeyExpireAsync(Listeners(streamId), TTL);
         await _db.KeyExpireAsync(Broadcaster(streamId), TTL);
     }
+
+    public async Task<long> GetListenerCountAsync(string streamId)
+    {
+        return await _db.SetLengthAsync(Listeners(streamId));
+    }
+
 }
 
