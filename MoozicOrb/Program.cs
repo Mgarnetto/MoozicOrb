@@ -23,6 +23,9 @@ builder.Services.AddScoped<IUserAuthService, UserAuthService>();
 builder.Services.AddScoped<IGroupMessageApiService, GroupMessageApiService>();
 builder.Services.AddScoped<IDirectMessageApiService, DirectMessageApiService>();
 
+builder.Services.AddScoped<ILoginService, LoginService>();
+
+
 // SignalR services remain untouched
 
 

@@ -12,6 +12,8 @@ namespace MoozicOrb.Models
         public string MiddleName { get; set; }
         public string LastName { get; set; }
 
+        public string UserName { get; set; } // email as username
+
         public string ProfilePic { get; set; }
 
         // Comma-delimited group IDs: "12,19,44"

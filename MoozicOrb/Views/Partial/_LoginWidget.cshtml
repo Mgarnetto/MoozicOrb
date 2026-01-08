@@ -1,0 +1,31 @@
+﻿<div id="login-widget">
+    <input type="text" id="login-username" placeholder="Username" />
+    <input type="password" id="login-password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+    <button onclick="logout()">Logout</button>
+</div>
+
+<script>
+    function login() {
+        fetch('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                username: document.getElementById('login-username').value,
+                password: document.getElementById('login-password').value
+            })
+        }).then(res => {
+            if(res.ok) location.reload();
+            else alert('Invalid username/password');
+        });
+    }
+
+    function logout() {
+        fetch('/auth/logout', { method: 'POST' })
+            .then(() => location.reload());
+    }
+</script>
+
+
+<!-- @await Html.PartialAsync("_LoginWidget")
+-->

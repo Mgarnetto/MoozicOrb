@@ -50,6 +50,7 @@ namespace MoozicOrb.IO
                 FirstName = row["first_name"].ToString(),
                 MiddleName = row["middle_name"].ToString(),
                 LastName = row["last_name"].ToString(),
+                UserName = row["username"].ToString(), // email as username
                 ProfilePic = row["profile_pic"].ToString(),
                 UserGroups = row["user_groups"].ToString(),
                 IsArtist = row["is_artist"].ToString() == "1"
