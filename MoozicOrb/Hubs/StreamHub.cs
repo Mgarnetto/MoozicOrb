@@ -1,34 +1,74 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
-namespace MoozicOrb.Hubs;
-
-public class StreamHub : Hub
+namespace MoozicOrb.Hubs
 {
-    // TEMP: dummy until AppSession wired
-    private const int USER_ID = 1;
-
-    public StreamHub() { }
-
-    public async Task JoinGroup(string groupName)
+    public class StreamHub : Hub
     {
-        if (string.IsNullOrEmpty(groupName))
-            throw new System.ArgumentException("groupName cannot be null or empty");
+        // streamId -> broadcaster connectionId
+        private static readonly ConcurrentDictionary<string, string> Broadcasters = new();
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+        public async Task JoinStream(string streamId, string role)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"stream:{streamId}");
 
-        // Notify caller
-        await Clients.Caller.SendAsync("JoinedStream", new { groupName, userId = USER_ID });
+            if (role == "broadcaster")
+            {
+                Broadcasters[streamId] = Context.ConnectionId;
 
-        // Optional: log
-        System.Console.WriteLine($"User {USER_ID} joined group {groupName}");
-    }
+                // Notify listeners broadcaster is ready
+                await Clients.Group($"stream:{streamId}")
+                    .SendAsync("BroadcasterReady");
+            }
+            else
+            {
+                // Listener joined — if broadcaster exists, tell them
+                if (Broadcasters.ContainsKey(streamId))
+                {
+                    await Clients.Caller.SendAsync("BroadcasterReady");
+                }
+            }
+        }
 
-    public override async Task OnDisconnectedAsync(System.Exception exception)
-    {
-        System.Console.WriteLine($"Connection {Context.ConnectionId} disconnected");
-        await base.OnDisconnectedAsync(exception);
+        public async Task SendOffer(string streamId, object offer)
+        {
+            if (Broadcasters.TryGetValue(streamId, out var broadcasterId))
+            {
+                // send offer to everyone except broadcaster
+                await Clients.GroupExcept($"stream:{streamId}", broadcasterId)
+                    .SendAsync("ReceiveOffer", offer);
+            }
+        }
+
+        public async Task SendAnswer(string streamId, object answer)
+        {
+            if (Broadcasters.TryGetValue(streamId, out var broadcasterId))
+            {
+                await Clients.Client(broadcasterId)
+                    .SendAsync("ReceiveAnswer", answer);
+            }
+        }
+
+        public async Task SendIceCandidate(string streamId, object candidate)
+        {
+            await Clients.Group($"stream:{streamId}")
+                .SendAsync("ReceiveIceCandidate", candidate);
+        }
+
+        public override async Task OnDisconnectedAsync(Exception ex)
+        {
+            foreach (var kvp in Broadcasters)
+            {
+                if (kvp.Value == Context.ConnectionId)
+                {
+                    Broadcasters.TryRemove(kvp.Key, out _);
+                    await Clients.Group($"stream:{kvp.Key}")
+                        .SendAsync("BroadcasterDisconnected");
+                }
+            }
+
+            await base.OnDisconnectedAsync(ex);
+        }
     }
 }
-
 

@@ -16,7 +16,7 @@
     </div>
 
 
-    <div class="card mb-4">
+    @* <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <span>Stream #9</span>
             <span id="stream-status" class="badge bg-secondary">OFFLINE</span>
@@ -30,8 +30,14 @@
                 Stop Stream
             </button>
         </div>
-    </div>
+    </div> *@
 
+    <button onclick="StreamService.startBroadcast()">Start Stream</button>
+    <button onclick="StreamService.joinStream()">Join Stream</button>
+
+    <audio id="audio-player" autoplay></audio>
+
+    
     <br /><br />
 
     <h3 class="mb-4">Group Chat</h3>

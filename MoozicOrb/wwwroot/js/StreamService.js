@@ -1,122 +1,73 @@
-﻿/*const groupName = `stream_${window.AppSession.userId}_${this.streamId}`;*/
-
-(() => {
+﻿(() => {
     const StreamService = {
         connection: null,
+        pc: null,
         streamId: null,
-        listeners: 0, // track listener count locally
+        role: null,
 
-        init() {
+        init(streamId) {
+            this.streamId = streamId;
+
             this.connection = new signalR.HubConnectionBuilder()
                 .withUrl("/StreamHub")
                 .withAutomaticReconnect()
                 .build();
 
-            this.registerHandlers();
-
-            this.connection.start()
-                .then(() => console.log("StreamService connected"))
-                .catch(err => console.error(err));
+            this.registerHubHandlers();
+            this.connection.start();
         },
 
-        registerHandlers() {
-            // Stream started/stopped updates
-            this.connection.on("StreamStarted", data => this.onStreamStarted(data));
-            this.connection.on("StreamStopped", data => this.onStreamStopped(data));
+        async startBroadcast() {
+            this.role = "broadcaster";
+            this.createPeerConnection();
 
-            // Join confirmation
-            this.connection.on("JoinedStream", data => {
-                console.log("Joined stream:", data);
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach(t => this.pc.addTrack(t, stream));
 
-                if (data.userId !== 1) { // TEMP: skip broadcaster
-                    this.listeners++;
-                    this.updateStatusUI();
+            await this.connection.invoke("JoinStream", this.streamId, "broadcaster");
+
+            const offer = await this.pc.createOffer();
+            await this.pc.setLocalDescription(offer);
+            await this.connection.invoke("SendOffer", this.streamId, offer);
+        },
+
+        async joinStream() {
+            this.role = "listener";
+            this.createPeerConnection();
+
+            await this.connection.invoke("JoinStream", this.streamId, "listener");
+        },
+
+        createPeerConnection() {
+            this.pc = new RTCPeerConnection();
+
+            this.pc.onicecandidate = e => {
+                if (e.candidate) {
+                    this.connection.invoke("SendIceCandidate", this.streamId, e.candidate);
                 }
+            };
+
+            this.pc.ontrack = e => {
+                const audio = document.getElementById("audio-player");
+                audio.srcObject = e.streams[0];
+            };
+        },
+
+        registerHubHandlers() {
+            this.connection.on("ReceiveOffer", async offer => {
+                await this.pc.setRemoteDescription(offer);
+                const answer = await this.pc.createAnswer();
+                await this.pc.setLocalDescription(answer);
+                await this.connection.invoke("SendAnswer", this.streamId, answer);
             });
 
-            // Stream status updates for any listener join/leave
-            this.connection.on("StreamStatusUpdate", data => {
-                this.listeners = data.listenerCount;
-                this.updateStatusUI(data.broadcaster);
+            this.connection.on("ReceiveAnswer", async answer => {
+                await this.pc.setRemoteDescription(answer);
             });
-        },
 
-        startStream() {
-            fetch(`/api/stream/start`, { method: "POST" })
-                .then(res => res.json())
-                .then(data => {
-                    this.streamId = data.streamId;
-
-                    // TEMP dummy user
-                    const userId = 1;
-                    const groupName = `stream_${userId}_${this.streamId}`;
-
-                    // Disable start button
-                    const startBtn = document.querySelector(".btn-success");
-                    if (startBtn) startBtn.disabled = true;
-
-                    // Join the group
-                    this.connection.invoke("JoinGroup", groupName)
-                        .then(() => {
-                            console.log(`Joined group: ${groupName}`);
-                            this.updateStatusUI(userId); // broadcaster is userId
-                        })
-                        .catch(err => console.error(err));
-                })
-                .catch(err => console.error("Failed to start stream:", err));
-        },
-
-        stopStream() {
-            if (!this.streamId) return;
-
-            fetch(`/api/stream/stop/${this.streamId}`, { method: "POST" })
-                .then(() => {
-                    this.streamId = null;
-                    this.listeners = 0;
-
-                    // Re-enable start button
-                    const startBtn = document.querySelector(".btn-success");
-                    if (startBtn) startBtn.disabled = false;
-
-                    this.updateStatusUI();
-                })
-                .catch(err => console.error(err));
-        },
-
-        updateStatusUI(broadcasterId = null) {
-            const statusEl = document.getElementById("stream-status");
-            if (!statusEl) return;
-
-            let text = "OFFLINE";
-            if (this.streamId) {
-                text = `LIVE`;
-                if (broadcasterId) text += ` (user ${broadcasterId})`;
-                text += ` - ${this.listeners} listener${this.listeners !== 1 ? 's' : ''}`;
-            }
-
-            statusEl.innerText = text;
-        },
-
-        onStreamStarted(data) {
-            this.streamId = data.streamId;
-            this.listeners = 0;
-
-            // Disable start button
-            const startBtn = document.querySelector(".btn-success");
-            if (startBtn) startBtn.disabled = true;
-
-            this.updateStatusUI(data.startedBy);
-        },
-
-        onStreamStopped(data) {
-            this.streamId = null;
-            this.listeners = 0;
-
-            // Re-enable start button
-            const startBtn = document.querySelector(".btn-success");
-            if (startBtn) startBtn.disabled = false;
-
-            this.updateStatusUI();
+            this.connection.on("ReceiveIceCandidate", c => {
+                this.pc.addIceCandidate(c);
+            });
         }
     };
 

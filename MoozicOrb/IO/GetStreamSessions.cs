@@ -8,12 +8,14 @@ namespace MoozicOrb.IO
         public DataTable GetByStream(long streamId)
         {
             string query = $@"
-                SELECT *
-                FROM stream_sessions
-                WHERE stream_id = {streamId}";
+                SELECT ss.*, u.first_name, u.last_name, u.profile_pic
+                FROM stream_sessions ss
+                LEFT JOIN user u ON ss.user_id = u.user_id
+                WHERE ss.stream_id = {streamId}";
 
             Query q = new Query();
             return q.Run(query);
         }
     }
 }
+

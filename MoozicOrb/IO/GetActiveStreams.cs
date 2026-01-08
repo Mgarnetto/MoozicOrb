@@ -8,12 +8,16 @@ namespace MoozicOrb.IO
         public DataTable GetLive()
         {
             string query = @"
-                SELECT *
-                FROM streams
-                WHERE is_live = 1";
+                SELECT s.*, t.name AS stream_type_name
+                FROM streams s
+                LEFT JOIN stream_types t
+                  ON s.description_id = t.type_id
+                WHERE s.is_live = 1
+                ORDER BY s.started_at DESC";
 
             Query q = new Query();
             return q.Run(query);
         }
     }
 }
+
