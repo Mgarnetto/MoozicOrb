@@ -2,63 +2,69 @@
     ViewData["Title"] = "Home Page";
 }
 
-
 <div class="container py-4">
-    <div id="login-card" class="card mb-4">
-        <div class="card-header">Login</div>
-        <div class="card-body d-flex gap-2">
-            <input type="text" id="login-username" class="form-control" placeholder="Username">
-            <input type="password" id="login-password" class="form-control" placeholder="Password">
-            <button class="btn btn-primary" id="login-button">Login</button>
+
+    <!-- LOGIN CARD -->
+    <div id="login-card" class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">Login</div>
+        <div class="card-body d-flex gap-2 flex-wrap">
+            <input type="text" id="login-username" class="form-control flex-fill" placeholder="Username">
+            <input type="password" id="login-password" class="form-control flex-fill" placeholder="Password">
+            <button class="btn btn-success" id="login-button">Login</button>
             <button class="btn btn-secondary" id="logout-button">Logout</button>
         </div>
         <div id="login-status" class="mt-2 text-danger"></div>
     </div>
 
-
-    @* <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
+    <!-- STREAM CONTROLS -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
             <span>Stream #9</span>
             <span id="stream-status" class="badge bg-secondary">OFFLINE</span>
         </div>
-
-        <div class="card-body d-flex gap-2">
-            <button class="btn btn-success" onclick="StreamService.startStream()">
-                Start Stream
-            </button>
-            <button class="btn btn-danger" onclick="StreamService.stopStream()">
-                Stop Stream
-            </button>
-        </div>
-    </div> *@
-
-    <button onclick="StreamService.startBroadcast()">Start Stream</button>
-    <button onclick="StreamService.joinStream()">Join Stream</button>
-
-    <audio id="audio-player" autoplay></audio>
-
-    
-    <br /><br />
-
-    <h3 class="mb-4">Group Chat</h3>
-
-    <div id="group-9" class="group-chat card mb-4" data-group-id="9">
-        <div class="card-header bg-primary text-white">
-            Group #9
-        </div>
-
-        <div class="card-body messages" style="height:300px; overflow-y:auto;">
-            <!-- messages load here -->
-        </div>
-
-        <div class="card-footer d-flex gap-2">
-            <input type="text" class="form-control group-text" placeholder="Type message...">
-            <button class="btn btn-primary send-group" data-group-id="9">
-                Send
-            </button>
+        <div class="card-body d-flex gap-2 flex-wrap">
+            <button class="btn btn-success" onclick="StreamService.startBroadcast()">Start Broadcast</button>
+            <button class="btn btn-primary" onclick="StreamService.joinStream()">Join Stream</button>
         </div>
     </div>
+
+    <!-- AUDIO / VIDEO CALL PANEL -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-warning text-dark">Audio / Video Call</div>
+        <div class="card-body d-flex flex-wrap gap-3 align-items-center">
+            <div class="d-flex flex-column align-items-center">
+                <label>Local</label>
+                <video id="local-video" autoplay muted playsinline class="border rounded" style="width:200px; height:150px;"></video>
+            </div>
+            <div class="d-flex flex-column align-items-center">
+                <label>Remote</label>
+                <video id="remote-video" autoplay playsinline class="border rounded" style="width:200px; height:150px;"></video>
+            </div>
+            <div class="flex-fill">
+                <div id="call-status" class="mb-2">Status: Idle</div>
+                <button class="btn btn-success me-2" onclick="startCall()">Start Call</button>
+                <button class="btn btn-danger" onclick="hangupCall()">Hang Up</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GROUP CHAT -->
+    <h3 class="mb-3">Group Chat</h3>
+    <div id="group-9" class="group-chat card shadow-sm mb-4" data-group-id="9">
+        <div class="card-header bg-primary text-white">Group #9</div>
+        <div class="card-body messages" style="height:300px; overflow-y:auto;"></div>
+        <div class="card-footer d-flex gap-2">
+            <input type="text" class="form-control group-text" placeholder="Type message...">
+            <button class="btn btn-primary send-group" data-group-id="9">Send</button>
+        </div>
+    </div>
+
 </div>
+
+
+
+
+
 
 
 

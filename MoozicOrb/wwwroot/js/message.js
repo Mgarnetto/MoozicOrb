@@ -1,32 +1,43 @@
-﻿const GROUP_ID = 9;
+﻿// =============================
+// EXISTING CONSTANTS
+// =============================
+const GROUP_ID = 9;
 let lastMessageId = 0;
 
+// =============================
+// SIGNALR CONNECTION
+// =============================
 const messageconn = new signalR.HubConnectionBuilder()
     .withUrl("/MessageHub")
     .withAutomaticReconnect()
     .build();
 
-// -----------------------------
+// =============================
+// WEBRTC STATE
+// =============================
+let rtcPeer = null;
+let rtcTargetUserId = null;
+let localStream = null;
+
+// =============================
 // START CONNECTION
-// -----------------------------
+// =============================
 messageconn.start()
     .then(() => {
-        console.log("SignalR connected");
+        console.log("MessageHub connected");
 
-        // Join SignalR group
+        // Join chat group
         messageconn.invoke("JoinGroup", GROUP_ID);
 
-        // Pull all existing messages
         loadGroupMessages();
     })
     .catch(console.error);
 
-// -----------------------------
-// SIGNALR NOTIFY → PULL SINGLE
-// -----------------------------
+// =============================
+// GROUP MESSAGE NOTIFY
+// =============================
 messageconn.on("OnGroupMessage", data => {
     if (data.groupId !== GROUP_ID) return;
-
     if (data.messageId <= lastMessageId) return;
 
     fetch(`/api/groups/${GROUP_ID}/messages/${data.messageId}`)
@@ -37,9 +48,130 @@ messageconn.on("OnGroupMessage", data => {
         });
 });
 
-// -----------------------------
-// LOAD ALL (ON CONNECT)
-// -----------------------------
+// =============================
+// WEBRTC SIGNAL HANDLERS
+// =============================
+messageconn.on("RtcOffer", async data => {
+    rtcTargetUserId = data.fromUserId;
+    await ensureRtcPeer();
+
+    await rtcPeer.setRemoteDescription({
+        type: "offer",
+        sdp: data.sdp
+    });
+
+    const answer = await rtcPeer.createAnswer();
+    await rtcPeer.setLocalDescription(answer);
+
+    messageconn.invoke(
+        "SendRtcAnswer",
+        rtcTargetUserId,
+        answer.sdp
+    );
+});
+
+messageconn.on("RtcAnswer", async data => {
+    await rtcPeer.setRemoteDescription({
+        type: "answer",
+        sdp: data.sdp
+    });
+});
+
+messageconn.on("RtcIceCandidate", async data => {
+    if (!rtcPeer) return;
+
+    await rtcPeer.addIceCandidate(data.candidate);
+});
+
+messageconn.on("RtcHangup", () => {
+    closeCall();
+});
+
+// =============================
+// WEBRTC HELPERS
+// =============================
+async function startCall(targetUserId) {
+    rtcTargetUserId = targetUserId;
+    await ensureRtcPeer();
+
+    const offer = await rtcPeer.createOffer();
+    await rtcPeer.setLocalDescription(offer);
+
+    messageconn.invoke(
+        "SendRtcOffer",
+        rtcTargetUserId,
+        offer.sdp
+    );
+}
+
+async function ensureRtcPeer() {
+    if (rtcPeer) return;
+
+    localStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: false
+    });
+
+    rtcPeer = new RTCPeerConnection({
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    });
+
+    localStream.getTracks().forEach(t =>
+        rtcPeer.addTrack(t, localStream)
+    );
+
+    rtcPeer.onicecandidate = e => {
+        if (e.candidate && rtcTargetUserId) {
+            messageconn.invoke(
+                "SendRtcIceCandidate",
+                rtcTargetUserId,
+                e.candidate
+            );
+        }
+    };
+
+    rtcPeer.ontrack = e => {
+        const audio = document.getElementById("audio-player");
+        if (audio) audio.srcObject = e.streams[0];
+    };
+}
+
+function closeCall() {
+    if (rtcPeer) {
+        rtcPeer.close();
+        rtcPeer = null;
+    }
+
+    if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+    }
+
+    rtcTargetUserId = null;
+}
+
+// =============================
+// EXISTING MESSAGE SEND
+// =============================
+$(document).on("click", ".send-group", function () {
+    const groupId = $(this).data("group-id");
+    const input = $(`#group-${groupId} .group-text`);
+    const text = input.val();
+
+    if (!text) return;
+
+    fetch(`/api/groups/${groupId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+    })
+        .then(() => input.val(""))
+        .catch(console.error);
+});
+
+// =============================
+// LOAD ALL
+// =============================
 function loadGroupMessages() {
     fetch(`/api/groups/${GROUP_ID}/messages`)
         .then(r => r.json())
@@ -56,31 +188,9 @@ function loadGroupMessages() {
         });
 }
 
-// -----------------------------
-// SEND GROUP MESSAGE (ONLY ONE)
-// -----------------------------
-$(document).on("click", ".send-group", function () {
-    const groupId = $(this).data("group-id");
-    const input = $(`#group-${groupId} .group-text`);
-    const text = input.val();
-
-    if (!text) return;
-
-    fetch(`/api/groups/${groupId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
-    })
-        .then(r => {
-            if (!r.ok) throw "POST failed";
-            input.val("");
-        })
-        .catch(console.error);
-});
-
-// -----------------------------
-// RENDER
-// -----------------------------
+// =============================
+// RENDER MESSAGE
+// =============================
 function appendMessage(m) {
     $(`#group-${GROUP_ID} .messages`).append(`
         <div class="mb-1">
@@ -92,4 +202,5 @@ function appendMessage(m) {
         </div>
     `);
 }
+
 
