@@ -1,44 +1,34 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 
-namespace MoozicOrb.Hubs
+namespace MoozicOrb.Hubs;
+
+public class StreamHub : Hub
 {
-    public class StreamHub : Hub
+    // TEMP: dummy until AppSession wired
+    private const int USER_ID = 1;
+
+    public StreamHub() { }
+
+    public async Task JoinGroup(string groupName)
     {
-        private const int USER_ID = 1; // dummy user
+        if (string.IsNullOrEmpty(groupName))
+            throw new System.ArgumentException("groupName cannot be null or empty");
 
-        public StreamHub() { }
+        await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
 
-        // Minimal JoinStream for testing
-        public async Task JoinStream(string streamId)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(streamId))
-                    throw new System.ArgumentException("streamId cannot be null or empty");
+        // Notify caller
+        await Clients.Caller.SendAsync("JoinedStream", new { groupName, userId = USER_ID });
 
-                // Add to SignalR group (does not fail)
-                await Groups.AddToGroupAsync(Context.ConnectionId, $"stream:{streamId}");
+        // Optional: log
+        System.Console.WriteLine($"User {USER_ID} joined group {groupName}");
+    }
 
-                // Notify the caller that they joined successfully
-                await Clients.Caller.SendAsync("JoinedStream", new { streamId, userId = USER_ID });
-
-                // Optional: log
-                System.Console.WriteLine($"User {USER_ID} joined stream {streamId}");
-            }
-            catch (System.Exception ex)
-            {
-                System.Console.WriteLine($"Error in JoinStream: {ex.Message}");
-                throw; // Let SignalR report error to JS
-            }
-        }
-
-        public override async Task OnDisconnectedAsync(System.Exception exception)
-        {
-            // Nothing risky here, safe
-            System.Console.WriteLine($"Connection {Context.ConnectionId} disconnected");
-            await base.OnDisconnectedAsync(exception);
-        }
+    public override async Task OnDisconnectedAsync(System.Exception exception)
+    {
+        System.Console.WriteLine($"Connection {Context.ConnectionId} disconnected");
+        await base.OnDisconnectedAsync(exception);
     }
 }
+
 
