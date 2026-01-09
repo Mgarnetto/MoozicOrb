@@ -20,9 +20,9 @@ namespace MoozicOrb.Controllers
 
             //var user = new MoozicOrb.Models.User()
             //{
-            //    FirstName = "Marcus",
+            //    FirstName = "Kemp",
             //    MiddleName = "",
-            //    LastName = "Garnetto",
+            //    LastName = "Broadie",
             //    ProfilePic = "",
             //    UserGroups = "9",
             //    IsArtist = true
