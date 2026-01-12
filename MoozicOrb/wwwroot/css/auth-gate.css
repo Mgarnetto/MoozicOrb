@@ -1,0 +1,15 @@
+﻿/* =====================================
+   Auth-required UI gating
+   ===================================== */
+
+.auth-off .auth-required {
+    pointer-events: none;
+    opacity: 0.45;
+    filter: grayscale(100%);
+}
+
+    .auth-off .auth-required::after {
+        content: " (login required)";
+        font-size: 0.8em;
+        color: #999;
+    }

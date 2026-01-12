@@ -1,5 +1,4 @@
-﻿using System;
-
+﻿
 namespace MoozicOrb.Models
 {
     public class UserSession

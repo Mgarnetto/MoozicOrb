@@ -2,10 +2,11 @@
 {
     public interface ILoginService
     {
-        /// <summary>
-        /// Validates username/password.
-        /// Returns userId if successful, or 0 if authentication fails.
-        /// </summary>
+        // Return just userId (sync)
         int Login(string username, string password);
+
+        // Logout by sessionId (sync)
+        void Logout(string sessionId);
     }
 }
+

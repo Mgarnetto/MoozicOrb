@@ -23,6 +23,7 @@ namespace MoozicOrb.Controllers
             //    FirstName = "Kemp",
             //    MiddleName = "",
             //    LastName = "Broadie",
+            //    UserName = "kemp",
             //    ProfilePic = "",
             //    UserGroups = "9",
             //    IsArtist = true
@@ -49,7 +50,7 @@ namespace MoozicOrb.Controllers
             //    int failed = 1;
             //}
 
-                return View();
+            return View();
         }
 
         public IActionResult Mainpage()

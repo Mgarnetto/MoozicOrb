@@ -10,9 +10,9 @@ namespace MoozicOrb.IO
         {
             string query = @"
                 INSERT INTO user
-                    (profile_pic, first_name, middle_name, last_name, user_groups, is_artist)
+                    (profile_pic, first_name, middle_name, last_name, username, user_groups, is_artist)
                 VALUES
-                    (@profilePic, @firstName, @middleName, @lastName, @groups, @isArtist);
+                    (@profilePic, @firstName, @middleName, @lastName, @username, @groups, @isArtist);
                 SELECT LAST_INSERT_ID();";
 
             using var conn = new MySqlConnection(DBConn1.ConnectionString);
@@ -22,6 +22,7 @@ namespace MoozicOrb.IO
             cmd.Parameters.AddWithValue("@firstName", user.FirstName ?? "");
             cmd.Parameters.AddWithValue("@middleName", user.MiddleName ?? "");
             cmd.Parameters.AddWithValue("@lastName", user.LastName ?? "");
+            cmd.Parameters.AddWithValue("@username", user.UserName ?? "");
             cmd.Parameters.AddWithValue("@groups", user.UserGroups ?? "");
             cmd.Parameters.AddWithValue("@isArtist", user.IsArtist ? 1 : 0);
 

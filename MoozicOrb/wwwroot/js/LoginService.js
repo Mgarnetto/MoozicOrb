@@ -3,8 +3,7 @@
         sessionId: null,
         userId: null,
 
-        // Call API to login
-        login(username, password) {
+        loginAsync(username, password) {
             return fetch("/api/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -18,17 +17,22 @@
                     return res.json();
                 })
                 .then(data => {
-                    this.sessionId = data.sessionId;
                     this.userId = data.userId;
+                    this.sessionId = data.sessionId;
+                    window.AppSession = { userId: this.userId, sessionId: this.sessionId };
 
-                    // Store globally for other services
-                    window.AppSession = { sessionId: this.sessionId, userId: this.userId };
+                    enableFeaturesAfterLogin();
+
+                    // Attach user session to SignalR hub
+                    if (messageconn.state === "Connected") {
+                        messageconn.invoke("AttachUserSession", this.userId);
+                        messageconn.invoke("JoinGroup", 9); // join default group
+                    }
 
                     return data;
                 });
         },
 
-        // Call API to logout
         logout() {
             if (!this.sessionId) return Promise.resolve();
 
@@ -41,14 +45,30 @@
                     this.sessionId = null;
                     this.userId = null;
                     window.AppSession = null;
+
+                    disableFeaturesBeforeLogin();
                 });
         },
 
-        // Check if logged in (session exists)
         isLoggedIn() {
             return !!this.sessionId;
         }
     };
 
     window.LoginService = LoginService;
+
+    function disableFeaturesBeforeLogin() {
+        document.querySelectorAll(".send-group, #start-broadcast, #join-stream, #start-call, #hangup-call")
+            .forEach(el => el.disabled = true);
+    }
+
+    function enableFeaturesAfterLogin() {
+        document.querySelectorAll(".send-group, #start-broadcast, #join-stream, #start-call, #hangup-call")
+            .forEach(el => el.disabled = false);
+    }
+
+    document.addEventListener("DOMContentLoaded", disableFeaturesBeforeLogin);
 })();
+
+
+

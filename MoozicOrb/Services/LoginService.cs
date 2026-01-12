@@ -11,26 +11,38 @@ namespace MoozicOrb.Services
 
         public LoginService()
         {
-            _userQuery = new UserQuery();
-            _authValidator = new ValidateUserAuthLocal();
+            _userQuery = new UserQuery();                 // Real user lookup
+            _authValidator = new ValidateUserAuthLocal(); // Real password validator
         }
 
+        // Attempt login using username/password
+        // Returns userId if success, 0 if invalid
         public int Login(string username, string password)
         {
-            // 1. Resolve user
+            // 1. Lookup user
             User user = _userQuery.GetUserByUsername(username);
-
             if (user == null || user.UserId <= 0)
                 return 0;
 
-            // 2. Validate password using existing IO
+            // 2. Validate password
             bool valid = _authValidator.Validate(user.UserId, password);
-
             if (!valid)
                 return 0;
 
             // 3. Success
             return user.UserId;
         }
+
+        // Logout by removing session
+        public void Logout(string sessionId)
+        {
+            if (string.IsNullOrEmpty(sessionId))
+                return;
+
+            SessionStore.RemoveSession(sessionId);
+        }
     }
 }
+
+
+

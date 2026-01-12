@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MoozicOrb.Services.Interfaces;
+using MoozicOrb.Models;
 using MoozicOrb.Services;
+using MoozicOrb.Services.Interfaces;
 
 namespace MoozicOrb.Controllers
 {
@@ -20,18 +21,12 @@ namespace MoozicOrb.Controllers
         public IActionResult Login([FromForm] string username, [FromForm] string password)
         {
             int userId = _loginService.Login(username, password);
-
             if (userId <= 0)
                 return Unauthorized(new { message = "Invalid credentials" });
 
             // Create session
             var session = SessionStore.CreateSession(userId);
-
-            return Ok(new
-            {
-                sessionId = session.SessionId,
-                userId = session.UserId
-            });
+            return Ok(new { sessionId = session.SessionId, userId = session.UserId });
         }
 
         // POST /api/logout
@@ -41,8 +36,16 @@ namespace MoozicOrb.Controllers
             if (string.IsNullOrEmpty(sessionId))
                 return BadRequest(new { message = "Missing sessionId" });
 
-            SessionStore.RemoveSession(sessionId);
+            _loginService.Logout(sessionId);
             return Ok(new { message = "Logged out" });
         }
     }
 }
+
+
+
+
+
+
+
+

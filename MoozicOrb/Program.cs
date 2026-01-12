@@ -18,7 +18,7 @@ builder.Services.AddScoped<IDirectMessageService, DirectMessageService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddScoped<IUserAuthService, UserAuthService>();
-
+builder.Services.AddScoped<ISessionStore, InMemorySessionStore>();
 
 builder.Services.AddScoped<IGroupMessageApiService, GroupMessageApiService>();
 builder.Services.AddScoped<IDirectMessageApiService, DirectMessageApiService>();
@@ -33,21 +33,21 @@ builder.Services.AddSingleton<IUserIdProvider, SignalRUserIdProvider>();
 builder.Services.AddHttpContextAccessor();
 
 // ---------------- REDIS ----------------
-builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-{
-    var configuration = ConfigurationOptions.Parse(
-        builder.Configuration.GetConnectionString("Redis"),
-        true
-    );
+//builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+//{
+//    var configuration = ConfigurationOptions.Parse(
+//        builder.Configuration.GetConnectionString("Redis"),
+//        true
+//    );
 
-    configuration.AbortOnConnectFail = false;
+//    configuration.AbortOnConnectFail = false;
 
-    return ConnectionMultiplexer.Connect(configuration);
-});
+//    return ConnectionMultiplexer.Connect(configuration);
+//});
 
-// ---------------- STREAM SERVICES ----------------
-builder.Services.AddSingleton<IRedisStreamStateService, RedisStreamStateService>();
-builder.Services.AddSingleton<IStreamSessionService, StreamSessionService>();
+//// ---------------- STREAM SERVICES ----------------
+//builder.Services.AddSingleton<IRedisStreamStateService, RedisStreamStateService>();
+//builder.Services.AddSingleton<IStreamSessionService, StreamSessionService>();
 
 
 var app = builder.Build();
