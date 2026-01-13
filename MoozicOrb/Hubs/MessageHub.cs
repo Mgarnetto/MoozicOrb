@@ -65,6 +65,23 @@ namespace MoozicOrb.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, $"group-{groupId}");
         }
 
+        // -----------------------------
+        // SESSION REHYDRATION / GROUP JOIN
+        // -----------------------------
+        public async Task JoinGroups(IEnumerable<long> groupIds)
+        {
+            if (!Context.Items.TryGetValue("UserId", out var _))
+                throw new HubException("Not logged in");
+
+            foreach (var groupId in groupIds)
+            {
+                await Groups.AddToGroupAsync(
+                    Context.ConnectionId,
+                    $"group-{groupId}"
+                );
+            }
+        }
+
         public async Task SendMessage(long groupId, string message)
         {
             if (!Context.Items.TryGetValue("UserId", out var uidObj) || uidObj is not int userId)

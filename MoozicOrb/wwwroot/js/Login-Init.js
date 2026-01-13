@@ -10,19 +10,11 @@
         try {
             const data = await LoginService.loginAsync(username, password);
 
-            // Update status
+            AuthState.setLoggedIn(data.userId, data.sessionId);
+            await AuthState.bootstrap();
+
             statusEl.style.color = "green";
             statusEl.innerText = `Logged in as user ${data.userId}`;
-
-            // Update AuthState
-            AuthState.setLoggedIn(data.userId, data.sessionId);
-
-            // Attach user to SignalR hub and join default group
-            if (messageconn.state === "Connected") {
-                await messageconn.invoke("AttachUserSession", data.userId);
-                await messageconn.invoke("JoinGroup", 9);
-            }
-
         } catch (err) {
             statusEl.style.color = "red";
             statusEl.innerText = err.message;
@@ -31,17 +23,17 @@
 
     logoutBtn.addEventListener("click", async () => {
         try {
-            await LoginService.logout();
+            await LoginService.logout(AuthState.sessionId);
+            AuthState.setLoggedOut();
 
             statusEl.style.color = "black";
             statusEl.innerText = "Logged out";
-
-            AuthState.setLoggedOut();
         } catch (err) {
             statusEl.style.color = "red";
             statusEl.innerText = err.message;
         }
     });
 });
+
 
 

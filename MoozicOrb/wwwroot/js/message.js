@@ -6,9 +6,40 @@ const messageconn = new signalR.HubConnectionBuilder()
     .withAutomaticReconnect()
     .build();
 
-// Track last message per group
-const GROUP_ID = 9;
-let lastMessageId = 0;
+// =============================
+// MESSAGE SERVICE
+// =============================
+const MessageService = (() => {
+    let started = false;
+
+    async function start() {
+        if (started) return;
+        started = true;
+
+        await messageconn.start();
+        console.log("[SignalR] Connected");
+
+        await messageconn.invoke("AttachUserSession", AuthState.userId);
+    }
+
+    async function joinGroups(groupIds) {
+        for (const gid of groupIds) {
+            await messageconn.invoke("JoinGroup", gid);
+        }
+    }
+
+    return { start, joinGroups };
+})();
+
+// =============================
+// RECONNECT HANDLING
+// =============================
+messageconn.onreconnected(async () => {
+    console.log("[SignalR] Reconnected");
+    if (AuthState.loggedIn) {
+        await AuthState.bootstrap();
+    }
+});
 
 // =============================
 // WEBRTC STATE
@@ -18,37 +49,13 @@ let rtcTargetUserId = null;
 let localStream = null;
 
 // =============================
-// START CONNECTION
-// =============================
-messageconn.start()
-    .then(() => {
-        console.log("[SignalR] MessageHub connected");
-
-        // If already logged in, attach user and join group
-        if (AuthState.loggedIn) {
-            messageconn.invoke("AttachUserSession", AuthState.userId)
-                .then(() => messageconn.invoke("JoinGroup", GROUP_ID))
-                .catch(console.error);
-        }
-
-        // Load initial group messages
-        loadGroupMessages();
-    })
-    .catch(console.error);
-
-// =============================
 // GROUP MESSAGE HANDLERS
 // =============================
 messageconn.on("OnGroupMessage", data => {
-    if (data.groupId !== GROUP_ID) return;
-    if (data.messageId <= lastMessageId) return;
-
-    fetch(`/api/groups/${GROUP_ID}/messages/${data.messageId}`)
+    const { groupId, messageId } = data;
+    fetch(`/api/groups/${groupId}/messages/${messageId}`)
         .then(r => r.json())
-        .then(m => {
-            appendMessage(m);
-            lastMessageId = m.messageId;
-        });
+        .then(m => appendMessage(m, groupId));
 });
 
 // =============================
@@ -58,11 +65,7 @@ messageconn.on("RtcOffer", async data => {
     rtcTargetUserId = data.fromUserId;
     await ensureRtcPeer();
 
-    await rtcPeer.setRemoteDescription({
-        type: "offer",
-        sdp: data.sdp
-    });
-
+    await rtcPeer.setRemoteDescription({ type: "offer", sdp: data.sdp });
     const answer = await rtcPeer.createAnswer();
     await rtcPeer.setLocalDescription(answer);
 
@@ -79,12 +82,12 @@ messageconn.on("RtcIceCandidate", async data => {
     await rtcPeer.addIceCandidate(data.candidate);
 });
 
-messageconn.on("RtcHangup", () => closeCall());
+messageconn.on("RtcHangup", closeCall);
 
 // =============================
 // WEBRTC HELPERS
 // =============================
-async function startCall(targetUserId = null) {
+async function startCall(targetUserId) {
     AuthState.requireAuth();
 
     rtcTargetUserId = targetUserId;
@@ -99,7 +102,7 @@ async function startCall(targetUserId = null) {
 async function ensureRtcPeer() {
     if (rtcPeer) return;
 
-    localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
     rtcPeer = new RTCPeerConnection({
         iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
@@ -108,29 +111,16 @@ async function ensureRtcPeer() {
     localStream.getTracks().forEach(t => rtcPeer.addTrack(t, localStream));
 
     rtcPeer.onicecandidate = e => {
-        if (e.candidate && rtcTargetUserId) {
+        if (e.candidate && rtcTargetUserId)
             messageconn.invoke("SendRtcIceCandidate", rtcTargetUserId, e.candidate);
-        }
     };
-
-    rtcPeer.ontrack = e => {
-        const remoteVideo = document.getElementById("remote-video");
-        if (remoteVideo) remoteVideo.srcObject = e.streams[0];
-    };
-
-    const localVideo = document.getElementById("local-video");
-    if (localVideo) localVideo.srcObject = localStream;
 }
 
 function closeCall() {
-    if (rtcPeer) {
-        rtcPeer.close();
-        rtcPeer = null;
-    }
-    if (localStream) {
-        localStream.getTracks().forEach(t => t.stop());
-        localStream = null;
-    }
+    rtcPeer?.close();
+    rtcPeer = null;
+    localStream?.getTracks().forEach(t => t.stop());
+    localStream = null;
     rtcTargetUserId = null;
 }
 
@@ -151,35 +141,35 @@ document.addEventListener("click", e => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text })
-    })
-        .then(() => input.value = "")
-        .catch(console.error);
+    }).then(() => input.value = "");
 });
 
 // =============================
 // LOAD GROUP MESSAGES
 // =============================
-function loadGroupMessages() {
-    fetch(`/api/groups/${GROUP_ID}/messages`)
+function loadGroupMessages(groupId) {
+    return fetch(`/api/groups/${groupId}/messages`)
         .then(r => r.json())
         .then(messages => {
-            const container = document.querySelector(`#group-${GROUP_ID} .messages`);
+            const container =
+                document.querySelector(`#group-${groupId} .messages`);
+
+            if (!container) return;
+
             container.innerHTML = "";
-
-            messages.forEach(m => {
-                appendMessage(m);
-                lastMessageId = Math.max(lastMessageId, m.messageId);
-            });
-
-            container.scrollTop = container.scrollHeight;
+            messages.forEach(m => appendMessage(m, groupId));
         });
 }
 
 // =============================
 // RENDER MESSAGE
 // =============================
-function appendMessage(m) {
-    const container = document.querySelector(`#group-${GROUP_ID} .messages`);
+function appendMessage(m, groupId) {
+    const container =
+        document.querySelector(`#group-${groupId} .messages`);
+
+    if (!container) return;
+
     const div = document.createElement("div");
     div.classList.add("mb-1");
     div.innerHTML = `
@@ -187,24 +177,8 @@ function appendMessage(m) {
         <span class="text-muted small ms-2">${m.timestamp}</span>
     `;
     container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
 }
 
-// =============================
-// STREAM SERVICE (stub, auth-gated)
-// =============================
-const StreamService = {
-    startBroadcast() {
-        AuthState.requireAuth();
-        console.log("[StreamService] Start Broadcast triggered");
-        // TODO: implement broadcast start logic
-    },
-    joinStream() {
-        AuthState.requireAuth();
-        console.log("[StreamService] Join Stream triggered");
-        // TODO: implement join stream logic
-    }
-};
 
 
 

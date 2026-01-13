@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MoozicOrb.IO;
 using MoozicOrb.Models;
 using MoozicOrb.Services;
 using MoozicOrb.Services.Interfaces;
@@ -39,6 +40,36 @@ namespace MoozicOrb.Controllers
             _loginService.Logout(sessionId);
             return Ok(new { message = "Logged out" });
         }
+
+        // GET /api/login/bootstrap
+        [HttpGet("bootstrap")]
+        public IActionResult Bootstrap([FromHeader(Name = "X-Session-Id")] string sessionId)
+        {
+            if (string.IsNullOrEmpty(sessionId))
+                return Unauthorized();
+
+            var session = SessionStore.GetSession(sessionId);
+            if (session == null)
+                return Unauthorized();
+
+            // Lookup user
+            var user = new UserQuery().GetUserById(session.UserId);
+            if (user == null)
+                return Unauthorized();
+
+            // Groups stored as CSV on user model
+            var groupIds = (user.UserGroups ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(g => long.Parse(g.Trim()))
+                .ToList();
+
+            return Ok(new
+            {
+                userId = user.UserId,
+                groups = groupIds
+            });
+        }
+
     }
 }
 
