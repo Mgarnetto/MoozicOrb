@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using MoozicOrb.Hubs;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 namespace MoozicOrb.Api.Controllers
@@ -9,12 +10,12 @@ namespace MoozicOrb.Api.Controllers
     [Route("api/calls")]
     public class CallsController : ControllerBase
     {
-        private readonly IHubContext<MessageHub> _hub;
+        private readonly IHubContext<CallHub> _callHub;
         private const int USER_ID = 1; // TEMP until auth
 
-        public CallsController(IHubContext<MessageHub> hub)
+        public CallsController(IHubContext<CallHub> callHub)
         {
-            _hub = hub;
+            _callHub = callHub;
         }
 
         // --------------------------
@@ -23,16 +24,18 @@ namespace MoozicOrb.Api.Controllers
         [HttpPost("start")]
         public async Task<IActionResult> StartCall([FromBody] StartCallDto dto)
         {
-            long callId = System.DateTime.UtcNow.Ticks;
-            int calleeId = dto.CalleeUserId;
+            if (dto == null || dto.CalleeUserId <= 0)
+                return BadRequest();
 
-            // Notify callee via SignalR
-            await _hub.Clients.User(calleeId.ToString()).SendAsync("IncomingCall", new
-            {
-                callId,
-                fromUserId = USER_ID,
-                type = dto.Type ?? "audio"
-            });
+            string callId = System.DateTime.UtcNow.Ticks.ToString();
+
+            await _callHub.Clients.User(dto.CalleeUserId.ToString())
+                .SendAsync("IncomingCall", new
+                {
+                    callId,
+                    fromUserId = USER_ID,
+                    type = dto.Type ?? "audio"
+                });
 
             return Ok(new { callId });
         }
@@ -43,8 +46,9 @@ namespace MoozicOrb.Api.Controllers
         [HttpPost("accept")]
         public async Task<IActionResult> AcceptCall([FromBody] CallActionDto dto)
         {
-            await _hub.Clients.User(dto.CallerUserId.ToString())
+            await _callHub.Clients.User(dto.CallerUserId.ToString())
                 .SendAsync("CallAccepted", new { callId = dto.CallId });
+
             return Ok();
         }
 
@@ -54,24 +58,26 @@ namespace MoozicOrb.Api.Controllers
         [HttpPost("reject")]
         public async Task<IActionResult> RejectCall([FromBody] CallActionDto dto)
         {
-            await _hub.Clients.User(dto.CallerUserId.ToString())
+            await _callHub.Clients.User(dto.CallerUserId.ToString())
                 .SendAsync("CallRejected", new { callId = dto.CallId });
+
             return Ok();
         }
     }
 
-    // DTOs
+    
+
     public class StartCallDto
     {
+        [Required]
         public int CalleeUserId { get; set; }
-        public string Type { get; set; } // "audio" or "video"
+
+        public string Type { get; set; }
     }
 
     public class CallActionDto
     {
-        public long CallId { get; set; }
+        public string CallId { get; set; }
         public int CallerUserId { get; set; }
     }
 }
-
-

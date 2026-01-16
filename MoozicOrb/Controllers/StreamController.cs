@@ -7,7 +7,7 @@ using System;
 namespace MoozicOrb.Controllers;
 
 [ApiController]
-[Route("api/stream")]
+[Route("api/streams")]
 public class StreamController : ControllerBase
 {
     private readonly IHubContext<StreamHub> _hub;
@@ -17,49 +17,52 @@ public class StreamController : ControllerBase
         _hub = hub;
     }
 
-    [HttpPost("start")]
-    public async Task<IActionResult> StartStream([FromForm] string sessionId)
+    // ----------------------------------------
+    // CREATE STREAM SLOT (SERVER-GENERATED ID)
+    // ----------------------------------------
+    [HttpPost("create")]
+    public IActionResult CreateStream([FromForm] string sessionId)
     {
-        // Resolve session → user
         var session = SessionStore.GetSession(sessionId);
         if (session == null)
             return Unauthorized("Invalid session");
 
-        int userId = session.UserId;
-        string streamId = Guid.NewGuid().ToString("N");
+        var streamId = Guid.NewGuid().ToString("N");
 
-        // Notify listeners (if any already joined)
-        await _hub.Clients.Group($"stream_{streamId}")
-            .SendAsync("StreamStarted", new
-            {
-                streamId,
-                startedBy = userId,
-                timestamp = DateTime.UtcNow
-            });
-
-        return Ok(new { streamId });
+        return Ok(new
+        {
+            streamId,
+            ownerUserId = session.UserId,
+            createdAt = DateTime.UtcNow
+        });
     }
 
-    [HttpPost("stop/{streamId}")]
-    public async Task<IActionResult> StopStream(string streamId, [FromForm] string sessionId)
+    // ----------------------------------------
+    // END STREAM
+    // ----------------------------------------
+    [HttpPost("{streamId}/end")]
+    public async Task<IActionResult> EndStream(
+        string streamId,
+        [FromForm] string sessionId)
     {
         var session = SessionStore.GetSession(sessionId);
         if (session == null)
             return Unauthorized("Invalid session");
 
-        int userId = session.UserId;
-
         await _hub.Clients.Group($"stream_{streamId}")
-            .SendAsync("StreamStopped", new
+            .SendAsync("StreamEnded", new
             {
                 streamId,
-                stoppedBy = userId,
+                endedBy = session.UserId,
                 timestamp = DateTime.UtcNow
             });
 
         return Ok();
     }
 }
+
+
+
 
 
 

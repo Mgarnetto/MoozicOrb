@@ -16,40 +16,55 @@ namespace MoozicOrb.Controllers
 
         public IActionResult Index()
         {
-            //var insertUser = new InsertUser();
+            //string fail = "success";
 
-            //var user = new MoozicOrb.Models.User()
+            //try
             //{
-            //    FirstName = "Kemp",
-            //    MiddleName = "",
-            //    LastName = "Broadie",
-            //    UserName = "kemp",
-            //    ProfilePic = "",
-            //    UserGroups = "9",
-            //    IsArtist = true
-            //};
+            //        var insertUser = new InsertUser();
 
-            //long userId = insertUser.Insert(user);
+            //        fail = "step1";
 
-            //if (userId <= 0)
+            //    var user = new MoozicOrb.Models.User()
+            //        {
+            //            FirstName = "Marcus",
+            //            MiddleName = "",
+            //            LastName = "Garnetto",
+            //            UserName = "marcus",
+            //            ProfilePic = "",
+            //            UserGroups = "9",
+            //            IsArtist = true
+            //        };
+
+            //        long userId = insertUser.Insert(user);
+
+            //        if (userId <= 0)
+            //        {
+            //            int failed = 1;
+            //        }
+
+            //        // ---- STEP 2: hash password ----
+            //        string password = "password";
+
+            //     fail = "step2";
+
+            //    string passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
+
+            //        // ---- STEP 3: insert auth row ----
+            //        var insertAuth = new InsertUserAuthLocal();
+            //        long authId = insertAuth.Insert(userId, passwordHash);
+            //    fail = "step3";
+            //    if (authId <= 0)
+            //        {
+            //            int failed = 1;
+            //        }
+            //}catch(Exception ex)
             //{
-            //    int failed = 1;
+            //    fail = "error"; 
+            //    ViewBag.Error = fail;
+            //    return View();
             //}
-
-            //// ---- STEP 2: hash password ----
-            //string password = "password";
-
-            //string passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
-
-            //// ---- STEP 3: insert auth row ----
-            //var insertAuth = new InsertUserAuthLocal();
-            //long authId = insertAuth.Insert(userId, passwordHash);
-
-            //if (authId <= 0)
-            //{
-            //    int failed = 1;
-            //}
-
+            //fail = "completed";
+            //ViewBag.Error = fail;
             return View();
         }
 

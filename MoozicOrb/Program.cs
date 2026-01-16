@@ -70,6 +70,7 @@ app.UseAuthorization();
 app.MapHub<GroupHub>("/GroupHub");
 app.MapHub<MessageHub>("/MessageHub");
 app.MapHub<StreamHub>("/StreamHub");
+app.MapHub<CallHub>("/CallHub");
 
 app.MapControllerRoute(
     name: "default",
