@@ -1,7 +1,6 @@
 ﻿using MoozicOrb.Api.Models;
 using MoozicOrb.Api.Services.Interfaces;
 using MoozicOrb.IO;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -20,7 +19,6 @@ namespace MoozicOrb.Api.Services
 
         public long CreateDirectMessage(int senderId, int receiverId, string text)
         {
-            // No domain model needed here — IO already accepts primitives
             return _insertDirectMessage.Insert(senderId, receiverId, text);
         }
 
@@ -28,25 +26,47 @@ namespace MoozicOrb.Api.Services
         {
             var messages = _getDirectMessages.GetMessagesBetweenUsers(userId1, userId2);
 
-            if (messages == null || messages.Length == 0)
-                return Enumerable.Empty<DirectMessageDto>();
-
-            return messages
-                .Cast<DirectMessageDto>()
-                .OrderBy(m => m.Timestamp);
+            return messages?
+                .OrderBy(m => m.Timestamp)
+                ?? Enumerable.Empty<DirectMessageDto>();
         }
 
         public DirectMessageDto GetDirectMessage(long messageId)
         {
             var messages = _getDirectMessages.GetMessageById(messageId);
+            return messages?.FirstOrDefault();
+        }
+
+        public IEnumerable<DirectMessageDto> GetAllMessagesForUser(int userId)
+        {
+            var messages = _getDirectMessages.GetAllMessagesForUser(userId);
+
+            return messages?
+                .OrderBy(m => m.Timestamp)
+                ?? Enumerable.Empty<DirectMessageDto>();
+        }
+
+        public Dictionary<int, List<DirectMessageDto>> GetAllDirectMessages(int userId)
+        {
+            var messages = _getDirectMessages.GetAllMessagesForUser(userId);
 
             if (messages == null || messages.Length == 0)
-                return null;
+                return new Dictionary<int, List<DirectMessageDto>>();
 
-            return messages[0] as DirectMessageDto;
+            return messages
+                .GroupBy(m =>
+                    m.SenderId == userId
+                        ? m.ReceiverId
+                        : m.SenderId
+                )
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.OrderBy(m => m.Timestamp).ToList()
+                );
         }
     }
 }
+
 
 
 

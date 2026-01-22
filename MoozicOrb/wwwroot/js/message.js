@@ -1,5 +1,4 @@
 ﻿(() => {
-
     const messageConn = new signalR.HubConnectionBuilder()
         .withUrl("/MessageHub")
         .withAutomaticReconnect()
@@ -17,66 +16,144 @@
             if (this.started) return;
             this.started = true;
 
-            try {
-                await messageConn.start();
-                console.log("[SignalR] MessageHub connected");
-            } catch (err) {
-                console.error("[SignalR] MessageHub failed to start:", err);
-            }
-
-            try {
-                await callConn.start();
-                console.log("[SignalR] CallHub connected");
-            } catch (err) {
-                console.error("[SignalR] CallHub failed to start:", err);
-            }
+            await messageConn.start();
+            await callConn.start();
 
             if (AuthState.loggedIn) {
-                try {
-                    await messageConn.invoke("AttachUserSession", AuthState.userId);
-                    await callConn.invoke("AttachUserSession", AuthState.userId);
-                } catch (err) {
-                    console.error("[SignalR] Failed to attach user session:", err);
-                }
+                await messageConn.invoke("AttachUserSession", AuthState.userId);
+                await callConn.invoke("AttachUserSession", AuthState.userId);
             }
         },
 
         async joinGroups(groupIds) {
             for (const id of groupIds) {
-                try {
-                    await messageConn.invoke("JoinGroup", Number(id));
-                } catch (err) {
-                    console.error(`Failed to join group ${id}:`, err);
-                }
+                await messageConn.invoke("JoinGroup", Number(id));
             }
         }
     };
 
-    // -----------------------------
-    // GROUP CHAT
-    // -----------------------------
-    async function loadGroupMessages(groupId) {
-        try {
-            const res = await fetch(`/api/groups/${groupId}/messages`);
-            if (!res.ok) return;
+    // =============================
+    // UI HELPERS
+    // =============================
+    const dmContainerParent = document.querySelector("#chat-container .dm-threads");
+    const groupContainerParent = document.querySelector("#chat-container .group-threads");
 
-            const messages = await res.json();
-            const container = document.querySelector(`#group-${groupId} .messages`);
-            if (!container) return;
+    function buildThreadInput({ type, id }) {
+        const wrapper = document.createElement("div");
+        wrapper.className = "card-footer d-flex gap-2";
 
-            container.innerHTML = "";
-            for (const msg of messages) appendMessage(msg, groupId);
-        } catch (err) {
-            console.error("Error loading group messages:", err);
-        }
+        wrapper.innerHTML = `
+            <input type="text"
+                   class="form-control"
+                   placeholder="Type message..." />
+            <button class="btn btn-primary">Send</button>
+        `;
+
+        const input = wrapper.querySelector("input");
+        const button = wrapper.querySelector("button");
+
+        const send = async () => {
+            const text = input.value.trim();
+            if (!text) return;
+
+            if (type === "direct") {
+                await fetch("/api/direct/messages", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Session-Id": AuthState.sessionId
+                    },
+                    body: JSON.stringify({
+                        receiverId: id,
+                        text
+                    })
+                });
+            } else {
+                await fetch(`/api/groups/${id}/messages`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Session-Id": AuthState.sessionId
+                    },
+                    body: JSON.stringify({ text })
+                });
+            }
+
+            input.value = "";
+        };
+
+        button.addEventListener("click", send);
+        input.addEventListener("keydown", e => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                send();
+            }
+        });
+
+        return wrapper;
     }
 
-    function appendMessage(msg, groupId) {
-        const container = document.querySelector(`#group-${groupId} .messages`);
-        if (!container) return;
+    function ensureDMContainer(userId) {
+        let el = document.querySelector(`#dm-thread-${userId}`);
+
+        if (!el) {
+            el = document.createElement("div");
+            el.id = `dm-thread-${userId}`;
+            el.className = "dm-chat card mb-3";
+
+            el.innerHTML = `
+                <div class="card-header bg-secondary text-white">
+                    DM: User #${userId}
+                </div>
+                <div class="card-body messages" style="height:200px;overflow:auto;"></div>
+            `;
+
+            el.appendChild(buildThreadInput({
+                type: "direct",
+                id: userId
+            }));
+
+            dmContainerParent.appendChild(el);
+        }
+
+        return el.querySelector(".messages");
+    }
+
+    function ensureGroupContainer(groupId) {
+        let el = document.querySelector(`#group-thread-${groupId}`);
+
+        if (!el) {
+            el = document.createElement("div");
+            el.id = `group-thread-${groupId}`;
+            el.className = "group-chat card mb-3";
+
+            el.innerHTML = `
+                <div class="card-header bg-primary text-white">
+                    Group #${groupId}
+                </div>
+                <div class="card-body messages" style="height:200px;overflow:auto;"></div>
+            `;
+
+            el.appendChild(buildThreadInput({
+                type: "group",
+                id: groupId
+            }));
+
+            groupContainerParent.appendChild(el);
+        }
+
+        return el.querySelector(".messages");
+    }
+
+    function appendMessage(msg, { type, userId, groupId }) {
+        const container =
+            type === "group"
+                ? ensureGroupContainer(groupId)
+                : ensureDMContainer(userId);
 
         const div = document.createElement("div");
         div.className = "mb-1";
+
         div.innerHTML = `
             <strong>${msg.senderName ?? msg.senderId}</strong>:
             ${msg.text}
@@ -84,48 +161,78 @@
                 ${msg.timestamp ?? ""}
             </span>
         `;
+
         container.appendChild(div);
         container.scrollTop = container.scrollHeight;
     }
 
-    async function sendGroupMessage(groupId, text) {
-        if (!text?.trim()) return;
+    // =============================
+    // DIRECT MESSAGES
+    // =============================
+    async function loadDirectMessages(userId) {
+        const res = await fetch(`/api/direct/messages/with/${userId}`, {
+            headers: { "X-Session-Id": AuthState.sessionId }
+        });
 
-        try {
-            const res = await fetch(`/api/groups/${groupId}/messages`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text })
-            });
+        if (!res.ok) return;
 
-            if (!res.ok) {
-                console.error(`Failed to send message to group ${groupId}:`, res.statusText);
-                return;
-            }
-
-            // Optionally, you can fetch the returned message immediately
-            // const { messageId } = await res.json();
-            // const msgRes = await fetch(`/api/groups/${groupId}/messages/${messageId}`);
-            // const msg = await msgRes.json();
-            // appendMessage(msg, groupId);
-
-            // Otherwise, SignalR notification will fetch it automatically
-        } catch (err) {
-            console.error(`Error sending message to group ${groupId}:`, err);
+        const messages = await res.json();
+        for (const msg of messages) {
+            appendMessage(msg, { type: "direct", userId });
         }
     }
 
+    messageConn.on("OnDirectMessage", async ({ senderId, messageId }) => {
+        const res = await fetch(`/api/direct/messages/single/${messageId}`, {
+            headers: { "X-Session-Id": AuthState.sessionId }
+        });
 
-    messageConn.on("OnGroupMessage", async ({ groupId, messageId }) => {
-        try {
-            const res = await fetch(`/api/groups/${groupId}/messages/${messageId}`);
-            if (!res.ok) return;
-            const msg = await res.json();
-            appendMessage(msg, groupId);
-        } catch (err) {
-            console.error("Error receiving new group message:", err);
-        }
+        if (!res.ok) return;
+
+        const msg = await res.json();
+
+        // ✅ FIX: determine correct thread owner
+        const threadUser =
+            msg.senderId === AuthState.userId
+                ? msg.receiverId
+                : msg.senderId;
+
+        appendMessage(msg, {
+            type: "direct",
+            userId: threadUser
+        });
     });
+
+    // =============================
+    // GROUP CHAT (FIXED)
+    // =============================
+    messageConn.on("OnGroupMessage", async ({ groupId, messageId }) => {
+        const res = await fetch(`/api/groups/${groupId}/messages/${messageId}`, {
+            headers: { "X-Session-Id": AuthState.sessionId }
+        });
+
+        if (!res.ok) return;
+
+        const msg = await res.json();
+
+        appendMessage(msg, {
+            type: "group",
+            groupId
+        });
+    });
+
+    async function loadGroupMessages(groupId) {
+        const res = await fetch(`/api/groups/${groupId}/messages`, {
+            headers: { "X-Session-Id": AuthState.sessionId }
+        });
+
+        if (!res.ok) return;
+
+        const messages = await res.json();
+        for (const msg of messages) {
+            appendMessage(msg, { type: "group", groupId });
+        }
+    }
 
     // -----------------------------
     // CALL STATE
@@ -138,7 +245,6 @@
         if (pc) return;
 
         try {
-            // GET LOCAL STREAM (audio + video)
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
         } catch (err) {
             console.error("Failed to get local media:", err);
@@ -146,7 +252,6 @@
             return;
         }
 
-        // ----- ATTACH LOCAL PREVIEW IMMEDIATELY -----
         const localVideo = document.getElementById("local-video");
         if (localVideo) {
             localVideo.srcObject = localStream;
@@ -159,7 +264,6 @@
             iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
         });
 
-        // ADD LOCAL TRACKS TO PEER CONNECTION
         localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
 
         pc.onicecandidate = e => {
@@ -176,58 +280,38 @@
     }
 
     async function startCall(calleeUserId) {
-        if (!calleeUserId || calleeUserId <= 0) {
-            alert("Please select a valid target user");
-            return;
-        }
+        if (!calleeUserId || calleeUserId <= 0) return;
 
-        try {
-            const res = await fetch("/api/calls/start", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ CalleeUserId: calleeUserId, Type: "audio" })
-            });
+        const res = await fetch("/api/calls/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ CalleeUserId: calleeUserId, Type: "audio" })
+        });
 
-            if (!res.ok) {
-                alert("Call could not be started.");
-                return;
-            }
+        if (!res.ok) return;
 
-            const { callId } = await res.json();
-            currentCallId = callId.toString();
+        const { callId } = await res.json();
+        currentCallId = callId.toString();
 
-            await callConn.invoke("RegisterCall", currentCallId, calleeUserId);
+        await callConn.invoke("RegisterCall", currentCallId, calleeUserId);
 
-            await ensurePeer();
-            if (!pc) return;
+        await ensurePeer();
 
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            await callConn.invoke("SendRtcOffer", currentCallId, offer.sdp);
-
-        } catch (err) {
-            console.error("Error starting call:", err);
-            alert("Failed to start call. See console for details.");
-        }
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await callConn.invoke("SendRtcOffer", currentCallId, offer.sdp);
     }
 
     async function hangupCall() {
         if (!currentCallId) return;
 
-        try {
-            await callConn.invoke("EndCall", currentCallId);
-        } catch (err) {
-            console.error("Failed to end call:", err);
-        }
+        await callConn.invoke("EndCall", currentCallId);
 
         pc?.close();
         pc = null;
-
         localStream?.getTracks().forEach(t => t.stop());
-        localStream = null;
 
         currentCallId = null;
-        console.log("Call hung up.");
     }
 
     // -----------------------------
@@ -236,48 +320,97 @@
     callConn.on("RtcOffer", async ({ callId, sdp }) => {
         currentCallId = callId;
         await ensurePeer();
-        if (!pc) return;
 
-        try {
-            await pc.setRemoteDescription({ type: "offer", sdp });
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            await callConn.invoke("SendRtcAnswer", callId, answer.sdp);
-        } catch (err) {
-            console.error("Failed to handle incoming RTC offer:", err);
-        }
+        await pc.setRemoteDescription({ type: "offer", sdp });
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        await callConn.invoke("SendRtcAnswer", callId, answer.sdp);
     });
 
     callConn.on("RtcAnswer", async ({ sdp }) => {
-        if (pc) {
-            try {
-                await pc.setRemoteDescription({ type: "answer", sdp });
-            } catch (err) {
-                console.error("Failed to set remote description on answer:", err);
-            }
-        }
+        if (pc) await pc.setRemoteDescription({ type: "answer", sdp });
     });
 
     callConn.on("RtcIceCandidate", async ({ candidate }) => {
-        if (pc && candidate) {
-            try {
-                await pc.addIceCandidate(candidate);
-            } catch (err) {
-                console.error("Failed to add ICE candidate:", err);
-            }
-        }
+        if (pc && candidate) await pc.addIceCandidate(candidate);
     });
 
     callConn.on("RtcHangup", hangupCall);
 
-    // -----------------------------
+    // =====================================================
+    // 🔹 ADDITIONS — CHAT INPUT + SEND HANDLERS
+    // =====================================================
+
+    function getActiveChatContext() {
+        return {
+            type: document.body.dataset.chatType, // "direct" | "group"
+            id: parseInt(document.body.dataset.chatId || "0")
+        };
+    }
+
+    async function sendMessage(text) {
+        if (!text) return;
+
+        const ctx = getActiveChatContext();
+        if (!ctx.id) return;
+
+        const payload =
+            ctx.type === "group"
+                ? { GroupId: ctx.id, Text: text }
+                : { RecipientUserId: ctx.id, Text: text };
+
+        const url =
+            ctx.type === "group"
+                ? "/api/groups/send"
+                : "/api/direct/send";
+
+        await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Session-Id": AuthState.sessionId
+            },
+            body: JSON.stringify(payload)
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const input = document.getElementById("chat-input");
+        const btn = document.getElementById("chat-send");
+
+        if (!input || !btn) return;
+
+        btn.addEventListener("click", () => {
+            const text = input.value.trim();
+            if (!text) return;
+            sendMessage(text);
+            input.value = "";
+        });
+
+        input.addEventListener("keydown", e => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                btn.click();
+            }
+        });
+    });
+
+    // =============================
     // EXPORTS
-    // -----------------------------
+    // =============================
     window.MessageService = MessageService;
+    window.loadDirectMessages = loadDirectMessages;
     window.loadGroupMessages = loadGroupMessages;
-    window.sendGroupMessage = sendGroupMessage;
+    window.appendMessage = appendMessage;
     window.startCall = startCall;
     window.hangupCall = hangupCall;
-
 })();
+
+
+
+
+
+
+
 

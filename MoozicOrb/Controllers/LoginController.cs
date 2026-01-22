@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MoozicOrb.Api.Services.Interfaces;
 using MoozicOrb.IO;
 using MoozicOrb.Models;
 using MoozicOrb.Services;
@@ -43,7 +44,8 @@ namespace MoozicOrb.Controllers
 
         // GET /api/login/bootstrap
         [HttpGet("bootstrap")]
-        public IActionResult Bootstrap([FromHeader(Name = "X-Session-Id")] string sessionId)
+        public IActionResult Bootstrap([FromHeader(Name = "X-Session-Id")] string sessionId,
+                                       [FromServices] IDirectMessageApiService dmService)
         {
             if (string.IsNullOrEmpty(sessionId))
                 return Unauthorized();
@@ -63,12 +65,23 @@ namespace MoozicOrb.Controllers
                 .Select(g => long.Parse(g.Trim()))
                 .ToList();
 
+            // --------------------------
+            // Direct messages: get all unique userIds this user has DMed with
+            // --------------------------
+            var allDMs = dmService.GetAllMessagesForUser(user.UserId); // implement this in your service
+            var directUsers = allDMs
+                .Select(m => m.SenderId == user.UserId ? m.ReceiverId : m.SenderId)
+                .Distinct()
+                .ToList();
+
             return Ok(new
             {
                 userId = user.UserId,
-                groups = groupIds
+                groups = groupIds,
+                directUsers
             });
         }
+
 
     }
 }

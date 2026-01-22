@@ -28,6 +28,7 @@ builder.Services.AddScoped<ILoginService, LoginService>();
 
 // SignalR services remain untouched
 
+builder.Services.AddSingleton<UserConnectionManager>();
 
 builder.Services.AddSingleton<IUserIdProvider, SignalRUserIdProvider>();
 builder.Services.AddHttpContextAccessor();

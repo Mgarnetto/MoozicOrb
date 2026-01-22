@@ -8,6 +8,27 @@ namespace MoozicOrb.IO
     {
         public UserQuery() { }
 
+        public User[] GetUsers()
+        {
+            string query = "SELECT * FROM user;";
+            Query q = new Query();
+            DataTable dt = q.Run(query);
+
+            User[] users = new User[dt.Rows.Count];
+            int it = 0;
+
+            foreach (DataRow dr in dt.Rows)
+            {
+                users[it] = new User();
+                users[it].UserId = int.Parse(dr["user_id"].ToString());
+                users[it].FirstName = dr["first_name"].ToString();
+                users[it].MiddleName = dr["middle_name"].ToString();
+                users[it].LastName = dr["last_name"].ToString();
+                it++;
+            }
+
+            return users;
+        }
         public User GetUserById(int userId)
         {
             string query = $"SELECT * FROM user WHERE user_id = {userId}";

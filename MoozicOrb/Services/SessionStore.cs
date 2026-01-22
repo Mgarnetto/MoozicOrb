@@ -41,6 +41,12 @@ namespace MoozicOrb.Services
 
             _sessions.TryRemove(sessionId, out _);
         }
+
+        public static UserSession GetSessionByUserId(int userId)
+        {
+            return _sessions.Values.FirstOrDefault(s => s.UserId == userId);
+        }
+
     }
 }
 

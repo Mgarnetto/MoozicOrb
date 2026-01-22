@@ -9,7 +9,7 @@
     --color-accent-yellow: rgb(255, 255, 55);
     --navbar-height: 60px;
     --sidebar-width: 300px;
-    l --transition-speed-fast: 0.25s;
+    --transition-speed-fast: 0.25s;
     --transition-speed-normal: 0.5s;
     --transition-speed-slow: 0.8s;
 }
@@ -548,75 +548,48 @@ main {
         color: #fff;
     }
 
-/* Scrollable Image Lists (Carousel Gallery) */
-.scroll-container {
-    display: flex;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    padding: 0 30px; /* Space for scroll buttons */
+.carousel-wrapper {
+    width: 100%;
+    overflow: hidden;
+    border: 2px solid #444;
     border-radius: 10px;
+    background: #000;
+    padding: 15px 10px;
 }
 
-.image-list {
-    list-style: none;
-    display: flex; /* Use flex for horizontal scrolling */
-    overflow-x: auto; /* Enable horizontal scrolling */
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-    scroll-behavior: smooth; /* Smooth scrolling with JS */
-    padding-bottom: 15px; /* Space for scrollbar */
-    gap: 15px; /* Space between items */
-    scrollbar-width: none; /* Firefox scrollbar */
-    scrollbar-color: var(--color-primary) #f1f1f1; /* Firefox scrollbar color */
+.carousel-track {
+    display: inline-flex;
+    white-space: nowrap;
+    animation: scroll 33s linear infinite;
 }
 
-    /* Hide scrollbar for Webkit browsers */
-    .image-list::-webkit-scrollbar {
-        height: 8px;
-    }
-
-    .image-list::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-    }
-
-    .image-list::-webkit-scrollbar-thumb {
-        background: var(--color-primary);
-        border-radius: 10px;
-    }
-
-.image-list__item {
-    flex: 0 0 auto; /* Prevent items from shrinking/growing */
-    width: 180px; /* Fixed width for each image container */
+.ad-card {
+    display: inline-block;
+    width: 250px;
+    margin: 0 20px;
+    background: #222;
+    border-radius: 10px;
+    padding: 40px;
     text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(255,255,255,0.1);
 }
 
-    .image-list__item img {
+    .ad-card img {
         width: 100%;
-        height: 180px; /* Fixed height for consistent image size */
-        object-fit: cover; /* Cover the area, crop if necessary */
-        border-radius: 10%;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        transition: transform 0.3s ease;
+        border-radius: 10px;
+        margin-bottom: 10px;
     }
 
-        .image-list__item img:hover {
-            transform: translateY(-5px); /* Lift effect on hover */
-        }
+@keyframes scroll {
+    from {
+        transform: translateX(0);
+    }
 
-.image-name {
-    margin-top: 10px;
-    text-align: center;
-    font-size: 1rem;
-    color: #D3D3D3;
-    white-space: normal; /* Allow text to wrap */
+    to {
+        transform: translateX(-50%);
+    }
 }
-
-/* --- */
 
 ## **Image Display and Advertisements**
 
@@ -1032,4 +1005,3 @@ Descriptive class names like `image-display` and `ad-banner` make the purpose of
 
         .footer-links li a:hover {
             color: var(--primary-bg-color); /* Highlight on hover */
-        }

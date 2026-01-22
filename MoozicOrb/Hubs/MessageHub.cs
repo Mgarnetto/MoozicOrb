@@ -1,26 +1,49 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using System.Collections.Concurrent;
+using MoozicOrb.Services;
+using System;
+using System.Threading.Tasks;
 
 namespace MoozicOrb.Hubs
 {
     public class MessageHub : Hub
     {
-        private static readonly ConcurrentDictionary<int, HashSet<string>> _userConnections = new();
+        private readonly UserConnectionManager _connections;
 
+        public MessageHub(UserConnectionManager connections)
+        {
+            _connections = connections;
+        }
+
+        // Called AFTER login
         public Task AttachUserSession(int userId)
         {
-            var conns = _userConnections.GetOrAdd(userId, _ => new HashSet<string>());
-            lock (conns)
-                conns.Add(Context.ConnectionId);
+            var session = SessionStore.GetSessionByUserId(userId);
+            if (session == null)
+                throw new HubException("Invalid session");
 
             Context.Items["UserId"] = userId;
+
+            _connections.AddConnection(userId, Context.ConnectionId);
+
             return Task.CompletedTask;
         }
 
+        public override Task OnDisconnectedAsync(Exception exception)
+        {
+            if (Context.Items.TryGetValue("UserId", out var val)
+                && val is int userId)
+            {
+                _connections.RemoveConnection(userId, Context.ConnectionId);
+            }
+
+            return base.OnDisconnectedAsync(exception);
+        }
+
+        // Group chat support
         public async Task JoinGroup(long groupId)
         {
             if (!Context.Items.ContainsKey("UserId"))
-                throw new HubException("Not logged in");
+                throw new HubException("Not authenticated");
 
             await Groups.AddToGroupAsync(
                 Context.ConnectionId,
@@ -29,6 +52,7 @@ namespace MoozicOrb.Hubs
         }
     }
 }
+
 
 
 

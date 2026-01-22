@@ -1,78 +1,142 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using MoozicOrb.Api.Models;
 using MoozicOrb.Api.Services.Interfaces;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using System.Collections.Generic;
+using MoozicOrb.Hubs;
+using MoozicOrb.Services;
+using System.Text.Json;
 
-namespace MoozicOrb.Api.Controllers
+[ApiController]
+[Route("api/direct/messages")]
+public class DirectMessagesController : ControllerBase
 {
-    [ApiController]
-    [Route("api/direct/messages")]
-    public class DirectMessagesController : ControllerBase
+    private readonly IDirectMessageApiService _service;
+    private readonly IHttpContextAccessor _http;
+    private readonly IHubContext<MessageHub> _hub;
+    private readonly UserConnectionManager _connections;
+
+    public DirectMessagesController(
+        IDirectMessageApiService service,
+        IHttpContextAccessor http,
+        IHubContext<MessageHub> hub,
+        UserConnectionManager connections)
     {
-        private readonly IDirectMessageApiService _service;
-        private readonly IWebHostEnvironment _env;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        _service = service;
+        _http = http;
+        _hub = hub;
+        _connections = connections;
+    }
 
-        public DirectMessagesController(
-            IDirectMessageApiService service,
-            IWebHostEnvironment env,
-            IHttpContextAccessor httpContextAccessor)
+    // =========================================
+    // Helpers
+    // =========================================
+    private int GetUserId()
+    {
+        var sid = _http.HttpContext?.Request.Headers["X-Session-Id"].ToString();
+        var session = SessionStore.GetSession(sid);
+
+        if (session == null)
+            throw new UnauthorizedAccessException();
+
+        return session.UserId;
+    }
+
+    // =========================================
+    // GET: Conversation with user
+    // Used by: loadDirectMessages(userId)
+    // =========================================
+    [HttpGet("with/{otherUserId:int}")]
+    public ActionResult<IEnumerable<DirectMessageDto>> GetConversation(
+        int otherUserId)
+    {
+        int me = GetUserId();
+
+        var messages = _service.GetDirectMessages(me, otherUserId);
+        return Ok(messages);
+    }
+
+    // =========================================
+    // GET: Single message (SignalR fetch)
+    // =========================================
+    [HttpGet("single/{messageId:long}")]
+    public ActionResult<DirectMessageDto> GetMessage(long messageId)
+    {
+        int me = GetUserId();
+
+        var msg = _service.GetDirectMessage(messageId);
+        if (msg == null)
+            return NotFound();
+
+        if (msg.SenderId != me && msg.ReceiverId != me)
+            return Forbid();
+
+        return Ok(msg);
+    }
+
+    // =========================================
+    // POST: Send DM
+    // =========================================
+    [HttpPost]
+    public async Task<IActionResult> CreateMessage(
+        [FromBody] JsonElement body)
+    {
+        if (!body.TryGetProperty("receiverId", out var r) ||
+            !body.TryGetProperty("text", out var t))
+            return BadRequest();
+
+        int senderId = GetUserId();
+        int receiverId = r.GetInt32();
+        string text = t.GetString();
+
+        var messageId =
+            _service.CreateDirectMessage(senderId, receiverId, text);
+
+        // 🔔 Notify receiver
+        foreach (var conn in _connections.GetConnections(receiverId))
         {
-            _service = service;
-            _env = env;
-            _httpContextAccessor = httpContextAccessor;
+            await _hub.Clients.Client(conn)
+                .SendAsync("OnDirectMessage", new
+                {
+                    senderId,
+                    messageId
+                });
         }
 
-        // GET all messages between two users (optional limit)
-        [HttpGet("{userId1}/{userId2}")]
-        public ActionResult<IEnumerable<DirectMessageDto>> GetMessages(int userId1, int userId2, int? limit = null)
+        // 🔔 Notify sender (multi-tab support)
+        foreach (var conn in _connections.GetConnections(senderId))
         {
-            // need to check auth to ensure user is part of this DM
-
-            var messages = _service.GetDirectMessages(userId1, userId2);
-
-            if (limit.HasValue)
-                messages = new List<DirectMessageDto>(messages).GetRange(0, System.Math.Min(limit.Value, messages is ICollection<DirectMessageDto> col ? col.Count : 0));
-
-            // Optionally hydrate profile pics / sender names here
-            foreach (var msg in messages)
-            {
-                msg.SenderName ??= $"User{msg.SenderId}";
-                msg.SenderProfilePicUrl ??= $"/images/users/{msg.SenderId}.png";
-            }
-
-            return Ok(messages);
+            await _hub.Clients.Client(conn)
+                .SendAsync("OnDirectMessage", new
+                {
+                    senderId,
+                    messageId
+                });
         }
 
-        // GET a single message by ID
-        [HttpGet("{messageId}")]
-        public ActionResult<DirectMessageDto> GetMessage(long messageId)
+        return Ok(new { messageId });
+    }
+
+    // =========================================
+    // GET: Bootstrap — ALL direct messages
+    // Used once at login
+    // =========================================
+    [HttpGet]
+    public ActionResult GetAllDirectMessages()
+    {
+        int me = GetUserId();
+
+        // Returns:
+        // Dictionary<int, List<DirectMessageDto>>
+        var conversations = _service.GetAllDirectMessages(me);
+
+        return Ok(new
         {
-            // need to check auth to ensure user is part of this DM
-
-            var message = _service.GetDirectMessage(messageId);
-            if (message == null) return NotFound();
-
-            message.SenderName ??= $"User{message.SenderId}";
-            message.SenderProfilePicUrl ??= $"/images/users/{message.SenderId}.png";
-
-            return Ok(message);
-        }
-
-        // POST create a new direct message
-        [HttpPost]
-        public ActionResult CreateMessage([FromBody] dynamic body)
-        {
-            int senderId = 1; // TODO: get from auth context
-            int receiverId = body.GetProperty("receiverId").GetInt32();
-            string text = body.GetProperty("text").GetString();
-
-            var messageId = _service.CreateDirectMessage(senderId, receiverId, text);
-
-            return Ok(new { messageId });
-        }
+            users = conversations.Keys,
+            messages = conversations
+        });
     }
 }
+
+
+
 
