@@ -1,0 +1,60 @@
+﻿@{
+    Layout = "";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MoozicOrb Radio Test</title>
+</head>
+<body>
+    <h2>🎧 MoozicOrb Radio Test</h2>
+    <button id="playBtn">Play Radio</button>
+    <audio id="audio" autoplay controls></audio>
+
+    <script>
+        let pc;
+
+        document.getElementById("playBtn").onclick = async () => {
+            pc = new RTCPeerConnection();
+
+            // Log ICE candidates
+            pc.onicecandidate = e => {
+                if (e.candidate) console.log("ICE candidate:", e.candidate.candidate);
+            };
+
+            // Handle remote track
+            pc.ontrack = e => {
+                console.log("🎵 Audio track received");
+                const audioEl = document.getElementById("audio");
+                audioEl.srcObject = e.streams[0];
+                audioEl.volume = 1;
+                audioEl.muted = false;
+            };
+
+            try {
+                // Get offer from server
+                const offer = await fetch("/api/webrtc/offer").then(r => r.text());
+                await pc.setRemoteDescription({ type: "offer", sdp: offer });
+
+                // Create answer
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+
+                // Send answer to server
+                await fetch("/api/webrtc/answer", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(answer.sdp)
+                });
+
+                console.log("✅ WebRTC connected");
+            } catch (err) {
+                console.error("WebRTC error:", err);
+            }
+        };
+    </script>
+</body>
+</html>
+
+

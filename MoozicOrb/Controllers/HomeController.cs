@@ -68,6 +68,11 @@ namespace MoozicOrb.Controllers
             return View();
         }
 
+        public IActionResult RadioTest()
+        {
+            return View();
+        }
+
         public IActionResult Mainpage()
         {
             return View();
