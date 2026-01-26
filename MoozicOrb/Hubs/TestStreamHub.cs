@@ -4,16 +4,22 @@ using System.Collections.Concurrent;
 using MoozicOrb.Radio;
 using System.Threading.Tasks;
 using System;
+using System.Net.Http;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Collections.Generic;
 
 namespace MoozicOrb.Hubs
 {
     public class TestStreamHub : Hub
     {
-        // Static dictionary to persist bridge instances across transient hub calls
         private static readonly ConcurrentDictionary<string, WebRtcAudioBridge> _activeBridges = new();
-
-        // IHubContext allows us to communicate with clients even after this Hub instance is disposed
         private readonly IHubContext<TestStreamHub> _hubContext;
+
+        // --- METERED.CA CONFIGURATION ---
+        // Replace 'example' and 'example_secret_key' with your actual dashboard values
+        private const string METERED_DOMAIN = "mo.metered.live";
+        private const string METERED_SECRET_KEY = "gzOScPrYoQCOr9Vj_ubpRBSIYYINi-lC7kYEqnv-6VYm77js";
 
         public TestStreamHub(IHubContext<TestStreamHub> hubContext)
         {
@@ -23,14 +29,45 @@ namespace MoozicOrb.Hubs
         public async Task RequestOffer()
         {
             var connectionId = Context.ConnectionId;
-            var bridge = new WebRtcAudioBridge();
+            List<RTCIceServer> iceServers = new List<RTCIceServer>();
+
+            // 1. Fetch TURN credentials from Metered.ca
+            try
+            {
+                using (var httpClient = new HttpClient())
+                {
+                    // This API call gets us a list of STUN and TURN servers with temp credentials
+                    var response = await httpClient.GetStringAsync($"https://{METERED_DOMAIN}.metered.live/api/v1/turn/credentials?apiKey={METERED_SECRET_KEY}");
+                    var meteredServers = JsonSerializer.Deserialize<List<MeteredIceServer>>(response);
+
+                    if (meteredServers != null)
+                    {
+                        foreach (var s in meteredServers)
+                        {
+                            iceServers.Add(new RTCIceServer
+                            {
+                                urls = s.Urls,
+                                username = s.Username,
+                                credential = s.Credential
+                            });
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Hub] Metered API Error: {ex.Message}. Falling back to basic STUN.");
+                iceServers.Add(new RTCIceServer { urls = "stun:stun.l.google.com:19302" });
+            }
+
+            // 2. Pass the iceServers to the bridge
+            // Note: Ensure your Bridge constructor is updated to accept List<RTCIceServer>
+            var bridge = new WebRtcAudioBridge(iceServers);
             _activeBridges[connectionId] = bridge;
 
-            // Use our event to bubble up candidates
             bridge.OnIceCandidateGenerated += async (candidate) => {
                 try
                 {
-                    // Only send if the Hub connection is still alive
                     await _hubContext.Clients.Client(connectionId).SendAsync("RtcIceCandidate", new { candidate = candidate });
                 }
                 catch (Exception ex)
@@ -40,21 +77,22 @@ namespace MoozicOrb.Hubs
             };
 
             var sdp = await bridge.GetOfferSdp();
-            await Clients.Caller.SendAsync("RtcOffer", new { sdp = sdp });
+
+            // 3. Send BOTH the SDP and the iceServers to the Client
+            await Clients.Caller.SendAsync("RtcOffer", new { sdp = sdp, iceServers = iceServers });
         }
 
         public async Task ReceiveAnswer(string sdp)
         {
             if (_activeBridges.TryGetValue(Context.ConnectionId, out var bridge))
             {
-                // FIX: Remove 'await'. SIPSorcery v10 returns void here.
                 bridge.PeerConnection.setRemoteDescription(new RTCSessionDescriptionInit
                 {
                     type = RTCSdpType.answer,
                     sdp = sdp
                 });
             }
-            await Task.CompletedTask; // Keep the method signature happy
+            await Task.CompletedTask;
         }
 
         public void ReceiveIceCandidate(string candidate)
@@ -63,7 +101,6 @@ namespace MoozicOrb.Hubs
             {
                 if (!string.IsNullOrWhiteSpace(candidate))
                 {
-                    // Add the client's ICE candidate to the server's PeerConnection
                     bridge.PeerConnection.addIceCandidate(new RTCIceCandidateInit { candidate = candidate });
                 }
             }
@@ -71,12 +108,25 @@ namespace MoozicOrb.Hubs
 
         public override async Task OnDisconnectedAsync(Exception? ex)
         {
-            // Crucial: Dispose the bridge when the client leaves to stop the audio loop and free ports
             if (_activeBridges.TryRemove(Context.ConnectionId, out var bridge))
             {
                 bridge.Dispose();
             }
             await base.OnDisconnectedAsync(ex);
         }
+    }
+
+    // --- HELPER CLASS FOR DESERIALIZATION ---
+    // This matches the JSON structure returned by Metered.ca
+    public class MeteredIceServer
+    {
+        [JsonPropertyName("urls")]
+        public string Urls { get; set; }
+
+        [JsonPropertyName("username")]
+        public string Username { get; set; }
+
+        [JsonPropertyName("credential")]
+        public string Credential { get; set; }
     }
 }

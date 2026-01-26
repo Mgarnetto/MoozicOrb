@@ -14,38 +14,33 @@ namespace MoozicOrb.Radio
         private AudioExtrasSource _audioSource;
         private bool _isStarted = false;
 
-        // NEW: Event to bubble up ICE candidates to your SignalR Hub
         public event Action<string> OnIceCandidateGenerated;
 
-        public WebRtcAudioBridge()
+        // FIXED: Added 'List<RTCIceServer> iceServers' parameter to match your Hub's call
+        public WebRtcAudioBridge(List<RTCIceServer> iceServers)
         {
-            // STUN: Essential for shared servers to discover public IPs
+            // Use the iceServers passed in from the Hub (Metered.ca + fallback)
             var config = new RTCConfiguration
             {
-                iceServers = new List<RTCIceServer> {
-                    new RTCIceServer { urls = "stun:stun.l.google.com:19302" }
-                }
+                iceServers = iceServers
             };
 
-            PeerConnection = new RTCPeerConnection(config);
+            // Use named parameter to avoid constructor ambiguity
+            PeerConnection = new RTCPeerConnection(configuration: config);
 
-            // 1. Initialize Source with SineWave
             var audioEncoder = new AudioEncoder();
             _audioSource = new AudioExtrasSource(audioEncoder, new AudioSourceOptions
             {
                 AudioSource = AudioSourcesEnum.SineWave
             });
 
-            // Restrict to PCMU (8000Hz) - the most compatible server codec
             _audioSource.RestrictFormats(f => f.Codec == AudioCodecsEnum.PCMU);
 
             var audioTrack = new MediaStreamTrack(_audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
             PeerConnection.addTrack(audioTrack);
 
-            // 2. Wire up samples
             _audioSource.OnAudioSourceEncodedSample += PeerConnection.SendAudio;
 
-            // 3. Handle Negotiation
             PeerConnection.OnAudioFormatsNegotiated += (formats) => {
                 var format = formats.FirstOrDefault();
                 if (!format.IsEmpty())
@@ -54,7 +49,6 @@ namespace MoozicOrb.Radio
                 }
             };
 
-            // NEW: Handle ICE candidate generation (Trickle ICE)
             PeerConnection.onicecandidate += (candidate) => {
                 if (candidate != null && !string.IsNullOrEmpty(candidate.candidate))
                 {
@@ -62,7 +56,6 @@ namespace MoozicOrb.Radio
                 }
             };
 
-            // 4. Manage Connection Lifecycle
             PeerConnection.onconnectionstatechange += async (state) => {
                 Console.WriteLine($"[WebRtc] Connection State: {state}");
 
@@ -82,7 +75,6 @@ namespace MoozicOrb.Radio
         {
             var offer = PeerConnection.createOffer();
 
-            // Aggressive SCTP/DataChannel stripping to prevent server crashes
             string[] lines = offer.sdp.Split('\n');
             var cleanSdp = new List<string>();
             bool inApplicationSection = false;

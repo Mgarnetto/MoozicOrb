@@ -68,6 +68,7 @@
         const logDiv = document.getElementById("log");
         const statusDiv = document.getElementById("status");
         const remoteAudio = document.getElementById("remoteAudio");
+        let pc = null;
 
         function logger(msg, type = 'info') {
             const entry = document.createElement("div");
@@ -82,55 +83,89 @@
             .withAutomaticReconnect()
             .build();
 
-        let pc = new RTCPeerConnection({
-            iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-        });
+        function createPeerConnection(iceServers) {
+            logger("🛠️ Initializing PeerConnection with TURN credentials...");
 
-        pc.onconnectionstatechange = () => {
-            statusDiv.innerText = `Status: ${pc.connectionState}`;
-            logger(`WebRTC State Changed: ${pc.connectionState}`);
-        };
+            // SANITIZATION: Ensure every object has the 'urls' property and valid credentials
+            const sanitizedServers = (iceServers || [])
+                .map(server => {
+                    const s = {
+                        urls: server.urls || server.Urls,
+                        username: server.username || server.Username,
+                        credential: server.credential || server.Credential
+                    };
 
-        pc.onicecandidate = (e) => {
-            if (e.candidate) {
-                connection.invoke("ReceiveIceCandidate", e.candidate.candidate)
-                    .catch(err => logger("❌ Send ICE Error: " + err, "error"));
+                    // Force credentialType to "password" if it's a TURN server
+                    if (s.username && s.credential) {
+                        s.credentialType = "password";
+                    }
+                    return s;
+                })
+                .filter(server => server.urls); // Only keep if it actually has a URL
+
+            const config = {
+                iceServers: sanitizedServers.length > 0
+                    ? sanitizedServers
+                    : [{ urls: "stun:stun.l.google.com:19302" }]
+            };
+
+            try {
+                // Re-creating the connection instance
+                pc = new RTCPeerConnection(config);
+
+                pc.onconnectionstatechange = () => {
+                    statusDiv.innerText = `Status: ${pc.connectionState}`;
+                    logger(`WebRTC State Changed: ${pc.connectionState}`);
+                    if (pc.connectionState === "failed") {
+                        logger("❌ Connection failed. Check if TURN is working or if UDP is blocked.", "error");
+                    }
+                };
+
+                pc.onicecandidate = (e) => {
+                    if (e.candidate) {
+                        connection.invoke("ReceiveIceCandidate", e.candidate.candidate)
+                            .catch(err => logger("❌ Send ICE Error: " + err, "error"));
+                    }
+                };
+
+                pc.ontrack = (event) => {
+                    logger("🔊 SUCCESS: Track received from server!", 'success');
+                    const track = event.track;
+                    let stream = (event.streams && event.streams[0])
+                                 ? event.streams[0]
+                                 : new MediaStream([track]);
+
+                    remoteAudio.srcObject = stream;
+                    remoteAudio.play()
+                        .then(() => logger("✅ Audio is playing", "success"))
+                        .catch(err => logger("🔇 Audio play error: " + err.message, "error"));
+                };
+            } catch (err) {
+                logger("❌ PC Constructor Error: " + err.message, "error");
+                pc = null; // Ensure pc is null if creation fails
             }
-        };
-
-        // INTEGRATED FIX: Handling streamless tracks and autoplay policy
-        pc.ontrack = (event) => {
-            logger("🔊 SUCCESS: Track received from server!", 'success');
-
-            // Log track details for debugging
-            const track = event.track;
-            logger(`📊 Track info: kind=${track.kind}, id=${track.id}`);
-
-            let stream = null;
-            if (event.streams && event.streams[0]) {
-                stream = event.streams[0];
-            } else {
-                logger("💡 Wrapping streamless track into new MediaStream...");
-                stream = new MediaStream([track]);
-            }
-
-            remoteAudio.srcObject = stream;
-
-            // Browsers need a user gesture (the button click) to allow this .play()
-            remoteAudio.play()
-                .then(() => logger("✅ Audio is playing", "success"))
-                .catch(err => logger("🔇 Audio block/error: " + err.message, "error"));
-        };
+        }
 
         connection.on("RtcOffer", async (data) => {
             try {
-                logger("📥 Received Offer from server");
+                logger("📥 Received Offer and ICE Servers from server");
+
+                // 1. Initialize PC
+                createPeerConnection(data.iceServers);
+
+                if (!pc) {
+                    throw new Error("PeerConnection could not be initialized.");
+                }
+
+                // 2. Set Remote Description
                 await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: data.sdp }));
 
+                // 3. Create and Set Local Answer
                 logger("📝 Creating Answer...");
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
 
+                // 4. Send Answer back to Hub
                 logger("📤 Sending Answer...");
                 await connection.invoke("ReceiveAnswer", answer.sdp);
             } catch (err) {
@@ -139,7 +174,7 @@
         });
 
         connection.on("RtcIceCandidate", (data) => {
-            if (data.candidate) {
+            if (data.candidate && pc) {
                 pc.addIceCandidate(new RTCIceCandidate({ candidate: data.candidate }))
                     .catch(e => logger("❌ Add ICE Error: " + e.message, "error"));
             }
