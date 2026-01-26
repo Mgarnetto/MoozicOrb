@@ -26,14 +26,19 @@ namespace MoozicOrb.Hubs
             var bridge = new WebRtcAudioBridge();
             _activeBridges[connectionId] = bridge;
 
-            bridge.PeerConnection.onicecandidate += async (candidate) => {
-                if (!string.IsNullOrEmpty(candidate?.candidate))
+            // Use our event to bubble up candidates
+            bridge.OnIceCandidateGenerated += async (candidate) => {
+                try
                 {
-                    await _hubContext.Clients.Client(connectionId).SendAsync("RtcIceCandidate", new { candidate = candidate.candidate });
+                    // Only send if the Hub connection is still alive
+                    await _hubContext.Clients.Client(connectionId).SendAsync("RtcIceCandidate", new { candidate = candidate });
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Hub] ICE Relay Error: {ex.Message}");
                 }
             };
 
-            // Use the v10 helper method
             var sdp = await bridge.GetOfferSdp();
             await Clients.Caller.SendAsync("RtcOffer", new { sdp = sdp });
         }
@@ -42,14 +47,14 @@ namespace MoozicOrb.Hubs
         {
             if (_activeBridges.TryGetValue(Context.ConnectionId, out var bridge))
             {
-                // SIPSorcery's setRemoteDescription is internaly async but follows the task pattern
+                // FIX: Remove 'await'. SIPSorcery v10 returns void here.
                 bridge.PeerConnection.setRemoteDescription(new RTCSessionDescriptionInit
                 {
                     type = RTCSdpType.answer,
                     sdp = sdp
                 });
             }
-            await Task.CompletedTask;
+            await Task.CompletedTask; // Keep the method signature happy
         }
 
         public void ReceiveIceCandidate(string candidate)

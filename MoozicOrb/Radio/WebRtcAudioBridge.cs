@@ -14,38 +14,51 @@ namespace MoozicOrb.Radio
         private AudioExtrasSource _audioSource;
         private bool _isStarted = false;
 
+        // NEW: Event to bubble up ICE candidates to your SignalR Hub
+        public event Action<string> OnIceCandidateGenerated;
+
         public WebRtcAudioBridge()
         {
+            // STUN: Essential for shared servers to discover public IPs
             var config = new RTCConfiguration
             {
-                iceServers = new List<RTCIceServer> { new RTCIceServer { urls = "stun:stun.l.google.com:19302" } }
+                iceServers = new List<RTCIceServer> {
+                    new RTCIceServer { urls = "stun:stun.l.google.com:19302" }
+                }
             };
 
             PeerConnection = new RTCPeerConnection(config);
 
-            // 1. Initialize Source with an Explicit Encoder (Required in v10)
+            // 1. Initialize Source with SineWave
             var audioEncoder = new AudioEncoder();
             _audioSource = new AudioExtrasSource(audioEncoder, new AudioSourceOptions
             {
                 AudioSource = AudioSourcesEnum.SineWave
             });
 
-            // Restrict to PCMU (8000Hz) to ensure the SineWave generator is happy
+            // Restrict to PCMU (8000Hz) - the most compatible server codec
             _audioSource.RestrictFormats(f => f.Codec == AudioCodecsEnum.PCMU);
 
             var audioTrack = new MediaStreamTrack(_audioSource.GetAudioSourceFormats(), MediaStreamStatusEnum.SendOnly);
             PeerConnection.addTrack(audioTrack);
 
-            // 2. Wire up the encoded samples to the PeerConnection
+            // 2. Wire up samples
             _audioSource.OnAudioSourceEncodedSample += PeerConnection.SendAudio;
 
-            // 3. Handle Negotiation (Struct-Safe Check)
+            // 3. Handle Negotiation
             PeerConnection.OnAudioFormatsNegotiated += (formats) => {
                 var format = formats.FirstOrDefault();
-                // AudioFormat is a struct in v10, use .IsEmpty() instead of != null
                 if (!format.IsEmpty())
                 {
                     _audioSource.SetAudioSourceFormat(format);
+                }
+            };
+
+            // NEW: Handle ICE candidate generation (Trickle ICE)
+            PeerConnection.onicecandidate += (candidate) => {
+                if (candidate != null && !string.IsNullOrEmpty(candidate.candidate))
+                {
+                    OnIceCandidateGenerated?.Invoke(candidate.candidate);
                 }
             };
 
@@ -56,12 +69,11 @@ namespace MoozicOrb.Radio
                 if (state == RTCPeerConnectionState.connected && !_isStarted)
                 {
                     _isStarted = true;
-                    // StartAudio is a Task in v10 - must be awaited or handled
                     await _audioSource.StartAudio();
                 }
                 else if (state == RTCPeerConnectionState.failed || state == RTCPeerConnectionState.closed)
                 {
-                     _audioSource.Close();
+                    _audioSource.Close();
                 }
             };
         }
@@ -70,7 +82,7 @@ namespace MoozicOrb.Radio
         {
             var offer = PeerConnection.createOffer();
 
-            // Hard-strip SCTP/DataChannels to prevent the 'rtcsctprecv' thread crash
+            // Aggressive SCTP/DataChannel stripping to prevent server crashes
             string[] lines = offer.sdp.Split('\n');
             var cleanSdp = new List<string>();
             bool inApplicationSection = false;
@@ -93,7 +105,6 @@ namespace MoozicOrb.Radio
 
         public void Dispose()
         {
-            // In v10, media sources use Close() instead of Dispose()
             _audioSource?.Close();
             PeerConnection?.Dispose();
         }
