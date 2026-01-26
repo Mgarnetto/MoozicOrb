@@ -10,7 +10,7 @@ namespace MoozicOrb.IO
 
         public User[] GetUsers()
         {
-            string query = "SELECT * FROM user;";
+            string query = "SELECT * FROM `user`";
             Query q = new Query();
             DataTable dt = q.Run(query);
 
@@ -22,7 +22,7 @@ namespace MoozicOrb.IO
                 users[it] = new User();
                 users[it].UserId = int.Parse(dr["user_id"].ToString());
                 users[it].FirstName = dr["first_name"].ToString();
-                users[it].MiddleName = dr["middle_name"].ToString();
+                //users[it].MiddleName = dr["middle_name"].ToString();
                 users[it].LastName = dr["last_name"].ToString();
                 it++;
             }

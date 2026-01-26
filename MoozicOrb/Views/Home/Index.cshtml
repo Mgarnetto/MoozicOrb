@@ -1,7 +1,16 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
+    MoozicOrb.Models.User[] userss = null;
 
-    MoozicOrb.Models.User[] users = new MoozicOrb.IO.UserQuery().GetUsers();
+    try
+    {
+        MoozicOrb.Models.User[] users = new MoozicOrb.IO.UserQuery().GetUsers();
+        userss = users;
+
+    }catch (Exception ex)
+    {
+        <p>@ex.ToString()</p>
+    }   
 }
 
 <div class="container py-4">
@@ -88,10 +97,18 @@
 
                     <select id="call-target-user" class="form-select mb-3">
                         <option value="">-- Select Target User --</option>
-                        @foreach (var user in users)
+                        @try
                         {
-                            <option value="@user.UserId">@user.FirstName (@user.UserId)</option>
+                           foreach (var user in userss)
+                            {
+                                <option value="@user.UserId">@user.FirstName (@user.UserId)</option>
+                            }
+                        }catch( Exception ex)
+                        {
+                            <option value="">Error loading users: @ex.Message</option>
                         }
+)
+                        
                     </select>
 
                     <div class="d-flex gap-2 flex-wrap">
