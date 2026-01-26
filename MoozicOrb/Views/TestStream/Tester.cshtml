@@ -1,0 +1,221 @@
+﻿@{
+    Layout = "";
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>WebRTC Audio Test (Client-Side Generation)</title>
+    <style>
+   body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        h1 { color: #333; }
+        #controls { margin: 20px 0; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #0056b3; }
+        #status { margin-top: 20px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+     #log { margin-top: 20px; padding: 15px; background: #000; color: #0f0; font-family: monospace; font-size: 12px; height: 300px; overflow-y: auto; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🎵 WebRTC Audio Test (Client Audio Generation)</h1>
+    <div id="controls">
+        <button id="joinBtn">1️⃣ Join & Start Handshake</button>
+        <button id="startAudioBtn" disabled>2️⃣ Generate Audio (440Hz Sine)</button>
+    <button id="stopAudioBtn" disabled>⏹️ Stop Audio</button>
+    </div>
+
+ <div id="status">
+        <strong>Status:</strong> <span id="statusText">Waiting...</span><br />
+        <strong>Audio Playing:</strong> <span id="audioStatus">No</span>
+    </div>
+
+    <div id="log"></div>
+
+    <script src="~/microsoft-signalr/signalr.js" asp-append-version="true"></script>
+    <script>
+ let pc = null;
+ let connection = null;
+        const streamId = "test-stream";
+  const logDiv = document.getElementById("log");
+        let audioContext = null;
+      let oscillator = null;
+        let gainNode = null;
+        let isAudioPlaying = false;
+
+ function log(msg) {
+            console.log(msg);
+const line = document.createElement("div");
+         line.textContent = "[" + new Date().toLocaleTimeString() + "] " + msg;
+  logDiv.appendChild(line);
+      logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus(text) {
+            document.getElementById("statusText").textContent = text;
+    }
+
+        function updateAudioStatus(playing) {
+    document.getElementById("audioStatus").textContent = playing ? "Yes ✅" : "No ❌";
+            isAudioPlaying = playing;
+        }
+
+        async function initConnection() {
+            if (connection) return;
+
+            log("🔧 Creating SignalR connection...");
+            connection = new signalR.HubConnectionBuilder()
+     .withUrl("/hubs/teststream")
+  .withAutomaticReconnect()
+          .build();
+
+  connection.on("RtcOffer", async (data) => {
+      log("📥 Received RtcOffer from server");
+           if (!pc) {
+    log("🔧 Creating RTCPeerConnection...");
+   pc = new RTCPeerConnection({
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+      });
+
+  pc.onicecandidate = (e) => {
+  if (e.candidate) {
+     log("🧊 ICE candidate generated");
+      connection.invoke("ReceiveIceCandidate", e.candidate.candidate).catch(console.error);
+           }
+    };
+     }
+
+        try {
+        log("📝 Setting remote description (offer)...");
+       await pc.setRemoteDescription({ type: "offer", sdp: data.sdp });
+      log("✅ Remote description set");
+
+         log("🔧 Creating answer...");
+              const answer = await pc.createAnswer();
+   log("✅ Answer created");
+
+      log("📝 Setting local description (answer)...");
+             await pc.setLocalDescription(answer);
+    log("✅ Local description set");
+
+     log("📤 Sending answer to server...");
+         await connection.invoke("ReceiveAnswer", answer.sdp);
+        log("✅ Answer sent to server");
+
+    updateStatus("Handshake complete! Now click 'Generate Audio'");
+     document.getElementById("startAudioBtn").disabled = false;
+           } catch (err) {
+     log("❌ Error during handshake: " + err.message);
+      updateStatus("Error: " + err.message);
+         }
+            });
+
+            connection.on("RtcIceCandidate", async (data) => {
+        if (pc && data.candidate) {
+      try {
+await pc.addIceCandidate(new RTCIceCandidate({ candidate: data.candidate }));
+     log("✅ ICE candidate added");
+    } catch (err) {
+           log("❌ ICE candidate error: " + err.message);
+             }
+   }
+    });
+
+        connection.on("Error", (data) => {
+     log("❌ Server error: " + data.message);
+      updateStatus("Server error: " + data.message);
+  });
+
+try {
+          log("🔌 Starting SignalR connection...");
+       await connection.start();
+         log("✅ SignalR connected");
+         updateStatus("SignalR connected. Click 'Join & Start Handshake'");
+            } catch (err) {
+     log("❌ Failed to start SignalR: " + err.message);
+     updateStatus("Connection failed: " + err.message);
+        }
+ }
+
+        function startAudio() {
+      if (isAudioPlaying) {
+         log("⚠️ Audio already playing");
+      return;
+        }
+
+      if (!audioContext) {
+             audioContext = new (window.AudioContext || window.webkitAudioContext)();
+           log("🎧 AudioContext created: " + audioContext.state);
+   }
+
+        if (audioContext.state === "suspended") {
+     audioContext.resume();
+      log("🎧 AudioContext resumed");
+   }
+
+         try {
+        oscillator = audioContext.createOscillator();
+ oscillator.type = "sine";
+       oscillator.frequency.value = 440;
+
+gainNode = audioContext.createGain();
+ gainNode.gain.value = 0.1;
+
+     oscillator.connect(gainNode);
+     gainNode.connect(audioContext.destination);
+
+   oscillator.start();
+  updateAudioStatus(true);
+            log("🔊 Audio started: 440Hz sine wave at 10% volume");
+     updateStatus("Audio playing! 🔊");
+
+            document.getElementById("startAudioBtn").disabled = true;
+ document.getElementById("stopAudioBtn").disabled = false;
+       } catch (err) {
+    log("❌ Error starting audio: " + err.message);
+ updateStatus("Audio error: " + err.message);
+ }
+        }
+
+        function stopAudio() {
+    if (!oscillator) return;
+
+            try {
+         oscillator.stop();
+      oscillator = null;
+           updateAudioStatus(false);
+       log("🛑 Audio stopped");
+           updateStatus("Audio stopped");
+
+           document.getElementById("startAudioBtn").disabled = false;
+   document.getElementById("stopAudioBtn").disabled = true;
+     } catch (err) {
+       log("❌ Error stopping audio: " + err.message);
+          }
+  }
+
+        document.getElementById("joinBtn").onclick = async () => {
+      try {
+      log("👆 Join button clicked");
+          await initConnection();
+            log("📨 Requesting offer from server...");
+         await connection.invoke("RequestOffer", streamId);
+            updateStatus("Handshake in progress...");
+           log("✅ RequestOffer sent");
+            } catch (err) {
+        log("❌ Error: " + err.message);
+          updateStatus("Error: " + err.message);
+     }
+   };
+
+        document.getElementById("startAudioBtn").onclick = startAudio;
+        document.getElementById("stopAudioBtn").onclick = stopAudio;
+
+        window.onload = () => {
+            log("📄 Page loaded");
+            initConnection().catch(console.error);
+   };
+    </script>
+</body>
+</html>
+

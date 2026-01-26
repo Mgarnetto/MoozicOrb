@@ -9,7 +9,10 @@
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Core" Version="1.2.0" />
+    <PackageReference Include="Microsoft.MixedReality.WebRTC" Version="2.0.2" />
     <PackageReference Include="MySql.Data" Version="9.5.0" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="SIPSorcery" Version="10.0.3" />
     <PackageReference Include="StackExchange.Redis" Version="2.10.1" />
   </ItemGroup>
 

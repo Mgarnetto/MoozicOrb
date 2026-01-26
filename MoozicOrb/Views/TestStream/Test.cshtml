@@ -1,0 +1,162 @@
+﻿@{
+    Layout = "";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebRTC Server Stream Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #1a1a1a;
+            color: white;
+            padding: 20px;
+        }
+
+        #log {
+            background: #000;
+            border: 1px solid #444;
+            height: 350px;
+            overflow-y: scroll;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #00ff00;
+            margin-top: 10px;
+        }
+
+        .error {
+            color: #ff5555;
+        }
+
+        .success {
+            color: #55ff55;
+        }
+
+        button {
+            padding: 12px 24px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+            button:disabled {
+                background: #444;
+            }
+
+        audio {
+            width: 100%;
+            margin-top: 15px;
+            border-radius: 4px;
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 Server Sine Wave Stream</h1>
+    <button id="joinBtn">🚀 Start Listening</button>
+    <div id="status" style="margin-top:10px;">Status: Idle</div>
+    <audio id="remoteAudio" autoplay controls></audio>
+
+    <div id="log"></div>
+
+    <script src="~/microsoft-signalr/signalr.js" asp-append-version="true"></script>
+    <script>
+        const logDiv = document.getElementById("log");
+        const statusDiv = document.getElementById("status");
+        const remoteAudio = document.getElementById("remoteAudio");
+
+        function logger(msg, type = 'info') {
+            const entry = document.createElement("div");
+            entry.className = type;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/hubs/teststream")
+            .withAutomaticReconnect()
+            .build();
+
+        let pc = new RTCPeerConnection({
+            iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+        });
+
+        pc.onconnectionstatechange = () => {
+            statusDiv.innerText = `Status: ${pc.connectionState}`;
+            logger(`WebRTC State Changed: ${pc.connectionState}`);
+        };
+
+        pc.onicecandidate = (e) => {
+            if (e.candidate) {
+                connection.invoke("ReceiveIceCandidate", e.candidate.candidate)
+                    .catch(err => logger("❌ Send ICE Error: " + err, "error"));
+            }
+        };
+
+        // INTEGRATED FIX: Handling streamless tracks and autoplay policy
+        pc.ontrack = (event) => {
+            logger("🔊 SUCCESS: Track received from server!", 'success');
+
+            // Log track details for debugging
+            const track = event.track;
+            logger(`📊 Track info: kind=${track.kind}, id=${track.id}`);
+
+            let stream = null;
+            if (event.streams && event.streams[0]) {
+                stream = event.streams[0];
+            } else {
+                logger("💡 Wrapping streamless track into new MediaStream...");
+                stream = new MediaStream([track]);
+            }
+
+            remoteAudio.srcObject = stream;
+
+            // Browsers need a user gesture (the button click) to allow this .play()
+            remoteAudio.play()
+                .then(() => logger("✅ Audio is playing", "success"))
+                .catch(err => logger("🔇 Audio block/error: " + err.message, "error"));
+        };
+
+        connection.on("RtcOffer", async (data) => {
+            try {
+                logger("📥 Received Offer from server");
+                await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: data.sdp }));
+
+                logger("📝 Creating Answer...");
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+
+                logger("📤 Sending Answer...");
+                await connection.invoke("ReceiveAnswer", answer.sdp);
+            } catch (err) {
+                logger("❌ Negotiation Error: " + err.message, "error");
+            }
+        });
+
+        connection.on("RtcIceCandidate", (data) => {
+            if (data.candidate) {
+                pc.addIceCandidate(new RTCIceCandidate({ candidate: data.candidate }))
+                    .catch(e => logger("❌ Add ICE Error: " + e.message, "error"));
+            }
+        });
+
+        document.getElementById("joinBtn").onclick = async () => {
+            try {
+                document.getElementById("joinBtn").disabled = true;
+                logger("🔌 Connecting to SignalR...");
+                await connection.start();
+                logger("✅ SignalR Connected. Requesting WebRTC Stream...");
+                await connection.invoke("RequestOffer");
+            } catch (err) {
+                logger("❌ Connection Failed: " + err.message, "error");
+                document.getElementById("joinBtn").disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>
