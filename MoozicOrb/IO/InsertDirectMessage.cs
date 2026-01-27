@@ -11,7 +11,6 @@ namespace MoozicOrb.IO
         public long Insert(int senderId, int receiverId, string messageText)
         {
             string queryString = @"
-                USE moozicorb;
                 INSERT INTO messages 
                     (sender_id, receiver_id, message_text, message_read, message_deleted, timestamp)
                 VALUES
