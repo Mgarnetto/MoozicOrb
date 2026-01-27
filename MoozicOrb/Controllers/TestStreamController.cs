@@ -4,12 +4,9 @@ namespace MoozicOrb.Controllers
 {
     public class TestStreamController : Controller
     {
-        [HttpGet("stream/test")]
-        public IActionResult Test()
+        public IActionResult Index()
         {
-            // Render the Razor view at Views/TestStream/Test.cshtml
-            return View();
+            return View("~/Views/TestStream/Test.cshtml");
         }
     }
 }
-

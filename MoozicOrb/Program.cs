@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.SignalR;
-using MoozicOrb.Services;
-using MoozicOrb.Services.Interfaces;
 using MoozicOrb.Api.Services;
 using MoozicOrb.Api.Services.Interfaces;
 using MoozicOrb.Hubs;
 using MoozicOrb.Infrastructure;
+using MoozicOrb.Services;
+using MoozicOrb.Services.Interfaces;
+using MoozicOrb.Services.Radio;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +26,12 @@ builder.Services.AddScoped<IDirectMessageApiService, DirectMessageApiService>();
 
 builder.Services.AddScoped<ILoginService, LoginService>();
 
+// 2. Register the Broadcaster (The Sink)
+// When you switch to WebRTC later, you only change THIS line.
+builder.Services.AddSingleton<IAudioBroadcaster, SignalRAudioBroadcaster>();
+
+// 3. Register the Radio Station (The DJ)
+builder.Services.AddHostedService<RadioStationService>();
 
 // SignalR services remain untouched
 

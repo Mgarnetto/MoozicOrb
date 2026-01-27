@@ -1,0 +1,37 @@
+﻿@{
+    Layout = "";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Diag</title>
+    <style>
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            padding: 50px;
+        }
+
+        .success {
+            color: #0f0;
+            font-weight: bold;
+        }
+
+        .fail {
+            color: #f00;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>🛰️ SharkASP Outgoing Connection Test</h2>
+    <hr>
+    @foreach (var line in ViewBag.DiagResults)
+    {
+        <p class="@(line.Contains("SUCCESS") ? "success" : line.Contains("❌") ? "fail" : "")">@line</p>
+    }
+    <hr>
+    <p style="color:#888">If this says TIMEOUT, SharkASP is blocking Port 443 to the Metered API IP.</p>
+</body>
+</html>

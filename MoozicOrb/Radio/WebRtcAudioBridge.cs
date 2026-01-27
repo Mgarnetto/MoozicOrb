@@ -16,20 +16,18 @@ namespace MoozicOrb.Radio
 
         public event Action<string> OnIceCandidateGenerated;
 
-        // FIXED: Added 'List<RTCIceServer> iceServers' parameter to match your Hub's call
         public WebRtcAudioBridge(List<RTCIceServer> iceServers)
         {
-            // Use the iceServers passed in from the Hub (Metered.ca + fallback)
+            // Simple config: use what we're given, allow all connection types
             var config = new RTCConfiguration
             {
-                iceServers = iceServers
+                iceServers = iceServers,
+                iceTransportPolicy = RTCIceTransportPolicy.all
             };
 
-            // Use named parameter to avoid constructor ambiguity
             PeerConnection = new RTCPeerConnection(configuration: config);
 
-            var audioEncoder = new AudioEncoder();
-            _audioSource = new AudioExtrasSource(audioEncoder, new AudioSourceOptions
+            _audioSource = new AudioExtrasSource(new AudioEncoder(), new AudioSourceOptions
             {
                 AudioSource = AudioSourcesEnum.SineWave
             });
@@ -43,22 +41,16 @@ namespace MoozicOrb.Radio
 
             PeerConnection.OnAudioFormatsNegotiated += (formats) => {
                 var format = formats.FirstOrDefault();
-                if (!format.IsEmpty())
-                {
-                    _audioSource.SetAudioSourceFormat(format);
-                }
+                if (!format.IsEmpty()) _audioSource.SetAudioSourceFormat(format);
             };
 
             PeerConnection.onicecandidate += (candidate) => {
                 if (candidate != null && !string.IsNullOrEmpty(candidate.candidate))
-                {
                     OnIceCandidateGenerated?.Invoke(candidate.candidate);
-                }
             };
 
             PeerConnection.onconnectionstatechange += async (state) => {
-                Console.WriteLine($"[WebRtc] Connection State: {state}");
-
+                Console.WriteLine($"[WebRtc] State: {state}");
                 if (state == RTCPeerConnectionState.connected && !_isStarted)
                 {
                     _isStarted = true;
@@ -74,23 +66,11 @@ namespace MoozicOrb.Radio
         public async Task<string> GetOfferSdp()
         {
             var offer = PeerConnection.createOffer();
-
+            // Basic SDP cleanup to remove SCTP (Data Channels) which can cause issues
             string[] lines = offer.sdp.Split('\n');
-            var cleanSdp = new List<string>();
-            bool inApplicationSection = false;
-
-            foreach (var line in lines)
-            {
-                if (line.StartsWith("m=application")) inApplicationSection = true;
-                if (line.StartsWith("m=audio") || line.StartsWith("m=video")) inApplicationSection = false;
-
-                if (!inApplicationSection && !line.Contains("sctp") && !line.Contains("SCTP"))
-                {
-                    cleanSdp.Add(line);
-                }
-            }
-
+            var cleanSdp = lines.Where(l => !l.Contains("sctp") && !l.Contains("SCTP")).ToList();
             offer.sdp = string.Join("\n", cleanSdp);
+
             await PeerConnection.setLocalDescription(offer);
             return offer.sdp;
         }

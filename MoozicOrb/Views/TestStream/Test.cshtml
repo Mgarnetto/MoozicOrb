@@ -1,195 +1,275 @@
 ﻿@{
-    Layout = "";
+    ViewData["Title"] = "MoozicOrb Hi-Fi";
+    Layout = null;
 }
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>WebRTC Server Stream Test</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MoozicOrb Hi-Fi</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
     <style>
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background: #1a1a1a;
-            color: white;
-            padding: 20px;
+            background-color: #121212;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
         }
 
-        #log {
-            background: #000;
-            border: 1px solid #444;
-            height: 350px;
-            overflow-y: scroll;
-            padding: 10px;
-            font-family: monospace;
-            font-size: 12px;
-            color: #00ff00;
+        .player {
+            background: #1e1e1e;
+            padding: 40px;
+            border-radius: 20px; /* Slightly softer corners */
+            text-align: center;
+            box-shadow: 0 0 60px rgba(0,0,0,0.7);
+            width: 320px;
+            position: relative;
+            border: 1px solid #333;
+        }
+
+        .status {
+            color: #888;
+            margin-bottom: 20px;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            font-weight: 600;
+            text-transform: uppercase;
+            transition: color 0.3s;
+        }
+
+        /* VISUALIZER STYLES */
+        #visualizer {
+            width: 100%;
+            height: 80px;
+            background: #181818;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: inset 0 0 10px #000;
+            border-bottom: 2px solid #333;
+        }
+
+        .btn {
+            background: #ff0055;
+            color: white;
+            border: none;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy transition */
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             margin-top: 10px;
         }
 
-        .error {
-            color: #ff5555;
-        }
-
-        .success {
-            color: #55ff55;
-        }
-
-        button {
-            padding: 12px 24px;
-            cursor: pointer;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-
-            button:disabled {
-                background: #444;
+            .btn:hover {
+                transform: scale(1.1);
+                box-shadow: 0 0 30px rgba(255, 0, 85, 0.6);
             }
 
-        audio {
-            width: 100%;
-            margin-top: 15px;
-            border-radius: 4px;
-            background: #333;
+        .active {
+            background: #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+        }
+
+            .active:hover {
+                box-shadow: 0 0 30px rgba(0, 255, 136, 0.6);
+            }
+
+        .badge {
+            background: #2a2a2a;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            color: #666;
+            margin-top: 25px;
+            display: inline-block;
+            font-weight: bold;
+            border: 1px solid #333;
         }
     </style>
 </head>
 <body>
-    <h1>🎵 Server Sine Wave Stream</h1>
-    <button id="joinBtn">🚀 Start Listening</button>
-    <div id="status" style="margin-top:10px;">Status: Idle</div>
-    <audio id="remoteAudio" autoplay controls></audio>
 
-    <div id="log"></div>
+    <div class="player">
+        <div class="status" id="status">Ready to Connect</div>
 
-    <script src="~/microsoft-signalr/signalr.js" asp-append-version="true"></script>
+        <canvas id="visualizer" width="300" height="100"></canvas>
+
+        <button class="btn" id="playBtn">▶</button>
+        <br />
+        <div class="badge">44.1kHz Stereo PCM</div>
+    </div>
+
     <script>
-        const logDiv = document.getElementById("log");
-        const statusDiv = document.getElementById("status");
-        const remoteAudio = document.getElementById("remoteAudio");
-        let pc = null;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        function logger(msg, type = 'info') {
-            const entry = document.createElement("div");
-            entry.className = type;
-            entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-            logDiv.appendChild(entry);
-            logDiv.scrollTop = logDiv.scrollHeight;
-        }
+        // --- VISUALIZER SETUP ---
+        const canvas = document.getElementById("visualizer");
+        const canvasCtx = canvas.getContext("2d");
+        const analyser = audioCtx.createAnalyser();
+
+        analyser.fftSize = 128;
+        analyser.smoothingTimeConstant = 0.8;
+        analyser.connect(audioCtx.destination);
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        let animationId;
+
+        // CONFIG: Hi-Fi Settings
+        const SAMPLE_RATE = 44100;
+        const CHANNELS = 2;
+        const BUFFER_DELAY = 0.5;
+
+        let nextStartTime = 0;
+        let isPlaying = false;
+        let isBuffering = true;
+
+        // --- NEW: Track active sources so we can kill them instantly ---
+        let activeSources = [];
 
         const connection = new signalR.HubConnectionBuilder()
             .withUrl("/hubs/teststream")
             .withAutomaticReconnect()
             .build();
 
-        function createPeerConnection(iceServers) {
-            logger("🛠️ Initializing PeerConnection with TURN credentials...");
+        function decodePcm(buffer) {
+            const numSamples = buffer.length / 2 / CHANNELS;
+            const leftChannel = new Float32Array(numSamples);
+            const rightChannel = new Float32Array(numSamples);
+            let dataView = new DataView(buffer.buffer);
 
-            // SANITIZATION: Ensure every object has the 'urls' property and valid credentials
-            const sanitizedServers = (iceServers || [])
-                .map(server => {
-                    const s = {
-                        urls: server.urls || server.Urls,
-                        username: server.username || server.Username,
-                        credential: server.credential || server.Credential
-                    };
-
-                    // Force credentialType to "password" if it's a TURN server
-                    if (s.username && s.credential) {
-                        s.credentialType = "password";
-                    }
-                    return s;
-                })
-                .filter(server => server.urls); // Only keep if it actually has a URL
-
-            const config = {
-                iceServers: sanitizedServers.length > 0
-                    ? sanitizedServers
-                    : [{ urls: "stun:stun.l.google.com:19302" }]
-            };
-
-            try {
-                // Re-creating the connection instance
-                pc = new RTCPeerConnection(config);
-
-                pc.onconnectionstatechange = () => {
-                    statusDiv.innerText = `Status: ${pc.connectionState}`;
-                    logger(`WebRTC State Changed: ${pc.connectionState}`);
-                    if (pc.connectionState === "failed") {
-                        logger("❌ Connection failed. Check if TURN is working or if UDP is blocked.", "error");
-                    }
-                };
-
-                pc.onicecandidate = (e) => {
-                    if (e.candidate) {
-                        connection.invoke("ReceiveIceCandidate", e.candidate.candidate)
-                            .catch(err => logger("❌ Send ICE Error: " + err, "error"));
-                    }
-                };
-
-                pc.ontrack = (event) => {
-                    logger("🔊 SUCCESS: Track received from server!", 'success');
-                    const track = event.track;
-                    let stream = (event.streams && event.streams[0])
-                                 ? event.streams[0]
-                                 : new MediaStream([track]);
-
-                    remoteAudio.srcObject = stream;
-                    remoteAudio.play()
-                        .then(() => logger("✅ Audio is playing", "success"))
-                        .catch(err => logger("🔇 Audio play error: " + err.message, "error"));
-                };
-            } catch (err) {
-                logger("❌ PC Constructor Error: " + err.message, "error");
-                pc = null; // Ensure pc is null if creation fails
+            for (let i = 0; i < numSamples; i++) {
+                let offset = i * 2 * CHANNELS;
+                let s1 = dataView.getInt16(offset, true);
+                leftChannel[i] = s1 / 32768;
+                let s2 = dataView.getInt16(offset + 2, true);
+                rightChannel[i] = s2 / 32768;
             }
+            return [leftChannel, rightChannel];
         }
 
-        connection.on("RtcOffer", async (data) => {
-            try {
-                logger("📥 Received Offer and ICE Servers from server");
+        function drawVisualizer() {
+            animationId = requestAnimationFrame(drawVisualizer);
+            analyser.getByteFrequencyData(dataArray);
 
-                // 1. Initialize PC
-                createPeerConnection(data.iceServers);
+            canvasCtx.fillStyle = 'rgba(24, 24, 24, 1)';
+            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
 
-                if (!pc) {
-                    throw new Error("PeerConnection could not be initialized.");
+            let gradient = canvasCtx.createLinearGradient(0, canvas.height, 0, 0);
+            gradient.addColorStop(0, '#00ff88');
+            gradient.addColorStop(1, '#ff0055');
+
+            const barWidth = (canvas.width / bufferLength) * 2.5;
+            let barHeight;
+            let x = 0;
+
+            for (let i = 0; i < bufferLength; i++) {
+                barHeight = dataArray[i] / 2.5;
+                canvasCtx.shadowBlur = 15;
+                canvasCtx.shadowColor = "rgba(0, 255, 136, 0.5)";
+                canvasCtx.fillStyle = gradient;
+                canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+                x += barWidth + 2;
+            }
+        };
+
+        connection.on("ReceiveAudio", (base64Data) => {
+            if (!isPlaying) return;
+
+            const binaryString = window.atob(base64Data);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
+
+            const [leftData, rightData] = decodePcm(bytes);
+
+            const audioBuffer = audioCtx.createBuffer(CHANNELS, leftData.length, SAMPLE_RATE);
+            audioBuffer.copyToChannel(leftData, 0);
+            audioBuffer.copyToChannel(rightData, 1);
+
+            const source = audioCtx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(analyser);
+
+            // --- NEW: Add to tracking array ---
+            activeSources.push(source);
+
+            // Cleanup when this specific chunk finishes playing naturally
+            source.onended = () => {
+                activeSources = activeSources.filter(s => s !== source);
+            };
+
+            const currentTime = audioCtx.currentTime;
+            if (isBuffering) {
+                nextStartTime = currentTime + BUFFER_DELAY;
+                isBuffering = false;
+            } else if (nextStartTime < currentTime) {
+                nextStartTime = currentTime + 0.05;
+            }
+
+            source.start(nextStartTime);
+            nextStartTime += audioBuffer.duration;
+        });
+
+        const playBtn = document.getElementById("playBtn");
+        const statusEl = document.getElementById("status");
+
+        playBtn.onclick = async () => {
+            if (!isPlaying) {
+                try {
+                    await audioCtx.resume();
+                    if (connection.state === signalR.HubConnectionState.Disconnected) {
+                        statusEl.innerText = "Connecting...";
+                        await connection.start();
+                    }
+                    isPlaying = true;
+                    isBuffering = true;
+                    playBtn.innerHTML = "■";
+                    playBtn.classList.add("active");
+                    statusEl.innerText = "BROADCASTING LIVE";
+                    statusEl.style.color = "#00ff88";
+
+                    drawVisualizer();
+
+                } catch (err) {
+                    statusEl.innerText = "Error";
+                    console.error(err);
                 }
+            } else {
+                // --- STOP CLICKED ---
+                isPlaying = false;
 
-                // 2. Set Remote Description
-                await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: data.sdp }));
+                // 1. Stop all queued audio immediately
+                activeSources.forEach(source => {
+                    try { source.stop(); } catch(e) { /* ignore already stopped */ }
+                });
 
-                // 3. Create and Set Local Answer
-                logger("📝 Creating Answer...");
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
+                // 2. Clear the array and reset times
+                activeSources = [];
+                nextStartTime = 0;
 
-                // 4. Send Answer back to Hub
-                logger("📤 Sending Answer...");
-                await connection.invoke("ReceiveAnswer", answer.sdp);
-            } catch (err) {
-                logger("❌ Negotiation Error: " + err.message, "error");
-            }
-        });
+                // 3. Close connection
+                await connection.stop();
 
-        connection.on("RtcIceCandidate", (data) => {
-            if (data.candidate && pc) {
-                pc.addIceCandidate(new RTCIceCandidate({ candidate: data.candidate }))
-                    .catch(e => logger("❌ Add ICE Error: " + e.message, "error"));
-            }
-        });
+                // 4. UI Reset
+                playBtn.innerHTML = "▶";
+                playBtn.classList.remove("active");
+                statusEl.innerText = "Disconnected";
+                statusEl.style.color = "#888";
 
-        document.getElementById("joinBtn").onclick = async () => {
-            try {
-                document.getElementById("joinBtn").disabled = true;
-                logger("🔌 Connecting to SignalR...");
-                await connection.start();
-                logger("✅ SignalR Connected. Requesting WebRTC Stream...");
-                await connection.invoke("RequestOffer");
-            } catch (err) {
-                logger("❌ Connection Failed: " + err.message, "error");
-                document.getElementById("joinBtn").disabled = false;
+                cancelAnimationFrame(animationId);
+                canvasCtx.clearRect(0,0, canvas.width, canvas.height);
             }
         };
     </script>
