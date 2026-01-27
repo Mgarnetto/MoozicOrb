@@ -11,9 +11,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
     <style>
         body {
-            background-color: #121212;
+            background-color: #000; /* Pure black for performance */
             color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: monospace; /* Monospace is faster to render/load */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -23,110 +23,91 @@
         }
 
         .player {
-            background: #1e1e1e;
-            padding: 40px;
-            border-radius: 20px; /* Slightly softer corners */
-            text-align: center;
-            box-shadow: 0 0 60px rgba(0,0,0,0.7);
-            width: 320px;
-            position: relative;
+            background: #111;
+            padding: 30px;
             border: 1px solid #333;
+            text-align: center;
+            width: 300px;
         }
 
         .status {
-            color: #888;
+            color: #666;
             margin-bottom: 20px;
-            font-size: 0.75rem;
-            letter-spacing: 2px;
-            font-weight: 600;
+            font-size: 0.8rem;
             text-transform: uppercase;
-            transition: color 0.3s;
         }
 
-        /* VISUALIZER STYLES */
+        /* HARDWARE ACCELERATED CANVAS */
         #visualizer {
             width: 100%;
             height: 80px;
-            background: #181818;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            box-shadow: inset 0 0 10px #000;
-            border-bottom: 2px solid #333;
+            background: #000;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #333;
+            /* Force GPU acceleration */
+            transform: translateZ(0);
         }
 
         .btn {
             background: #ff0055;
             color: white;
             border: none;
-            width: 80px;
-            height: 80px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             font-size: 1.5rem;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy transition */
-            box-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 10px;
         }
-
-            .btn:hover {
-                transform: scale(1.1);
-                box-shadow: 0 0 30px rgba(255, 0, 85, 0.6);
-            }
 
         .active {
             background: #00ff88;
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+            color: black;
         }
 
-            .active:hover {
-                box-shadow: 0 0 30px rgba(0, 255, 136, 0.6);
-            }
-
         .badge {
-            background: #2a2a2a;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.65rem;
-            color: #666;
-            margin-top: 25px;
+            background: #222;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            color: #555;
+            margin-top: 15px;
             display: inline-block;
-            font-weight: bold;
-            border: 1px solid #333;
         }
     </style>
 </head>
 <body>
 
     <div class="player">
-        <div class="status" id="status">Ready to Connect</div>
+        <div class="status" id="status">Ready</div>
 
-        <canvas id="visualizer" width="300" height="100"></canvas>
+        <canvas id="visualizer" width="300" height="80"></canvas>
 
         <button class="btn" id="playBtn">▶</button>
         <br />
-        <div class="badge">44.1kHz Stereo PCM</div>
+        <div class="badge">PCM 44.1kHz</div>
     </div>
 
     <script>
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        // --- VISUALIZER SETUP ---
+        // --- ULTRA LITE VISUALIZER ---
         const canvas = document.getElementById("visualizer");
-        const canvasCtx = canvas.getContext("2d");
+        // Alpha: false tells browser "This canvas is never transparent", saving compositing time
+        const canvasCtx = canvas.getContext("2d", { alpha: false });
         const analyser = audioCtx.createAnalyser();
 
-        analyser.fftSize = 128;
-        analyser.smoothingTimeConstant = 0.8;
+        // FAST SETTINGS
+        analyser.fftSize = 64; // 32 Bars (Lowest acceptable setting)
+        analyser.smoothingTimeConstant = 0.3; // Very twitchy/reactive (0 = raw data, 1 = slow)
         analyser.connect(audioCtx.destination);
 
         const bufferLength = analyser.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
         let animationId;
 
-        // CONFIG: Hi-Fi Settings
+        // Pre-calculate width to avoid division in the loop
+        const barWidth = (canvas.width / bufferLength);
+
+        // CONFIG
         const SAMPLE_RATE = 44100;
         const CHANNELS = 2;
         const BUFFER_DELAY = 0.5;
@@ -134,8 +115,6 @@
         let nextStartTime = 0;
         let isPlaying = false;
         let isBuffering = true;
-
-        // --- NEW: Track active sources so we can kill them instantly ---
         let activeSources = [];
 
         const connection = new signalR.HubConnectionBuilder()
@@ -159,29 +138,36 @@
             return [leftChannel, rightChannel];
         }
 
+        // --- THE FASTEST LOOP ---
         function drawVisualizer() {
             animationId = requestAnimationFrame(drawVisualizer);
             analyser.getByteFrequencyData(dataArray);
 
-            canvasCtx.fillStyle = 'rgba(24, 24, 24, 1)';
+            // 1. Clear Screen (Solid Black)
+            canvasCtx.fillStyle = '#000000';
             canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
 
-            let gradient = canvasCtx.createLinearGradient(0, canvas.height, 0, 0);
-            gradient.addColorStop(0, '#00ff88');
-            gradient.addColorStop(1, '#ff0055');
+            // 2. Set Color ONCE (Neon Green)
+            canvasCtx.fillStyle = '#00ff88';
 
-            const barWidth = (canvas.width / bufferLength) * 2.5;
-            let barHeight;
+            // 3. Batch Draw (Single Path)
+            // This is the fastest way to draw multiple shapes in JS
+            canvasCtx.beginPath();
+
             let x = 0;
-
             for (let i = 0; i < bufferLength; i++) {
-                barHeight = dataArray[i] / 2.5;
-                canvasCtx.shadowBlur = 15;
-                canvasCtx.shadowColor = "rgba(0, 255, 136, 0.5)";
-                canvasCtx.fillStyle = gradient;
-                canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-                x += barWidth + 2;
+                // Simple scaling
+                const barHeight = dataArray[i] / 3;
+
+                if (barHeight > 0) {
+                    // Add rect to the path
+                    canvasCtx.rect(x, canvas.height - barHeight, barWidth - 1, barHeight);
+                }
+                x += barWidth;
             }
+
+            // 4. Paint the path to the GPU in one go
+            canvasCtx.fill();
         };
 
         connection.on("ReceiveAudio", (base64Data) => {
@@ -201,11 +187,8 @@
             const source = audioCtx.createBufferSource();
             source.buffer = audioBuffer;
             source.connect(analyser);
-
-            // --- NEW: Add to tracking array ---
             activeSources.push(source);
 
-            // Cleanup when this specific chunk finishes playing naturally
             source.onended = () => {
                 activeSources = activeSources.filter(s => s !== source);
             };
@@ -237,7 +220,7 @@
                     isBuffering = true;
                     playBtn.innerHTML = "■";
                     playBtn.classList.add("active");
-                    statusEl.innerText = "BROADCASTING LIVE";
+                    statusEl.innerText = "ULTRA LITE";
                     statusEl.style.color = "#00ff88";
 
                     drawVisualizer();
@@ -247,26 +230,21 @@
                     console.error(err);
                 }
             } else {
-                // --- STOP CLICKED ---
                 isPlaying = false;
 
-                // 1. Stop all queued audio immediately
+                // Stop Everything
                 activeSources.forEach(source => {
-                    try { source.stop(); } catch(e) { /* ignore already stopped */ }
+                    try { source.stop(); } catch(e) {}
                 });
-
-                // 2. Clear the array and reset times
                 activeSources = [];
                 nextStartTime = 0;
 
-                // 3. Close connection
                 await connection.stop();
 
-                // 4. UI Reset
                 playBtn.innerHTML = "▶";
                 playBtn.classList.remove("active");
                 statusEl.innerText = "Disconnected";
-                statusEl.style.color = "#888";
+                statusEl.style.color = "#666";
 
                 cancelAnimationFrame(animationId);
                 canvasCtx.clearRect(0,0, canvas.width, canvas.height);
