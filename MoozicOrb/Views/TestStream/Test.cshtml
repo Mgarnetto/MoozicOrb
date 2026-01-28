@@ -1,255 +1,116 @@
 ﻿@{
-    ViewData["Title"] = "MoozicOrb Hi-Fi";
-    Layout = null;
+    ViewData["Title"] = "Home";
+    Layout = "_TestLayout";
 }
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MoozicOrb Hi-Fi</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
-    <style>
-        body {
-            background-color: #000; /* Pure black for performance */
-            color: #fff;
-            font-family: monospace; /* Monospace is faster to render/load */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
 
-        .player {
-            background: #111;
-            padding: 30px;
-            border: 1px solid #333;
-            text-align: center;
-            width: 300px;
-        }
+<header class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <div class="hero-tag">ARTIST OF THE WEEK</div>
+        <h1 class="hero-title">MEET<br>MICHAEL<br>KAY</h1>
+        <a href="#" class="btn-hero">READ MORE</a>
+    </div>
+</header>
 
-        .status {
-            color: #666;
-            margin-bottom: 20px;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-        }
+<section class="section">
+    <h2 class="section-heading">TOP ARTIST</h2>
+    <div class="scroller">
+        <div class="scroller-track">
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/111/ff0055?text=DJ+Thunder')"></div>
+                <div class="card-info"><h4>DJ Thunder</h4><p>New EDM Album</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/111/00AEEF?text=Soul+Vibes')"></div>
+                <div class="card-info"><h4>Soul Vibes</h4><p>Live Tour 2026</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/111/ffff00?text=Neon+Pulse')"></div>
+                <div class="card-info"><h4>Neon Pulse</h4><p>Electro-Pop Sensation</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/111/00ff88?text=The+Echoes')"></div>
+                <div class="card-info"><h4>The Echoes</h4><p>New Indie Rock Single</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/111/aa66ff?text=R+Breeze')"></div>
+                <div class="card-info"><h4>R Breeze</h4><p>R&B Chart Topper</p></div>
+            </div>
+        </div>
+    </div>
+</section>
 
-        /* HARDWARE ACCELERATED CANVAS */
-        #visualizer {
-            width: 100%;
-            height: 80px;
-            background: #000;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #333;
-            /* Force GPU acceleration */
-            transform: translateZ(0);
-        }
+<section class="section">
+    <h2 class="section-heading">BY MAP OR GENRE</h2>
 
-        .btn {
-            background: #ff0055;
-            color: white;
-            border: none;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .active {
-            background: #00ff88;
-            color: black;
-        }
-
-        .badge {
-            background: #222;
-            padding: 4px 8px;
-            font-size: 0.7rem;
-            color: #555;
-            margin-top: 15px;
-            display: inline-block;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="player">
-        <div class="status" id="status">Ready</div>
-
-        <canvas id="visualizer" width="300" height="80"></canvas>
-
-        <button class="btn" id="playBtn">▶</button>
-        <br />
-        <div class="badge">PCM 44.1kHz</div>
+    <div class="genre-container">
+        <input type="text" class="genre-search" placeholder="Search genres...">
+        <div class="genre-pills scroller-thin">
+            <span class="pill">Acid-House</span><span class="pill">Afro-Beat</span><span class="pill">Alternative</span>
+            <span class="pill">Bass</span><span class="pill">Blues</span><span class="pill">Country</span>
+            <span class="pill">Dance</span><span class="pill">Dubstep</span><span class="pill">EDM</span>
+            <span class="pill">Folk</span><span class="pill">Hip-Hop</span><span class="pill">House</span>
+            <span class="pill">Indie</span><span class="pill">Jazz</span><span class="pill">Metal</span>
+            <span class="pill">Pop</span><span class="pill">R&B</span><span class="pill">Rap</span>
+            <span class="pill">Rock</span><span class="pill">Techno</span><span class="pill">Trance</span>
+        </div>
     </div>
 
-    <script>
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    <div class="globe-box">
+        <div id="chartdiv"></div>
+    </div>
+</section>
 
-        // --- ULTRA LITE VISUALIZER ---
-        const canvas = document.getElementById("visualizer");
-        // Alpha: false tells browser "This canvas is never transparent", saving compositing time
-        const canvasCtx = canvas.getContext("2d", { alpha: false });
-        const analyser = audioCtx.createAnalyser();
+<section class="section">
+    <h2 class="section-heading">TOP PRODUCERS</h2>
+    <div class="scroller">
+        <div class="scroller-track">
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/222/fff?text=Metro')"></div>
+                <div class="card-info"><h4>Metro Beats</h4><p>Platinum Status</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/222/fff?text=Wave')"></div>
+                <div class="card-info"><h4>Soundwave</h4><p>Beat Maker</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/222/fff?text=Freq')"></div>
+                <div class="card-info"><h4>Frequency</h4><p>Mastering</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/222/fff?text=Analog')"></div>
+                <div class="card-info"><h4>Analog</h4><p>Synth Specialist</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/222/fff?text=Dr+Drum')"></div>
+                <div class="card-info"><h4>Dr. Drum</h4><p>Percussion King</p></div>
+            </div>
+        </div>
+    </div>
+</section>
 
-        // FAST SETTINGS
-        analyser.fftSize = 64; // 32 Bars (Lowest acceptable setting)
-        analyser.smoothingTimeConstant = 0.3; // Very twitchy/reactive (0 = raw data, 1 = slow)
-        analyser.connect(audioCtx.destination);
-
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        let animationId;
-
-        // Pre-calculate width to avoid division in the loop
-        const barWidth = (canvas.width / bufferLength);
-
-        // CONFIG
-        const SAMPLE_RATE = 44100;
-        const CHANNELS = 2;
-        const BUFFER_DELAY = 0.5;
-
-        let nextStartTime = 0;
-        let isPlaying = false;
-        let isBuffering = true;
-        let activeSources = [];
-
-        const connection = new signalR.HubConnectionBuilder()
-            .withUrl("/hubs/teststream")
-            .withAutomaticReconnect()
-            .build();
-
-        function decodePcm(buffer) {
-            const numSamples = buffer.length / 2 / CHANNELS;
-            const leftChannel = new Float32Array(numSamples);
-            const rightChannel = new Float32Array(numSamples);
-            let dataView = new DataView(buffer.buffer);
-
-            for (let i = 0; i < numSamples; i++) {
-                let offset = i * 2 * CHANNELS;
-                let s1 = dataView.getInt16(offset, true);
-                leftChannel[i] = s1 / 32768;
-                let s2 = dataView.getInt16(offset + 2, true);
-                rightChannel[i] = s2 / 32768;
-            }
-            return [leftChannel, rightChannel];
-        }
-
-        // --- THE FASTEST LOOP ---
-        function drawVisualizer() {
-            animationId = requestAnimationFrame(drawVisualizer);
-            analyser.getByteFrequencyData(dataArray);
-
-            // 1. Clear Screen (Solid Black)
-            canvasCtx.fillStyle = '#000000';
-            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // 2. Set Color ONCE (Neon Green)
-            canvasCtx.fillStyle = '#00ff88';
-
-            // 3. Batch Draw (Single Path)
-            // This is the fastest way to draw multiple shapes in JS
-            canvasCtx.beginPath();
-
-            let x = 0;
-            for (let i = 0; i < bufferLength; i++) {
-                // Simple scaling
-                const barHeight = dataArray[i] / 3;
-
-                if (barHeight > 0) {
-                    // Add rect to the path
-                    canvasCtx.rect(x, canvas.height - barHeight, barWidth - 1, barHeight);
-                }
-                x += barWidth;
-            }
-
-            // 4. Paint the path to the GPU in one go
-            canvasCtx.fill();
-        };
-
-        connection.on("ReceiveAudio", (base64Data) => {
-            if (!isPlaying) return;
-
-            const binaryString = window.atob(base64Data);
-            const len = binaryString.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) { bytes[i] = binaryString.charCodeAt(i); }
-
-            const [leftData, rightData] = decodePcm(bytes);
-
-            const audioBuffer = audioCtx.createBuffer(CHANNELS, leftData.length, SAMPLE_RATE);
-            audioBuffer.copyToChannel(leftData, 0);
-            audioBuffer.copyToChannel(rightData, 1);
-
-            const source = audioCtx.createBufferSource();
-            source.buffer = audioBuffer;
-            source.connect(analyser);
-            activeSources.push(source);
-
-            source.onended = () => {
-                activeSources = activeSources.filter(s => s !== source);
-            };
-
-            const currentTime = audioCtx.currentTime;
-            if (isBuffering) {
-                nextStartTime = currentTime + BUFFER_DELAY;
-                isBuffering = false;
-            } else if (nextStartTime < currentTime) {
-                nextStartTime = currentTime + 0.05;
-            }
-
-            source.start(nextStartTime);
-            nextStartTime += audioBuffer.duration;
-        });
-
-        const playBtn = document.getElementById("playBtn");
-        const statusEl = document.getElementById("status");
-
-        playBtn.onclick = async () => {
-            if (!isPlaying) {
-                try {
-                    await audioCtx.resume();
-                    if (connection.state === signalR.HubConnectionState.Disconnected) {
-                        statusEl.innerText = "Connecting...";
-                        await connection.start();
-                    }
-                    isPlaying = true;
-                    isBuffering = true;
-                    playBtn.innerHTML = "■";
-                    playBtn.classList.add("active");
-                    statusEl.innerText = "ULTRA LITE";
-                    statusEl.style.color = "#00ff88";
-
-                    drawVisualizer();
-
-                } catch (err) {
-                    statusEl.innerText = "Error";
-                    console.error(err);
-                }
-            } else {
-                isPlaying = false;
-
-                // Stop Everything
-                activeSources.forEach(source => {
-                    try { source.stop(); } catch(e) {}
-                });
-                activeSources = [];
-                nextStartTime = 0;
-
-                await connection.stop();
-
-                playBtn.innerHTML = "▶";
-                playBtn.classList.remove("active");
-                statusEl.innerText = "Disconnected";
-                statusEl.style.color = "#666";
-
-                cancelAnimationFrame(animationId);
-                canvasCtx.clearRect(0,0, canvas.width, canvas.height);
-            }
-        };
-    </script>
-</body>
-</html>
+<section class="section">
+    <h2 class="section-heading">EVENTS CALENDAR</h2>
+    <div class="calendar-layout">
+        <div class="calendar-box">
+            <div class="cal-header">
+                <button class="cal-nav prev-month">&lt;</button>
+                <span class="cal-month-label">January 2026</span>
+                <button class="cal-nav next-month">&gt;</button>
+            </div>
+            <div class="cal-weekdays">
+                <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+            </div>
+            <div class="cal-days"></div>
+        </div>
+        <div class="event-info-box">
+            <div class="selected-date-big">
+                <span class="sel-weekday">Wednesday</span>
+                <span class="sel-full-date">Jan 15, 2026</span>
+            </div>
+            <div class="events-list-container"></div>
+            <button class="btn-add-event">ADD EVENT +</button>
+        </div>
+    </div>
+</section>
