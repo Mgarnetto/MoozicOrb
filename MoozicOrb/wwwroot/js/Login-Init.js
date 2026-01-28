@@ -1,38 +1,74 @@
 ﻿document.addEventListener("DOMContentLoaded", () => {
-    const loginBtn = document.getElementById("login-button");
-    const logoutBtn = document.getElementById("logout-button");
-    const statusEl = document.getElementById("login-status");
+    const loginBtn = document.getElementById("loginSubmitBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const statusEl = document.getElementById("loginStatus");
 
-    loginBtn.addEventListener("click", async () => {
-        const username = document.getElementById("login-username").value;
-        const password = document.getElementById("login-password").value;
+    // LOGIN LOGIC
+    if (loginBtn) {
+        loginBtn.addEventListener("click", async () => {
+            const usernameInput = document.getElementById("loginUser");
+            const passwordInput = document.getElementById("loginPass");
 
-        try {
-            const data = await LoginService.loginAsync(username, password);
+            const username = usernameInput.value;
+            const password = passwordInput.value;
 
-            AuthState.setLoggedIn(data.userId, data.sessionId);
-            await AuthState.bootstrap();
+            try {
+                // 1. Perform the Login
+                const data = await LoginService.loginAsync(username, password);
 
-            statusEl.style.color = "green";
-            statusEl.innerText = `Logged in as user ${data.userId}`;
-        } catch (err) {
-            statusEl.style.color = "red";
-            statusEl.innerText = err.message;
-        }
-    });
+                // 2. Update the App State (Show UI, Load Chats)
+                AuthState.setLoggedIn(data.userId, data.sessionId);
 
-    logoutBtn.addEventListener("click", async () => {
-        try {
-            await LoginService.logout(AuthState.sessionId);
-            AuthState.setLoggedOut();
+                // 3. Save Session so it survives a refresh (See Step 2)
+                localStorage.setItem("moozic_session", JSON.stringify(data));
 
-            statusEl.style.color = "black";
-            statusEl.innerText = "Logged out";
-        } catch (err) {
-            statusEl.style.color = "red";
-            statusEl.innerText = err.message;
-        }
-    });
+                // 4. Bootstrap (Load data)
+                await AuthState.bootstrap();
+
+                if (statusEl) {
+                    statusEl.style.color = "green";
+                    statusEl.innerText = `Logged in!`;
+                }
+
+                // ❌ DELETED: location.reload();  <-- THIS WAS THE PROBLEM
+
+                // Optional: Close the dropdown if you have code for it
+                // document.getElementById("loginDropdown").classList.remove("active");
+
+            } catch (err) {
+                if (statusEl) {
+                    statusEl.style.color = "red";
+                    statusEl.innerText = err.message;
+                }
+            }
+        });
+    }
+
+    // LOGOUT LOGIC
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", async () => {
+            try {
+                if (AuthState.sessionId) {
+                    await LoginService.logout(AuthState.sessionId);
+                }
+
+                // Clear storage and state
+                localStorage.removeItem("moozic_session");
+                AuthState.setLoggedOut();
+
+                if (statusEl) {
+                    statusEl.style.color = "black";
+                    statusEl.innerText = "Logged out";
+                }
+
+                // Reload is okay on logout to clear sensitive data from memory
+                location.reload();
+
+            } catch (err) {
+                console.error("Logout failed", err);
+            }
+        });
+    }
 });
 
 

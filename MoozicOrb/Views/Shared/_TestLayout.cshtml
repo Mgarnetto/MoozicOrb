@@ -8,9 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
@@ -19,8 +17,7 @@
     <script src="https://cdn.amcharts.com/lib/5/geodata/worldLow.js"></script>
     <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
 </head>
-<body>
-
+<body class="auth-off">
     <nav class="navbar">
         <div class="nav-left">
             <button class="navbar-toggler" id="sidebarToggle">
@@ -33,12 +30,62 @@
             </a>
         </div>
         <div class="nav-right">
-            <a href="#" class="btn-login">LOGIN</a>
+            <div id="auth-guest">
+                <button class="btn-login" id="loginToggleBtn">LOGIN</button>
+            </div>
+            <div id="auth-user" style="display:none;">
+                <button class="btn-login" id="logoutBtn">LOGOUT</button>
+            </div>
+
+            <div class="login-dropdown" id="loginDropdown">
+                <div class="form-wrapper">
+                    <div class="slide-controls">
+                        <input type="radio" name="slider" id="loginRadio" checked>
+                        <input type="radio" name="slider" id="signupRadio">
+                        <label for="loginRadio" class="slide login">Login</label>
+                        <label for="signupRadio" class="slide signup">Signup</label>
+                        <div class="slider-tab"></div>
+                    </div>
+
+                    <div class="form-inner">
+                        <form id="loginForm" onsubmit="return false;">
+                            <div class="field">
+                                <input type="text" id="loginUser" placeholder="Username" required>
+                            </div>
+                            <div class="field">
+                                <input type="password" id="loginPass" placeholder="Password" required>
+                            </div>
+                            <div class="pass-link"><a href="#">Forgot password?</a></div>
+                            <div class="field btn">
+                                <div class="btn-layer"></div>
+                                <input type="submit" value="Login" id="loginSubmitBtn">
+                            </div>
+                            <div class="signup-link">Not a member? <a href="#" id="switchToSignup">Signup now</a></div>
+                            <div id="loginStatus" class="status-msg"></div>
+                        </form>
+
+                        <form id="signupForm" onsubmit="return false;">
+                            <div class="field"><input type="text" placeholder="Full Name" required></div>
+                            <div class="field"><input type="email" placeholder="Email Address" required></div>
+                            <div class="field"><input type="password" placeholder="Password" required></div>
+                            <div class="field"><input type="password" placeholder="Confirm Password" required></div>
+                            <div class="age-gate">
+                                <input type="checkbox" id="ageCheck" required>
+                                <label for="ageCheck">I am 18 years or older</label>
+                            </div>
+                            <div class="field btn">
+                                <div class="btn-layer"></div>
+                                <input type="submit" value="Signup">
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </nav>
 
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-profile">
+        <div class="sidebar-profile auth-required">
             <div class="profile-img"></div>
             <div class="profile-stats">
                 <span><strong>1.2k</strong> Followers</span>
@@ -56,8 +103,12 @@
         </div>
 
         <ul class="sidebar-nav">
-            <li><a href="/" class="nav-link active" data-target="home"><i class="fa fa-home"></i> Home</a></li>
-            <li><a href="#" class="nav-link" id="messages-trigger"><i class="fa fa-envelope"></i> Messages</a></li>
+            <li><a href="/" class="nav-link active"><i class="fa fa-home"></i> Home</a></li>
+            <li>
+                <a href="#" class="nav-link auth-trigger" id="messages-trigger">
+                    <i class="fa fa-envelope"></i> Messages
+                </a>
+            </li>
             <li><a href="#"><i class="fa fa-music"></i> Discover</a></li>
             <li><a href="#"><i class="fa fa-list"></i> Playlist</a></li>
             <li><a href="#"><i class="fa fa-radio"></i> RadioOrb</a></li>
@@ -73,7 +124,6 @@
 
     <div class="chat-overlay" id="chatOverlay">
         <div class="chat-app-container">
-
             <aside class="chat-sidebar">
                 <header class="chat-header">
                     <h2>Messages</h2>
@@ -82,36 +132,48 @@
                         <button class="icon-btn close-overlay" id="closeOverlaySidebar"><i class="fas fa-times"></i></button>
                     </div>
                 </header>
-                <ul class="chat-list" id="chatList">
-                </ul>
+                <ul class="chat-list" id="chatList"></ul>
             </aside>
 
             <main class="chat-window" id="chatWindow">
                 <header class="chat-window-header">
                     <div class="header-left">
                         <button class="icon-btn back-btn" id="chatBackBtn"><i class="fas fa-chevron-left"></i></button>
-                        <img id="chatAvatar" src="" class="avatar-sm">
+                        <img id="chatAvatar" src="" class="avatar-sm" style="display:none;">
                         <div>
                             <h3 id="chatTitle">Select a Chat</h3>
-                            <span class="status">Online</span>
+                            <span class="status" id="chatStatus"></span>
                         </div>
                     </div>
                     <div class="header-right">
-                        <button class="icon-btn"><i class="fas fa-video"></i></button>
+                        <button class="icon-btn" id="startVideoCallBtn"><i class="fas fa-video"></i></button>
                         <button class="icon-btn"><i class="fas fa-ellipsis-v"></i></button>
                         <button class="icon-btn close-overlay" id="closeOverlayWindow"><i class="fas fa-times"></i></button>
                     </div>
                 </header>
 
-                <div class="chat-messages" id="chatMessages">
-                </div>
+                <div class="chat-messages" id="chatMessages"></div>
 
                 <footer class="chat-input-area">
                     <button class="icon-btn"><i class="fas fa-microphone"></i></button>
                     <input type="text" placeholder="Type a message..." id="msgInput">
-                    <button class="send-btn"><i class="fas fa-paper-plane"></i></button>
+                    <button class="send-btn" id="msgSendBtn"><i class="fas fa-paper-plane"></i></button>
                 </footer>
             </main>
+        </div>
+    </div>
+
+    <div id="videoCallModal" class="video-modal">
+        <div class="video-content">
+            <div class="video-grid">
+                <video id="remote-video" autoplay playsinline class="remote-feed"></video>
+                <video id="local-video" autoplay playsinline muted class="local-feed"></video>
+            </div>
+            <div class="video-controls">
+                <button class="v-btn bg-danger" id="hangupBtn"><i class="fas fa-phone-slash"></i></button>
+                <button class="v-btn" onclick="toggleMute()"><i class="fas fa-microphone"></i></button>
+                <button class="v-btn" onclick="toggleCam()"><i class="fas fa-video"></i></button>
+            </div>
         </div>
     </div>
 
@@ -129,6 +191,10 @@
         <div id="status" style="display:none;"></div>
     </div>
 
+    <script src="~/js/auth-state.js" asp-append-version="true"></script>
+    <script src="~/js/LoginService.js" asp-append-version="true"></script>
+    <script src="~/js/Login-Init.js" asp-append-version="true"></script>
+    <script src="~/js/message.js" asp-append-version="true"></script>
     <script src="~/js/main.js" asp-append-version="true"></script>
     <script src="~/js/player.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)

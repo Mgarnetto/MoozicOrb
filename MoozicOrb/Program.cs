@@ -40,6 +40,11 @@ builder.Services.AddSingleton<UserConnectionManager>();
 builder.Services.AddSingleton<IUserIdProvider, SignalRUserIdProvider>();
 builder.Services.AddHttpContextAccessor();
 
+// Register the Upload Service
+builder.Services.AddScoped<IMediaUploadService, MediaUploadService>();
+// Register the Stream Service
+builder.Services.AddScoped<IStreamApiService, StreamApiService>();
+
 // ---------------- REDIS ----------------
 //builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 //{
@@ -82,8 +87,12 @@ app.MapHub<TestStreamHub>("/hubs/teststream");
 app.MapHub<StreamHub>("/StreamHub");
 app.MapHub<CallHub>("/CallHub");
 
+//app.MapControllerRoute(
+//    name: "default",
+//    pattern: "{controller=Home}/{action=Index}/{id?}");
+
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=TestStream}/{action=Index}/{id?}");
 
 app.Run();

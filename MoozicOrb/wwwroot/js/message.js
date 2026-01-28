@@ -1,4 +1,7 @@
 ﻿(() => {
+    // =============================
+    // 1. SIGNALR CONNECTIONS
+    // =============================
     const messageConn = new signalR.HubConnectionBuilder()
         .withUrl("/MessageHub")
         .withAutomaticReconnect()
@@ -9,6 +12,13 @@
         .withAutomaticReconnect()
         .build();
 
+    // =============================
+    // 2. STATE MANAGEMENT
+    // =============================
+    const AppState = {
+        activeChat: { type: null, id: null }
+    };
+
     const MessageService = {
         started: false,
 
@@ -16,16 +26,22 @@
             if (this.started) return;
             this.started = true;
 
-            await messageConn.start();
-            await callConn.start();
+            try {
+                await messageConn.start();
+                await callConn.start();
+                console.log("SignalR Connected");
 
-            if (AuthState.loggedIn) {
-                await messageConn.invoke("AttachUserSession", AuthState.userId);
-                await callConn.invoke("AttachUserSession", AuthState.userId);
+                if (typeof AuthState !== 'undefined' && AuthState.userId) {
+                    await messageConn.invoke("AttachUserSession", AuthState.userId);
+                    await callConn.invoke("AttachUserSession", AuthState.userId);
+                }
+            } catch (err) {
+                console.error("SignalR Connection Error: ", err);
             }
         },
 
         async joinGroups(groupIds) {
+            if (!this.started) return;
             for (const id of groupIds) {
                 await messageConn.invoke("JoinGroup", Number(id));
             }
@@ -33,217 +49,211 @@
     };
 
     // =============================
-    // UI HELPERS
+    // 3. UI HELPERS
     // =============================
-    const dmContainerParent = document.querySelector("#chat-container .dm-threads");
-    const groupContainerParent = document.querySelector("#chat-container .group-threads");
+    const chatMessagesContainer = document.getElementById("chatMessages");
+    const chatTitle = document.getElementById("chatTitle");
 
-    function buildThreadInput({ type, id }) {
-        const wrapper = document.createElement("div");
-        wrapper.className = "card-footer d-flex gap-2";
-
-        wrapper.innerHTML = `
-            <input type="text"
-                   class="form-control"
-                   placeholder="Type message..." />
-            <button class="btn btn-primary">Send</button>
-        `;
-
-        const input = wrapper.querySelector("input");
-        const button = wrapper.querySelector("button");
-
-        const send = async () => {
-            const text = input.value.trim();
-            if (!text) return;
-
-            if (type === "direct") {
-                await fetch("/api/direct/messages", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-Session-Id": AuthState.sessionId
-                    },
-                    body: JSON.stringify({
-                        receiverId: id,
-                        text
-                    })
-                });
-            } else {
-                await fetch(`/api/groups/${id}/messages`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-Session-Id": AuthState.sessionId
-                    },
-                    body: JSON.stringify({ text })
-                });
-            }
-
-            input.value = "";
-        };
-
-        button.addEventListener("click", send);
-        input.addEventListener("keydown", e => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                send();
-            }
-        });
-
-        return wrapper;
+    function clearChatWindow() {
+        if (chatMessagesContainer) chatMessagesContainer.innerHTML = '';
     }
 
-    function ensureDMContainer(userId) {
-        let el = document.querySelector(`#dm-thread-${userId}`);
+    function appendMessage(msg, isHistory = false) {
+        if (!chatMessagesContainer) return;
 
-        if (!el) {
-            el = document.createElement("div");
-            el.id = `dm-thread-${userId}`;
-            el.className = "dm-chat card mb-3";
+        const isForCurrentChat =
+            (AppState.activeChat.type === "direct" && (msg.senderId == AppState.activeChat.id || msg.receiverId == AppState.activeChat.id)) ||
+            (AppState.activeChat.type === "group" && msg.groupId == AppState.activeChat.id);
 
-            el.innerHTML = `
-                <div class="card-header bg-secondary text-white">
-                    DM: User #${userId}
-                </div>
-                <div class="card-body messages" style="height:200px;overflow:auto;"></div>
-            `;
-
-            el.appendChild(buildThreadInput({
-                type: "direct",
-                id: userId
-            }));
-
-            dmContainerParent.appendChild(el);
+        if (!isForCurrentChat && !isHistory) {
+            console.log("Background message:", msg);
+            return;
         }
-
-        return el.querySelector(".messages");
-    }
-
-    function ensureGroupContainer(groupId) {
-        let el = document.querySelector(`#group-thread-${groupId}`);
-
-        if (!el) {
-            el = document.createElement("div");
-            el.id = `group-thread-${groupId}`;
-            el.className = "group-chat card mb-3";
-
-            el.innerHTML = `
-                <div class="card-header bg-primary text-white">
-                    Group #${groupId}
-                </div>
-                <div class="card-body messages" style="height:200px;overflow:auto;"></div>
-            `;
-
-            el.appendChild(buildThreadInput({
-                type: "group",
-                id: groupId
-            }));
-
-            groupContainerParent.appendChild(el);
-        }
-
-        return el.querySelector(".messages");
-    }
-
-    function appendMessage(msg, { type, userId, groupId }) {
-        const container =
-            type === "group"
-                ? ensureGroupContainer(groupId)
-                : ensureDMContainer(userId);
 
         const div = document.createElement("div");
-        div.className = "mb-1";
+        const isMe = (typeof AuthState !== 'undefined') && msg.senderId == AuthState.userId;
+        div.className = isMe ? "message-row me" : "message-row them";
 
         div.innerHTML = `
-            <strong>${msg.senderName ?? msg.senderId}</strong>:
-            ${msg.text}
-            <span class="text-muted small ms-2">
-                ${msg.timestamp ?? ""}
-            </span>
+            <div class="msg-bubble">
+                <small><strong>${msg.senderName ?? "User"}</strong></small>
+                <div>${msg.text}</div>
+            </div>
         `;
 
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
+        chatMessagesContainer.appendChild(div);
+        chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
     }
 
     // =============================
-    // DIRECT MESSAGES
+    // 4. LOAD MESSAGES (UPDATED FOR MOBILE)
     // =============================
-    async function loadDirectMessages(userId) {
+    async function loadDirectMessages(userId, username) {
+        AppState.activeChat = { type: "direct", id: userId };
+        if (chatTitle) chatTitle.innerText = username || `User #${userId}`;
+        clearChatWindow();
+
         const res = await fetch(`/api/direct/messages/with/${userId}`, {
             headers: { "X-Session-Id": AuthState.sessionId }
         });
 
-        if (!res.ok) return;
-
-        const messages = await res.json();
-        for (const msg of messages) {
-            appendMessage(msg, { type: "direct", userId });
+        if (res.ok) {
+            const messages = await res.json();
+            messages.forEach(m => appendMessage(m, true));
         }
+
+        // 1. Open the Overlay
+        document.getElementById("chatOverlay").classList.add("active");
+
+        // 2. TRIGGER MOBILE VIEW (The Fix)
+        const container = document.querySelector('.chat-app-container');
+        if (container) container.classList.add('conversation-active');
     }
 
+    async function loadGroupMessages(groupId, groupName) {
+        AppState.activeChat = { type: "group", id: groupId };
+        if (chatTitle) chatTitle.innerText = groupName || `Group #${groupId}`;
+        clearChatWindow();
+
+        const res = await fetch(`/api/groups/${groupId}/messages`, {
+            headers: { "X-Session-Id": AuthState.sessionId }
+        });
+
+        if (res.ok) {
+            const messages = await res.json();
+            messages.forEach(m => appendMessage(m, true));
+        }
+
+        // 1. Open the Overlay
+        document.getElementById("chatOverlay").classList.add("active");
+
+        // 2. TRIGGER MOBILE VIEW (The Fix)
+        const container = document.querySelector('.chat-app-container');
+        if (container) container.classList.add('conversation-active');
+    }
+
+    // =============================
+    // 5. SIGNALR EVENTS
+    // =============================
     messageConn.on("OnDirectMessage", async ({ senderId, messageId }) => {
         const res = await fetch(`/api/direct/messages/single/${messageId}`, {
             headers: { "X-Session-Id": AuthState.sessionId }
         });
 
-        if (!res.ok) return;
+        if (res.ok) {
+            const msg = await res.json();
+            const partnerId = (msg.senderId == AuthState.userId) ? msg.receiverId : msg.senderId;
+            const partnerName = (msg.senderId == AuthState.userId) ? `User ${partnerId}` : msg.senderName;
 
-        const msg = await res.json();
-
-        // ✅ FIX: determine correct thread owner
-        const threadUser =
-            msg.senderId === AuthState.userId
-                ? msg.receiverId
-                : msg.senderId;
-
-        appendMessage(msg, {
-            type: "direct",
-            userId: threadUser
-        });
+            if (window.AuthState && window.AuthState.ensureThread) {
+                window.AuthState.ensureThread({
+                    id: partnerId,
+                    name: partnerName,
+                    type: "direct"
+                });
+            }
+            appendMessage(msg);
+        }
     });
 
-    // =============================
-    // GROUP CHAT (FIXED)
-    // =============================
     messageConn.on("OnGroupMessage", async ({ groupId, messageId }) => {
         const res = await fetch(`/api/groups/${groupId}/messages/${messageId}`, {
             headers: { "X-Session-Id": AuthState.sessionId }
         });
 
-        if (!res.ok) return;
-
-        const msg = await res.json();
-
-        appendMessage(msg, {
-            type: "group",
-            groupId
-        });
+        if (res.ok) {
+            const msg = await res.json();
+            if (window.AuthState && window.AuthState.ensureThread) {
+                window.AuthState.ensureThread({
+                    id: groupId,
+                    name: `Group ${groupId}`,
+                    type: "group"
+                });
+            }
+            appendMessage(msg);
+        }
     });
 
-    async function loadGroupMessages(groupId) {
-        const res = await fetch(`/api/groups/${groupId}/messages`, {
-            headers: { "X-Session-Id": AuthState.sessionId }
+    // =============================
+    // 6. SENDING MESSAGES
+    // =============================
+    async function handleSendMessage(text) {
+        if (!AppState.activeChat.id) return;
+
+        const url = AppState.activeChat.type === "group"
+            ? `/api/groups/${AppState.activeChat.id}/messages`
+            : "/api/direct/messages";
+
+        const payload = AppState.activeChat.type === "group"
+            ? { text: text }
+            : { receiverId: AppState.activeChat.id, text: text };
+
+        await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Session-Id": AuthState.sessionId
+            },
+            body: JSON.stringify(payload)
         });
-
-        if (!res.ok) return;
-
-        const messages = await res.json();
-        for (const msg of messages) {
-            appendMessage(msg, { type: "group", groupId });
-        }
     }
 
-    // -----------------------------
-    // CALL STATE
-    // -----------------------------
+    // =============================
+    // 7. INITIALIZATION
+    // =============================
+    document.addEventListener("DOMContentLoaded", () => {
+        // Chat Input
+        const input = document.getElementById("msgInput");
+        const btn = document.getElementById("msgSendBtn");
+
+        if (input && btn) {
+            const sendTrigger = async () => {
+                const text = input.value.trim();
+                if (!text) return;
+                await handleSendMessage(text);
+                input.value = "";
+            };
+
+            btn.addEventListener("click", sendTrigger);
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    sendTrigger();
+                }
+            });
+        }
+
+        // Start Call
+        const startVideoBtn = document.getElementById("startVideoCallBtn");
+        if (startVideoBtn) {
+            startVideoBtn.addEventListener("click", () => {
+                if (AppState.activeChat.type === "direct") {
+                    startCall(AppState.activeChat.id);
+                } else {
+                    alert("Video calls are only available in Direct Messages.");
+                }
+            });
+        }
+
+        // Hangup
+        const hangupBtn = document.getElementById("hangupBtn");
+        if (hangupBtn) {
+            hangupBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                hangupCall();
+            });
+        }
+    });
+
+    // =============================
+    // 8. VIDEO CALL LOGIC
+    // =============================
     let pc = null;
     let localStream = null;
     let currentCallId = null;
 
     async function ensurePeer() {
         if (pc) return;
-
         try {
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
         } catch (err) {
@@ -260,16 +270,12 @@
             localVideo.playsInline = true;
         }
 
-        pc = new RTCPeerConnection({
-            iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-        });
-
+        pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
         localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
 
         pc.onicecandidate = e => {
             if (e.candidate && currentCallId) {
-                callConn.invoke("SendRtcIceCandidate", currentCallId, e.candidate)
-                    .catch(err => console.error("Failed to send ICE candidate:", err));
+                callConn.invoke("SendRtcIceCandidate", currentCallId, e.candidate).catch(console.error);
             }
         };
 
@@ -282,9 +288,15 @@
     async function startCall(calleeUserId) {
         if (!calleeUserId || calleeUserId <= 0) return;
 
+        const modal = document.getElementById("videoCallModal");
+        if (modal) modal.style.display = "flex";
+
         const res = await fetch("/api/calls/start", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "X-Session-Id": AuthState.sessionId
+            },
             body: JSON.stringify({ CalleeUserId: calleeUserId, Type: "audio" })
         });
 
@@ -294,7 +306,6 @@
         currentCallId = callId.toString();
 
         await callConn.invoke("RegisterCall", currentCallId, calleeUserId);
-
         await ensurePeer();
 
         const offer = await pc.createOffer();
@@ -303,24 +314,32 @@
     }
 
     async function hangupCall() {
-        if (!currentCallId) return;
-
-        await callConn.invoke("EndCall", currentCallId);
-
-        pc?.close();
-        pc = null;
-        localStream?.getTracks().forEach(t => t.stop());
-
+        if (currentCallId) {
+            await callConn.invoke("EndCall", currentCallId);
+        }
+        if (pc) {
+            pc.close();
+            pc = null;
+        }
+        if (localStream) {
+            localStream.getTracks().forEach(t => t.stop());
+            localStream = null;
+        }
         currentCallId = null;
+
+        const modal = document.getElementById("videoCallModal");
+        if (modal) modal.style.display = "none";
     }
 
-    // -----------------------------
-    // SIGNALING
-    // -----------------------------
+    // =============================
+    // 9. SIGNALING LISTENERS
+    // =============================
     callConn.on("RtcOffer", async ({ callId, sdp }) => {
         currentCallId = callId;
-        await ensurePeer();
+        const modal = document.getElementById("videoCallModal");
+        if (modal) modal.style.display = "flex";
 
+        await ensurePeer();
         await pc.setRemoteDescription({ type: "offer", sdp });
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
@@ -338,66 +357,8 @@
 
     callConn.on("RtcHangup", hangupCall);
 
-    // =====================================================
-    // 🔹 ADDITIONS — CHAT INPUT + SEND HANDLERS
-    // =====================================================
-
-    function getActiveChatContext() {
-        return {
-            type: document.body.dataset.chatType, // "direct" | "group"
-            id: parseInt(document.body.dataset.chatId || "0")
-        };
-    }
-
-    async function sendMessage(text) {
-        if (!text) return;
-
-        const ctx = getActiveChatContext();
-        if (!ctx.id) return;
-
-        const payload =
-            ctx.type === "group"
-                ? { GroupId: ctx.id, Text: text }
-                : { RecipientUserId: ctx.id, Text: text };
-
-        const url =
-            ctx.type === "group"
-                ? "/api/groups/send"
-                : "/api/direct/send";
-
-        await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-Session-Id": AuthState.sessionId
-            },
-            body: JSON.stringify(payload)
-        });
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        const input = document.getElementById("chat-input");
-        const btn = document.getElementById("chat-send");
-
-        if (!input || !btn) return;
-
-        btn.addEventListener("click", () => {
-            const text = input.value.trim();
-            if (!text) return;
-            sendMessage(text);
-            input.value = "";
-        });
-
-        input.addEventListener("keydown", e => {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                btn.click();
-            }
-        });
-    });
-
     // =============================
-    // EXPORTS
+    // 10. EXPORTS
     // =============================
     window.MessageService = MessageService;
     window.loadDirectMessages = loadDirectMessages;
@@ -405,12 +366,5 @@
     window.appendMessage = appendMessage;
     window.startCall = startCall;
     window.hangupCall = hangupCall;
+
 })();
-
-
-
-
-
-
-
-

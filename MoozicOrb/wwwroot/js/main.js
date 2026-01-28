@@ -1,6 +1,8 @@
 ﻿document.addEventListener('DOMContentLoaded', () => {
 
-    // --- SIDEBAR TOGGLE ---
+    // =========================================
+    // 1. SIDEBAR TOGGLE (Global Navigation)
+    // =========================================
     const sidebar = document.getElementById('sidebar');
     const toggleBtn = document.getElementById('sidebarToggle');
     const body = document.body;
@@ -12,6 +14,7 @@
         });
     }
 
+    // Close Sidebar when clicking outside
     document.addEventListener('click', (e) => {
         if (sidebar && toggleBtn && !sidebar.contains(e.target) && !toggleBtn.contains(e.target) && sidebar.classList.contains('active')) {
             sidebar.classList.remove('active');
@@ -19,49 +22,82 @@
         }
     });
 
-    // --- CHAT OVERLAY LOGIC ---
+    // =========================================
+    // 2. LOGIN DROPDOWN LOGIC
+    // =========================================
+    const loginBtn = document.getElementById('loginToggleBtn');
+    const loginDropdown = document.getElementById('loginDropdown');
+    const signupRadio = document.getElementById('signupRadio');
+    const loginRadio = document.getElementById('loginRadio');
+    const formInner = document.querySelector('.form-inner');
+    const switchToSignupLink = document.getElementById('switchToSignup');
+
+    if (loginBtn && loginDropdown) {
+        loginBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            loginDropdown.classList.toggle('active');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!loginDropdown.contains(e.target) && e.target !== loginBtn) {
+                loginDropdown.classList.remove('active');
+            }
+        });
+
+        if (signupRadio && loginRadio && formInner) {
+            signupRadio.addEventListener('change', () => {
+                formInner.style.marginLeft = "-100%";
+            });
+            loginRadio.addEventListener('change', () => {
+                formInner.style.marginLeft = "0%";
+            });
+
+            if (switchToSignupLink) {
+                switchToSignupLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    signupRadio.checked = true;
+                    formInner.style.marginLeft = "-100%";
+                });
+            }
+        }
+    }
+
+    // =========================================
+    // 3. CHAT OVERLAY LOGIC (CLEANED)
+    // =========================================
+    // NOTE: Data loading is now handled by auth-state.js. 
+    // This section only handles OPENING/CLOSING the UI.
+
     const messagesTrigger = document.getElementById('messages-trigger');
     const chatOverlay = document.getElementById('chatOverlay');
     const closeChatWindowBtn = document.getElementById('closeOverlayWindow');
-    const closeChatSidebarBtn = document.getElementById('closeOverlaySidebar'); // NEW BUTTON
+    const closeChatSidebarBtn = document.getElementById('closeOverlaySidebar');
     const chatContainer = document.querySelector('.chat-app-container');
     const chatBackBtn = document.getElementById('chatBackBtn');
-    const chatList = document.getElementById('chatList');
-    const chatMessages = document.getElementById('chatMessages');
-    const chatTitle = document.getElementById('chatTitle');
-    const chatAvatar = document.getElementById('chatAvatar');
-
-    const chats = [
-        { id: 1, name: 'AI Assistant', avatar: 'https://placehold.co/100/00AEEF/fff?text=AI', msgs: [{ text: 'Welcome to MoozicOrb!', in: true }] },
-        { id: 2, name: 'Producer Mike', avatar: 'https://placehold.co/100/ff0055/fff?text=PM', msgs: [{ text: 'Yo, send that beat.', in: true }, { text: 'Sent.', in: false }] }
-    ];
 
     if (messagesTrigger && chatOverlay) {
-        // Show Overlay
+        // Show Overlay & Fix Sidebar State
         messagesTrigger.addEventListener('click', (e) => {
             e.preventDefault();
+
+            // 1. Open Chat Overlay
             chatOverlay.classList.add('active');
-            renderChatList();
-            if (sidebar) sidebar.classList.remove('active');
+
+            // 2. Close Main Sidebar AND Reset Hamburger Icon
+            if (sidebar) {
+                sidebar.classList.remove('active');
+                body.classList.remove('sidebar-open');
+            }
         });
 
-        // Hide Overlay (Window Button)
-        if (closeChatWindowBtn) {
-            closeChatWindowBtn.addEventListener('click', () => {
-                chatOverlay.classList.remove('active');
-                if (chatContainer) chatContainer.classList.remove('conversation-active');
-            });
-        }
+        const closeAll = () => {
+            chatOverlay.classList.remove('active');
+            if (chatContainer) chatContainer.classList.remove('conversation-active');
+        };
 
-        // Hide Overlay (Sidebar Button) - NEW
-        if (closeChatSidebarBtn) {
-            closeChatSidebarBtn.addEventListener('click', () => {
-                chatOverlay.classList.remove('active');
-                if (chatContainer) chatContainer.classList.remove('conversation-active');
-            });
-        }
+        if (closeChatWindowBtn) closeChatWindowBtn.addEventListener('click', closeAll);
+        if (closeChatSidebarBtn) closeChatSidebarBtn.addEventListener('click', closeAll);
 
-        // Mobile Back Button
         if (chatBackBtn) {
             chatBackBtn.addEventListener('click', () => {
                 if (chatContainer) chatContainer.classList.remove('conversation-active');
@@ -69,40 +105,9 @@
         }
     }
 
-    function renderChatList() {
-        if (!chatList) return;
-        chatList.innerHTML = chats.map(c => `
-            <li class="chat-item" data-id="${c.id}">
-                <img src="${c.avatar}" class="avatar-sm">
-                <div class="chat-info"><h4>${c.name}</h4><p>Tap to chat...</p></div>
-            </li>
-        `).join('');
-
-        document.querySelectorAll('.chat-item').forEach(item => {
-            item.addEventListener('click', () => loadChat(item.dataset.id));
-        });
-    }
-
-    function loadChat(id) {
-        const chat = chats.find(c => c.id == id);
-        if (!chat) return;
-
-        if (chatTitle) chatTitle.textContent = chat.name;
-        if (chatAvatar) chatAvatar.src = chat.avatar;
-        if (chatMessages) {
-            chatMessages.innerHTML = chat.msgs.map(m => `
-                <div class="msg ${m.in ? 'in' : 'out'}">${m.text}</div>
-            `).join('');
-        }
-
-        document.querySelectorAll('.chat-item').forEach(i => i.classList.remove('active'));
-        const activeItem = document.querySelector(`.chat-item[data-id="${id}"]`);
-        if (activeItem) activeItem.classList.add('active');
-
-        if (chatContainer) chatContainer.classList.add('conversation-active');
-    }
-
-    // --- AMCHARTS GLOBE ---
+    // =========================================
+    // 4. AMCHARTS GLOBE
+    // =========================================
     if (document.getElementById('chartdiv')) {
         am5.ready(function () {
             var root = am5.Root.new("chartdiv");
@@ -147,7 +152,9 @@
         });
     }
 
-    // --- CALENDAR LOGIC ---
+    // =========================================
+    // 5. CALENDAR LOGIC
+    // =========================================
     const daysBox = document.querySelector('.cal-days');
     const monthLabel = document.querySelector('.cal-month-label');
     const prevBtn = document.querySelector('.prev-month');
@@ -170,19 +177,13 @@
             const daysInMonth = new Date(year, month + 1, 0).getDate();
 
             for (let i = 0; i < firstDayIndex; i++) {
-                const d = document.createElement('div');
-                d.className = 'day-cell dim';
-                daysBox.appendChild(d);
+                const d = document.createElement('div'); d.className = 'day-cell dim'; daysBox.appendChild(d);
             }
 
             for (let i = 1; i <= daysInMonth; i++) {
-                const d = document.createElement('div');
-                d.className = 'day-cell';
-                d.textContent = i;
+                const d = document.createElement('div'); d.className = 'day-cell'; d.textContent = i;
                 const checkDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                if (eventsDB.some(e => e.date === checkDate)) {
-                    d.classList.add('has-event');
-                }
+                if (eventsDB.some(e => e.date === checkDate)) d.classList.add('has-event');
                 d.addEventListener('click', () => {
                     document.querySelectorAll('.day-cell').forEach(c => c.classList.remove('active'));
                     d.classList.add('active');
