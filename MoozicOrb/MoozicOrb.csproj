@@ -15,11 +15,14 @@
     <PackageReference Include="SIPSorcery" Version="10.0.3" />
     <PackageReference Include="StackExchange.Redis" Version="2.10.1" />
     <PackageReference Include="TagLibSharp" Version="2.3.0" />
+    <PackageReference Include="Xabe.FFmpeg" Version="6.0.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Audio\" />
     <Folder Include="Images\" />
+    <Folder Include="media\Audio\" />
+    <Folder Include="media\Image\" />
+    <Folder Include="media\Video\" />
     <Folder Include="Video\" />
   </ItemGroup>
 
