@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MoozicOrb.Api.Models
+namespace MoozicOrb.API.Models
 {
     public class StationDto
     {

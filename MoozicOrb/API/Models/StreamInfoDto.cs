@@ -1,4 +1,4 @@
-﻿namespace MoozicOrb.Api.Models
+﻿namespace MoozicOrb.API.Models
 {
     public class StreamInfoDto
     {

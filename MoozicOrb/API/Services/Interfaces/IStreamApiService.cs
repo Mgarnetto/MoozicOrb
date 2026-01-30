@@ -1,6 +1,6 @@
-﻿using MoozicOrb.Api.Models;
+﻿using MoozicOrb.API.Models;
 
-namespace MoozicOrb.Api.Services.Interfaces
+namespace MoozicOrb.API.Services.Interfaces
 {
     public interface IStreamApiService
     {

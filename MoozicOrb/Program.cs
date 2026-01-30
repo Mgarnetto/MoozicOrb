@@ -41,9 +41,9 @@ builder.Services.AddSingleton<IUserIdProvider, SignalRUserIdProvider>();
 builder.Services.AddHttpContextAccessor();
 
 // Register the Upload Service
-builder.Services.AddScoped<IMediaUploadService, MediaUploadService>();
+//builder.Services.AddScoped<IMediaUploadService, MediaUploadService>();
 // Register the Stream Service
-builder.Services.AddScoped<IStreamApiService, StreamApiService>();
+//builder.Services.AddScoped<IStreamApiService, StreamApiService>();
 
 // ---------------- REDIS ----------------
 //builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
@@ -82,6 +82,8 @@ app.UseAuthorization();
 
 app.MapHub<GroupHub>("/GroupHub");
 app.MapHub<MessageHub>("/MessageHub");
+// Register the Hub Route
+app.MapHub<PostHub>("/PostHub");
 app.MapHub<TestStreamHub>("/hubs/teststream");
 
 app.MapHub<StreamHub>("/StreamHub");
