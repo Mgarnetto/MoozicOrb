@@ -34,6 +34,8 @@ builder.Services.AddHostedService<RadioStationService>();
 
 // SignalR services 
 
+builder.Services.AddSingleton<CallStateService>();
+
 builder.Services.AddSingleton<UserConnectionManager>();
 
 builder.Services.AddSingleton<IUserIdProvider, SignalRUserIdProvider>();

@@ -29,13 +29,14 @@
             }
         }
 
-        public IEnumerable<string> GetConnections(int userId)
+        // Change return type from IEnumerable<string> to List<string>
+        public List<string> GetConnections(int userId)
         {
             lock (_lock)
             {
                 return _connections.TryGetValue(userId, out var set)
                     ? set.ToList()
-                    : Enumerable.Empty<string>();
+                    : new List<string>(); // Return empty list instead of Enumerable.Empty
             }
         }
 

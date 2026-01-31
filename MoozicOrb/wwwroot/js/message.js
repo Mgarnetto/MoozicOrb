@@ -1,5 +1,66 @@
 ﻿(() => {
     // =============================
+    // 0. RINGTONE GENERATOR (Web Audio API)
+    // =============================
+    const RingtoneService = {
+        audioCtx: null,
+        intervalId: null,
+
+        start() {
+            if (this.intervalId) return; // Already ringing
+
+            // Create Context (Safe to do on event)
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.audioCtx = new AudioContext();
+
+            const playPulse = () => {
+                if (!this.audioCtx) return;
+                const t = this.audioCtx.currentTime;
+
+                // Oscillator 1 (Main Tone 800Hz)
+                const osc1 = this.audioCtx.createOscillator();
+                osc1.type = "sine";
+                osc1.frequency.value = 800;
+
+                // Oscillator 2 (Modulator 650Hz)
+                const osc2 = this.audioCtx.createOscillator();
+                osc2.type = "sine";
+                osc2.frequency.value = 650;
+
+                // Volume Envelope (Fade In/Out)
+                const gain = this.audioCtx.createGain();
+                gain.gain.setValueAtTime(0, t);
+                gain.gain.linearRampToValueAtTime(0.3, t + 0.1);
+                gain.gain.linearRampToValueAtTime(0, t + 1.5);
+
+                osc1.connect(gain);
+                osc2.connect(gain);
+                gain.connect(this.audioCtx.destination);
+
+                osc1.start(t);
+                osc2.start(t);
+                osc1.stop(t + 1.6);
+                osc2.stop(t + 1.6);
+            };
+
+            // Play immediately, then repeat every 2.5 seconds
+            playPulse();
+            this.intervalId = setInterval(playPulse, 2500);
+        },
+
+        stop() {
+            if (this.intervalId) {
+                clearInterval(this.intervalId);
+                this.intervalId = null;
+            }
+            if (this.audioCtx) {
+                this.audioCtx.close().catch(e => console.error(e));
+                this.audioCtx = null;
+            }
+        }
+    };
+
+    // =============================
     // 1. SIGNALR CONNECTIONS
     // =============================
     const messageConn = new signalR.HubConnectionBuilder()
@@ -13,43 +74,12 @@
         .build();
 
     // =============================
-    // 2. STATE MANAGEMENT
+    // 2. STATE
     // =============================
-    const AppState = {
-        activeChat: { type: null, id: null }
-    };
-
-    const MessageService = {
-        started: false,
-
-        async start() {
-            if (this.started) return;
-            this.started = true;
-
-            try {
-                await messageConn.start();
-                await callConn.start();
-                console.log("SignalR Connected");
-
-                if (typeof AuthState !== 'undefined' && AuthState.userId) {
-                    await messageConn.invoke("AttachUserSession", AuthState.userId);
-                    await callConn.invoke("AttachUserSession", AuthState.userId);
-                }
-            } catch (err) {
-                console.error("SignalR Connection Error: ", err);
-            }
-        },
-
-        async joinGroups(groupIds) {
-            if (!this.started) return;
-            for (const id of groupIds) {
-                await messageConn.invoke("JoinGroup", Number(id));
-            }
-        }
-    };
+    const AppState = { activeChat: { type: null, id: null } };
 
     // =============================
-    // 3. UI HELPERS
+    // 3. UI HELPERS (Chat)
     // =============================
     const chatMessagesContainer = document.getElementById("chatMessages");
     const chatTitle = document.getElementById("chatTitle");
@@ -61,17 +91,12 @@
     function appendMessage(msg, isHistory = false) {
         if (!chatMessagesContainer) return;
 
-        // Robust name check for both casing styles
         const sName = msg.senderName || msg.SenderName || "User";
-
         const isForCurrentChat =
             (AppState.activeChat.type === "direct" && (msg.senderId == AppState.activeChat.id || msg.receiverId == AppState.activeChat.id)) ||
             (AppState.activeChat.type === "group" && msg.groupId == AppState.activeChat.id);
 
-        if (!isForCurrentChat && !isHistory) {
-            console.log("Background message:", msg);
-            return;
-        }
+        if (!isForCurrentChat && !isHistory) return;
 
         const div = document.createElement("div");
         const isMe = (typeof AuthState !== 'undefined') && msg.senderId == AuthState.userId;
@@ -83,7 +108,6 @@
                 <div>${msg.text}</div>
             </div>
         `;
-
         chatMessagesContainer.appendChild(div);
         chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
     }
@@ -96,18 +120,12 @@
         if (chatTitle) chatTitle.innerText = username || `User #${userId}`;
         clearChatWindow();
 
-        const res = await fetch(`/api/direct/messages/with/${userId}`, {
-            headers: { "X-Session-Id": AuthState.sessionId }
-        });
-
+        const res = await fetch(`/api/direct/messages/with/${userId}`, { headers: { "X-Session-Id": AuthState.sessionId } });
         if (res.ok) {
-            const messages = await res.json();
-            messages.forEach(m => appendMessage(m, true));
+            (await res.json()).forEach(m => appendMessage(m, true));
         }
-
         document.getElementById("chatOverlay").classList.add("active");
-        const container = document.querySelector('.chat-app-container');
-        if (container) container.classList.add('conversation-active');
+        document.querySelector('.chat-app-container')?.classList.add('conversation-active');
     }
 
     async function loadGroupMessages(groupId, groupName) {
@@ -115,155 +133,85 @@
         if (chatTitle) chatTitle.innerText = groupName || `Group #${groupId}`;
         clearChatWindow();
 
-        const res = await fetch(`/api/groups/${groupId}/messages`, {
-            headers: { "X-Session-Id": AuthState.sessionId }
-        });
-
+        const res = await fetch(`/api/groups/${groupId}/messages`, { headers: { "X-Session-Id": AuthState.sessionId } });
         if (res.ok) {
-            const messages = await res.json();
-            messages.forEach(m => appendMessage(m, true));
+            (await res.json()).forEach(m => appendMessage(m, true));
         }
-
         document.getElementById("chatOverlay").classList.add("active");
-        const container = document.querySelector('.chat-app-container');
-        if (container) container.classList.add('conversation-active');
+        document.querySelector('.chat-app-container')?.classList.add('conversation-active');
     }
 
     // =============================
-    // 5. SIGNALR EVENTS (THE FIX)
+    // 5. SIGNALR EVENTS (Chat)
     // =============================
     messageConn.on("OnDirectMessage", async ({ senderId, messageId }) => {
-        const res = await fetch(`/api/direct/messages/single/${messageId}`, {
-            headers: { "X-Session-Id": AuthState.sessionId }
-        });
-
+        const res = await fetch(`/api/direct/messages/single/${messageId}`, { headers: { "X-Session-Id": AuthState.sessionId } });
         if (res.ok) {
             const msg = await res.json();
-
-            // 1. Identify Partner ID
             const partnerId = (msg.senderId == AuthState.userId) ? msg.receiverId : msg.senderId;
+            const partnerName = (msg.senderId == AuthState.userId) ? (msg.receiverName || msg.ReceiverName) : (msg.senderName || msg.SenderName);
 
-            // 2. Identify Partner Name (Check CamelCase AND PascalCase)
-            // If I am sender, I need ReceiverName. If I am receiver, I need SenderName.
-            const rName = msg.receiverName || msg.ReceiverName;
-            const sName = msg.senderName || msg.SenderName;
-
-            let partnerName = (msg.senderId == AuthState.userId) ? rName : sName;
-
-            // Fallback to "User ID" only if name is strictly missing
-            if (!partnerName) partnerName = `User ${partnerId}`;
-
-            if (window.AuthState && window.AuthState.ensureThread) {
-                window.AuthState.ensureThread({
-                    id: partnerId,
-                    name: partnerName,
-                    type: "direct"
-                });
+            if (window.AuthState?.ensureThread) {
+                window.AuthState.ensureThread({ id: partnerId, name: partnerName || `User ${partnerId}`, type: "direct" });
             }
             appendMessage(msg);
         }
     });
 
     messageConn.on("OnGroupMessage", async ({ groupId, messageId }) => {
-        const res = await fetch(`/api/groups/${groupId}/messages/${messageId}`, {
-            headers: { "X-Session-Id": AuthState.sessionId }
-        });
-
+        const res = await fetch(`/api/groups/${groupId}/messages/${messageId}`, { headers: { "X-Session-Id": AuthState.sessionId } });
         if (res.ok) {
             const msg = await res.json();
-            if (window.AuthState && window.AuthState.ensureThread) {
-                window.AuthState.ensureThread({
-                    id: groupId,
-                    name: `Group ${groupId}`,
-                    type: "group"
-                });
+            if (window.AuthState?.ensureThread) {
+                window.AuthState.ensureThread({ id: groupId, name: `Group ${groupId}`, type: "group" });
             }
             appendMessage(msg);
         }
     });
 
     // =============================
-    // 6. SENDING MESSAGES
-    // =============================
-    async function handleSendMessage(text) {
-        if (!AppState.activeChat.id) return;
-
-        const url = AppState.activeChat.type === "group"
-            ? `/api/groups/${AppState.activeChat.id}/messages`
-            : "/api/direct/messages";
-
-        const payload = AppState.activeChat.type === "group"
-            ? { text: text }
-            : { receiverId: AppState.activeChat.id, text: text };
-
-        await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-Session-Id": AuthState.sessionId
-            },
-            body: JSON.stringify(payload)
-        });
-    }
-
-    // =============================
-    // 7. INITIALIZATION
-    // =============================
-    document.addEventListener("DOMContentLoaded", () => {
-        const input = document.getElementById("msgInput");
-        const btn = document.getElementById("msgSendBtn");
-
-        if (input && btn) {
-            const sendTrigger = async () => {
-                const text = input.value.trim();
-                if (!text) return;
-                await handleSendMessage(text);
-                input.value = "";
-            };
-
-            btn.addEventListener("click", sendTrigger);
-            input.addEventListener("keydown", (e) => {
-                if (e.key === "Enter") {
-                    e.preventDefault();
-                    sendTrigger();
-                }
-            });
-        }
-
-        const startVideoBtn = document.getElementById("startVideoCallBtn");
-        if (startVideoBtn) {
-            startVideoBtn.addEventListener("click", () => {
-                if (AppState.activeChat.type === "direct") {
-                    startCall(AppState.activeChat.id);
-                } else {
-                    alert("Video calls are only available in Direct Messages.");
-                }
-            });
-        }
-
-        const hangupBtn = document.getElementById("hangupBtn");
-        if (hangupBtn) {
-            hangupBtn.addEventListener("click", (e) => {
-                e.preventDefault();
-                hangupCall();
-            });
-        }
-    });
-
-    // =============================
-    // 8. VIDEO CALL LOGIC
+    // 6. VIDEO CALL LOGIC (H264 & STATE)
     // =============================
     let pc = null;
     let localStream = null;
     let currentCallId = null;
+    let incomingCallId = null; // Temp ID for incoming ring
+    let incomingCallerId = null;
+
+    // --- HELPER: Force H264 Codec ---
+    function forceH264(sdp) {
+        const sdpLines = sdp.split('\r\n');
+        let mLineIndex = -1;
+        for (let i = 0; i < sdpLines.length; i++) {
+            if (sdpLines[i].startsWith('m=video')) { mLineIndex = i; break; }
+        }
+        if (mLineIndex === -1) return sdp;
+
+        const h264Map = [];
+        const regex = /a=rtpmap:(\d+)\s+H264/gi;
+        for (const line of sdpLines) {
+            let match;
+            while ((match = regex.exec(line)) !== null) h264Map.push(match[1]);
+        }
+        if (h264Map.length === 0) return sdp;
+
+        const mLine = sdpLines[mLineIndex];
+        const elements = mLine.split(' ');
+        const header = elements.slice(0, 3);
+        const payloads = elements.slice(3);
+        const nonH264 = payloads.filter(p => !h264Map.includes(p));
+        const newPayloads = [...h264Map, ...nonH264];
+        sdpLines[mLineIndex] = [...header, ...newPayloads].join(' ');
+        return sdpLines.join('\r\n');
+    }
 
     async function ensurePeer() {
         if (pc) return;
         try {
             localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
         } catch (err) {
-            console.error("Failed to get local media:", err);
-            alert("Unable to access microphone/camera.");
+            console.error(err);
+            alert("Camera access denied.");
             return;
         }
 
@@ -290,65 +238,108 @@
         };
     }
 
+    // --- CALLER: STARTS CALL ---
     async function startCall(calleeUserId) {
-        if (!calleeUserId || calleeUserId <= 0) return;
+        if (!calleeUserId) return;
 
+        // 1. Show Video Modal (Local Preview)
         const modal = document.getElementById("videoCallModal");
         if (modal) modal.style.display = "flex";
+        await ensurePeer();
 
+        // 2. Notify API
         const res = await fetch("/api/calls/start", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-Session-Id": AuthState.sessionId
-            },
+            headers: { "Content-Type": "application/json", "X-Session-Id": AuthState.sessionId },
             body: JSON.stringify({ CalleeUserId: calleeUserId, Type: "audio" })
         });
 
-        if (!res.ok) return;
+        if (res.ok) {
+            const { callId } = await res.json();
+            currentCallId = callId.toString();
+            console.log("Call started. Waiting for answer...");
+        } else {
+            alert("Failed to start call (User busy or offline).");
+            hangupCall();
+        }
+    }
 
-        const { callId } = await res.json();
-        currentCallId = callId.toString();
+    // --- CALLEE: RECEIVES RING ---
+    callConn.on("IncomingCall", ({ callId, fromUserId }) => {
+        incomingCallId = callId;
+        incomingCallerId = fromUserId;
 
-        await callConn.invoke("RegisterCall", currentCallId, calleeUserId);
+        const modal = document.getElementById("incomingCallModal");
+        const nameEl = document.getElementById("incomingCallerName");
+
+        if (nameEl) nameEl.innerText = `User ${fromUserId}`;
+        if (modal) modal.classList.add("active");
+
+        // Start Ringing
+        RingtoneService.start();
+    });
+
+    async function acceptIncomingCall() {
+        RingtoneService.stop();
+        if (!incomingCallId) return;
+
+        // 1. Close Ringing Modal
+        document.getElementById("incomingCallModal").classList.remove("active");
+
+        // 2. Open Video Modal & Get Camera
+        currentCallId = incomingCallId;
+        const vidModal = document.getElementById("videoCallModal");
+        if (vidModal) vidModal.style.display = "flex";
         await ensurePeer();
+
+        // 3. Notify API
+        await fetch("/api/calls/accept", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Session-Id": AuthState.sessionId },
+            body: JSON.stringify({ CallId: currentCallId, CallerUserId: incomingCallerId })
+        });
+    }
+
+    async function rejectIncomingCall() {
+        RingtoneService.stop();
+        if (!incomingCallId) return;
+
+        await fetch("/api/calls/reject", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Session-Id": AuthState.sessionId },
+            body: JSON.stringify({ CallId: incomingCallId, CallerUserId: incomingCallerId })
+        });
+
+        document.getElementById("incomingCallModal").classList.remove("active");
+        incomingCallId = null;
+    }
+
+    // --- SIGNALING EVENTS ---
+
+    // 1. Caller receives this when Callee clicks "Accept"
+    callConn.on("CallAccepted", async ({ callId }) => {
+        if (currentCallId !== callId) return;
+        console.log("Call Accepted! Sending Offer...");
 
         const offer = await pc.createOffer();
+        offer.sdp = forceH264(offer.sdp);
         await pc.setLocalDescription(offer);
         await callConn.invoke("SendRtcOffer", currentCallId, offer.sdp);
-    }
+    });
 
-    async function hangupCall() {
-        if (currentCallId) {
-            await callConn.invoke("EndCall", currentCallId);
-        }
-        if (pc) {
-            pc.close();
-            pc = null;
-        }
-        if (localStream) {
-            localStream.getTracks().forEach(t => t.stop());
-            localStream = null;
-        }
-        currentCallId = null;
+    callConn.on("CallRejected", () => {
+        alert("User busy or rejected the call.");
+        hangupCall();
+    });
 
-        const modal = document.getElementById("videoCallModal");
-        if (modal) modal.style.display = "none";
-    }
-
-    // =============================
-    // 9. SIGNALING LISTENERS
-    // =============================
     callConn.on("RtcOffer", async ({ callId, sdp }) => {
         currentCallId = callId;
-        const modal = document.getElementById("videoCallModal");
-        if (modal) modal.style.display = "flex";
-
         await ensurePeer();
+
         await pc.setRemoteDescription({ type: "offer", sdp });
         const answer = await pc.createAnswer();
+        answer.sdp = forceH264(answer.sdp);
         await pc.setLocalDescription(answer);
-
         await callConn.invoke("SendRtcAnswer", callId, answer.sdp);
     });
 
@@ -362,14 +353,81 @@
 
     callConn.on("RtcHangup", hangupCall);
 
+    async function hangupCall() {
+        RingtoneService.stop(); // Safety
+        if (currentCallId) await callConn.invoke("EndCall", currentCallId);
+
+        if (pc) { pc.close(); pc = null; }
+        if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+
+        currentCallId = null;
+        document.getElementById("videoCallModal").style.display = "none";
+        document.getElementById("incomingCallModal").classList.remove("active");
+    }
+
     // =============================
-    // 10. EXPORTS
+    // 7. INIT & EVENT BINDING
     // =============================
+    const MessageService = {
+        started: false,
+        async start() {
+            if (this.started) return;
+            this.started = true;
+            try {
+                await messageConn.start();
+                await callConn.start();
+                if (AuthState?.userId) {
+                    await messageConn.invoke("AttachUserSession", AuthState.userId);
+                    await callConn.invoke("AttachUserSession", AuthState.userId);
+                }
+            } catch (e) { console.error(e); }
+        },
+        async joinGroups(groupIds) {
+            for (const id of groupIds) await messageConn.invoke("JoinGroup", Number(id));
+        }
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // Send Msg
+        const input = document.getElementById("msgInput");
+        const sendBtn = document.getElementById("msgSendBtn");
+        const triggerSend = async () => {
+            if (!input.value.trim()) return;
+            const payload = AppState.activeChat.type === "group"
+                ? { text: input.value.trim() }
+                : { receiverId: AppState.activeChat.id, text: input.value.trim() };
+            const url = AppState.activeChat.type === "group"
+                ? `/api/groups/${AppState.activeChat.id}/messages`
+                : "/api/direct/messages";
+
+            await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-Session-Id": AuthState.sessionId }, body: JSON.stringify(payload) });
+            input.value = "";
+        };
+        if (sendBtn) sendBtn.onclick = triggerSend;
+        if (input) input.onkeydown = (e) => { if (e.key === "Enter") { e.preventDefault(); triggerSend(); } };
+
+        // Start Call
+        const vidBtn = document.getElementById("startVideoCallBtn");
+        if (vidBtn) vidBtn.onclick = () => {
+            if (AppState.activeChat.type === "direct") startCall(AppState.activeChat.id);
+            else alert("Direct messages only.");
+        };
+
+        // Hangup
+        const hangBtn = document.getElementById("hangupBtn");
+        if (hangBtn) hangBtn.onclick = (e) => { e.preventDefault(); hangupCall(); };
+
+        // Answer / Reject Buttons
+        const acceptBtn = document.getElementById("btnAcceptCall");
+        const rejectBtn = document.getElementById("btnRejectCall");
+        if (acceptBtn) acceptBtn.onclick = acceptIncomingCall;
+        if (rejectBtn) rejectBtn.onclick = rejectIncomingCall;
+    });
+
     window.MessageService = MessageService;
     window.loadDirectMessages = loadDirectMessages;
     window.loadGroupMessages = loadGroupMessages;
     window.appendMessage = appendMessage;
     window.startCall = startCall;
     window.hangupCall = hangupCall;
-
 })();
