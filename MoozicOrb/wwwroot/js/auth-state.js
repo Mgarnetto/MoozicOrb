@@ -21,7 +21,6 @@
             if (guestNav) guestNav.style.display = "none";
             if (userNav) {
                 userNav.style.display = "flex";
-                // Hide the "Welcome User" text, keep the logout button
                 const welcomeText = userNav.querySelector(".welcome-text");
                 if (welcomeText) welcomeText.style.display = "none";
             }
@@ -47,70 +46,103 @@
             if (guestNav) guestNav.style.display = "block";
             if (userNav) userNav.style.display = "none";
 
-            // Clear sidebar on logout
             const chatList = document.getElementById("chatList");
             if (chatList) chatList.innerHTML = '';
         },
 
         // ============================================
-        // 2. BOOTSTRAP (The Fix is Here)
+        // 2. BOOTSTRAP (THE FIX)
         // ============================================
         async bootstrap() {
             if (!this.sessionId) throw new Error("Missing session");
 
-            // 1. Start SignalR connection FIRST (non-blocking if possible)
+            // 1. Start SignalR
             if (window.MessageService) {
-                // We await this ensuring we are connected before trying to join groups later
                 try { await window.MessageService.start(); }
                 catch (e) { console.error("SignalR start failed", e); }
-            }
-
-            let data;
-            try {
-                const res = await fetch("/api/login/bootstrap", {
-                    headers: { "X-Session-Id": this.sessionId }
-                });
-                if (!res.ok) throw new Error("Bootstrap failed");
-                data = await res.json();
-            } catch (err) {
-                console.error("[AuthState] Bootstrap error:", err);
-                throw err;
             }
 
             // 2. Clear List
             const chatList = document.getElementById("chatList");
             if (chatList) chatList.innerHTML = "";
 
-            // 3. RENDER ALL THREADS INSTANTLY (Don't wait for network!)
             const groupsToJoin = [];
 
-            if (Array.isArray(data.groups)) {
-                for (const groupId of data.groups) {
-                    this.ensureThread({
-                        id: groupId,
-                        name: `Group ${groupId}`,
-                        type: "group",
-                        img: "/images/default-group.png"
-                    });
-                    groupsToJoin.push(groupId);
+            try {
+                // --- STEP A: Fetch Groups (from Login Controller) ---
+                const resBoot = await fetch("/api/login/bootstrap", {
+                    headers: { "X-Session-Id": this.sessionId }
+                });
+                if (resBoot.ok) {
+                    const dataBoot = await resBoot.json();
+
+                    if (Array.isArray(dataBoot.groups)) {
+                        for (const groupId of dataBoot.groups) {
+                            this.ensureThread({
+                                id: groupId,
+                                name: `Group ${groupId}`,
+                                type: "group",
+                                img: "/images/default-group.png"
+                            });
+                            groupsToJoin.push(groupId);
+                        }
+                    }
                 }
+
+                // --- STEP B: Fetch DMs (from DirectMessages Controller) ---
+                // This guarantees we get the full message objects with names
+                const resDms = await fetch("/api/direct/messages", {
+                    headers: { "X-Session-Id": this.sessionId }
+                });
+
+                if (resDms.ok) {
+                    const dataDms = await resDms.json();
+
+                    // Handle Casing (messages vs Messages)
+                    const conversations = dataDms.messages || dataDms.Messages || {};
+
+                    for (const otherUserId in conversations) {
+                        const msgs = conversations[otherUserId];
+                        let displayName = `User ${otherUserId}`;
+                        let displayPic = "/images/default-user.png";
+
+                        // EXTRACT NAME LOGIC
+                        if (msgs && msgs.length > 0) {
+                            // Grab the most recent message
+                            const sample = msgs[msgs.length - 1];
+
+                            // Robust Casing Check
+                            const sName = sample.senderName || sample.SenderName;
+                            const rName = sample.receiverName || sample.ReceiverName;
+                            const sPic = sample.senderProfilePicUrl || sample.SenderProfilePicUrl;
+                            const rPic = sample.receiverProfilePicUrl || sample.ReceiverProfilePicUrl;
+
+                            if (sample.senderId == this.userId) {
+                                // I sent it -> Show Receiver Name
+                                if (rName) displayName = rName;
+                                if (rPic) displayPic = rPic;
+                            } else {
+                                // They sent it -> Show Sender Name
+                                if (sName) displayName = sName;
+                                if (sPic) displayPic = sPic;
+                            }
+                        }
+
+                        this.ensureThread({
+                            id: parseInt(otherUserId),
+                            name: displayName,
+                            type: "direct",
+                            img: displayPic
+                        });
+                    }
+                }
+
+            } catch (err) {
+                console.error("[AuthState] Bootstrap error:", err);
             }
 
-            if (Array.isArray(data.directUsers)) {
-                for (const userId of data.directUsers) {
-                    this.ensureThread({
-                        id: userId,
-                        name: `User ${userId}`,
-                        type: "direct",
-                        img: "/images/default-user.png"
-                    });
-                }
-            }
-
-            // 4. JOIN SIGNALR GROUPS IN BACKGROUND
-            // We do this AFTER the UI is drawn so the user sees their list immediately.
+            // 3. Join SignalR Groups
             if (groupsToJoin.length > 0 && window.MessageService) {
-                // No 'await' here lets the UI finish loading while this happens in background
                 window.MessageService.joinGroups(groupsToJoin)
                     .catch(err => console.error("Failed to join background groups:", err));
             }
@@ -120,12 +152,18 @@
         // 3. UI GENERATOR
         // ============================================
         ensureThread({ id, name, type, img }) {
-            // Check for duplicates
             const domId = `thread-${type}-${id}`;
-            if (document.getElementById(domId)) return;
+            const existing = document.getElementById(domId);
 
-            // Defaults
-            if (!img) img = type === "group" ? "/images/default-group.png" : "/images/default-user.png";
+            // If exists, update name/image
+            if (existing) {
+                const titleEl = existing.querySelector("h4");
+                if (titleEl) titleEl.innerText = name;
+                return;
+            }
+
+            // Fallback for null images
+            if (!img || img === "null") img = type === "group" ? "/images/default-group.png" : "/images/default-user.png";
 
             this.renderThreadItem(domId, { id, name, type, img });
         },
@@ -150,16 +188,24 @@
             li.onmouseover = () => li.style.background = "rgba(255,255,255,0.05)";
             li.onmouseout = () => li.style.background = "transparent";
 
-            const iconClass = type === "group" ? "fa-users" : "fa-user";
-            const avatarColor = type === "group" ? "#6c5ce7" : "#0984e3";
+            // If image is a URL, use img tag, otherwise use icon fallback
+            let avatarHtml;
+            if (img.includes("/") && !img.includes("default")) {
+                avatarHtml = `<img src="${img}" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 15px; object-fit: cover;">`;
+            } else {
+                const iconClass = type === "group" ? "fa-users" : "fa-user";
+                const avatarColor = type === "group" ? "#6c5ce7" : "#0984e3";
+                avatarHtml = `
+                    <div class="avatar" style="
+                        width: 40px; height: 40px; background: ${avatarColor}; 
+                        border-radius: 50%; display: flex; align-items: center; 
+                        justify-content: center; margin-right: 15px; color: white;">
+                        <i class="fas ${iconClass}"></i>
+                    </div>`;
+            }
 
             li.innerHTML = `
-                <div class="avatar" style="
-                    width: 40px; height: 40px; background: ${avatarColor}; 
-                    border-radius: 50%; display: flex; align-items: center; 
-                    justify-content: center; margin-right: 15px; color: white;">
-                    <i class="fas ${iconClass}"></i>
-                </div>
+                ${avatarHtml}
                 <div class="info" style="flex: 1;">
                     <h4 style="margin: 0; font-size: 14px; font-weight: 600; color: #fff;">${name}</h4>
                     <p style="margin: 0; font-size: 12px; color: #aaa;">Click to chat</p>
@@ -167,11 +213,9 @@
             `;
 
             li.addEventListener("click", () => {
-                // Visual Highlight
                 Array.from(chatList.children).forEach(c => c.style.background = "transparent");
                 li.style.background = "rgba(255,255,255,0.1)";
 
-                // Trigger Load
                 if (type === "group") {
                     if (window.loadGroupMessages) window.loadGroupMessages(id, name);
                 } else {
@@ -205,7 +249,6 @@
             AuthState.setLoggedOut();
         }
 
-        // Toggle button logic
         const toggleBtn = document.getElementById("loginToggleBtn");
         const dropdown = document.getElementById("loginDropdown");
         if (toggleBtn && dropdown) {

@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MoozicOrb.Api.Services.Interfaces;
 using MoozicOrb.IO;
 using MoozicOrb.Models;
 using MoozicOrb.Services;
 using MoozicOrb.Services.Interfaces;
+using System;
+using System.Linq;
 
 namespace MoozicOrb.Controllers
 {
@@ -18,7 +19,6 @@ namespace MoozicOrb.Controllers
             _loginService = loginService;
         }
 
-        // POST /api/login
         [HttpPost]
         public IActionResult Login([FromForm] string username, [FromForm] string password)
         {
@@ -26,12 +26,10 @@ namespace MoozicOrb.Controllers
             if (userId <= 0)
                 return Unauthorized(new { message = "Invalid credentials" });
 
-            // Create session
             var session = SessionStore.CreateSession(userId);
             return Ok(new { sessionId = session.SessionId, userId = session.UserId });
         }
 
-        // POST /api/logout
         [HttpPost("logout")]
         public IActionResult Logout([FromForm] string sessionId)
         {
@@ -42,47 +40,32 @@ namespace MoozicOrb.Controllers
             return Ok(new { message = "Logged out" });
         }
 
-        // GET /api/login/bootstrap
+        // KEEP THIS: It is lighter now (Groups only)
         [HttpGet("bootstrap")]
-        public IActionResult Bootstrap([FromHeader(Name = "X-Session-Id")] string sessionId,
-                                       [FromServices] IDirectMessageApiService dmService)
+        public IActionResult Bootstrap([FromHeader(Name = "X-Session-Id")] string sessionId)
         {
-            if (string.IsNullOrEmpty(sessionId))
-                return Unauthorized();
+            if (string.IsNullOrEmpty(sessionId)) return Unauthorized();
 
             var session = SessionStore.GetSession(sessionId);
-            if (session == null)
-                return Unauthorized();
+            if (session == null) return Unauthorized();
 
-            // Lookup user
+            // 1. Get User
             var user = new UserQuery().GetUserById(session.UserId);
-            if (user == null)
-                return Unauthorized();
+            if (user == null) return Unauthorized();
 
-            // Groups stored as CSV on user model
+            // 2. Get Groups (Critical for SignalR)
             var groupIds = (user.UserGroups ?? "")
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(g => long.Parse(g.Trim()))
                 .ToList();
 
-            // --------------------------
-            // Direct messages: get all unique userIds this user has DMed with
-            // --------------------------
-            var allDMs = dmService.GetAllMessagesForUser(user.UserId); // implement this in your service
-            var directUsers = allDMs
-                .Select(m => m.SenderId == user.UserId ? m.ReceiverId : m.SenderId)
-                .Distinct()
-                .ToList();
-
+            // Return minimal data
             return Ok(new
             {
                 userId = user.UserId,
-                groups = groupIds,
-                directUsers
+                groups = groupIds
             });
         }
-
-
     }
 }
 

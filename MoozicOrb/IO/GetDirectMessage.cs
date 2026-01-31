@@ -8,80 +8,73 @@ namespace MoozicOrb.IO
     {
         public GetDirectMessages() { }
 
-        // ----------------------------------------------------
-        // THREAD BETWEEN TWO USERS
-        // ----------------------------------------------------
+        // SHARED SQL BASE (Reduces duplication)
+        private const string BASE_SQL = @"
+            SELECT 
+                m.message_id, m.sender_id, m.receiver_id, m.message_text, m.timestamp,
+                s.first_name as s_first, s.last_name as s_last, s.profile_pic as s_pic,
+                r.first_name as r_first, r.last_name as r_last, r.profile_pic as r_pic
+            FROM messages m
+            JOIN user s ON m.sender_id = s.user_id
+            JOIN user r ON m.receiver_id = r.user_id
+            WHERE m.message_deleted = 0
+        ";
+
         public DirectMessageDto[] GetMessagesBetweenUsers(int userId1, int userId2)
         {
-            string queryString = $@"
-                SELECT *
-                FROM messages
-                WHERE
-                    message_deleted = 0
+            string sql = $@"{BASE_SQL} 
                 AND (
-                        (sender_id = {userId1} AND receiver_id = {userId2})
-                     OR (sender_id = {userId2} AND receiver_id = {userId1})
-                    )
-                ORDER BY timestamp ASC
-            ";
+                    (m.sender_id = {userId1} AND m.receiver_id = {userId2})
+                    OR (m.sender_id = {userId2} AND m.receiver_id = {userId1})
+                )
+                ORDER BY m.timestamp ASC";
 
-            Query query = new Query();
-            DataTable dt = query.Run(queryString);
-
-            return MapDataTable(dt);
+            return MapDataTable(new Query().Run(sql));
         }
 
-        // ----------------------------------------------------
-        // SINGLE MESSAGE BY ID
-        // ----------------------------------------------------
         public DirectMessageDto[] GetMessageById(long messageId)
         {
-            string queryString = $@"
-                SELECT *
-                FROM messages
-                WHERE message_id = {messageId}
-                LIMIT 1
-            ";
+            // Note: Removed 'message_deleted = 0' check here to allow fetching single system messages if needed
+            // Re-adding the JOINs manually since base has WHERE clause
+            string sql = @"
+                SELECT 
+                    m.message_id, m.sender_id, m.receiver_id, m.message_text, m.timestamp,
+                    s.first_name as s_first, s.last_name as s_last, s.profile_pic as s_pic,
+                    r.first_name as r_first, r.last_name as r_last, r.profile_pic as r_pic
+                FROM messages m
+                JOIN user s ON m.sender_id = s.user_id
+                JOIN user r ON m.receiver_id = r.user_id
+                WHERE m.message_id = " + messageId;
 
-            Query query = new Query();
-            DataTable dt = query.Run(queryString);
-
-            return MapDataTable(dt);
+            return MapDataTable(new Query().Run(sql));
         }
 
-        // ----------------------------------------------------
-        // ALL DMS FOR USER (LOGIN / INBOX)
-        // ----------------------------------------------------
         public DirectMessageDto[] GetAllMessagesForUser(int userId)
         {
-            string queryString = $@"
-                SELECT *
-                FROM messages
-                WHERE
-                    message_deleted = 0
-                AND (sender_id = {userId} OR receiver_id = {userId})
-                ORDER BY timestamp ASC
-            ";
+            string sql = $@"{BASE_SQL} 
+                AND (m.sender_id = {userId} OR m.receiver_id = {userId})
+                ORDER BY m.timestamp ASC";
 
-            Query query = new Query();
-            DataTable dt = query.Run(queryString);
-
-            return MapDataTable(dt);
+            return MapDataTable(new Query().Run(sql));
         }
 
-        // ----------------------------------------------------
-        // MAP
-        // ----------------------------------------------------
         private DirectMessageDto[] MapDataTable(DataTable dt)
         {
-            if (dt == null || dt.Rows.Count == 0)
-                return Array.Empty<DirectMessageDto>();
+            if (dt == null || dt.Rows.Count == 0) return Array.Empty<DirectMessageDto>();
 
-            DirectMessageDto[] messages = new DirectMessageDto[dt.Rows.Count];
+            var messages = new DirectMessageDto[dt.Rows.Count];
             int i = 0;
 
             foreach (DataRow row in dt.Rows)
             {
+                // Map Sender
+                string sFirst = row["s_first"]?.ToString() ?? "";
+                string sLast = row["s_last"]?.ToString() ?? "";
+
+                // Map Receiver
+                string rFirst = row["r_first"]?.ToString() ?? "";
+                string rLast = row["r_last"]?.ToString() ?? "";
+
                 messages[i++] = new DirectMessageDto
                 {
                     MessageId = Convert.ToInt64(row["message_id"]),
@@ -90,14 +83,14 @@ namespace MoozicOrb.IO
                     Text = row["message_text"].ToString(),
                     Timestamp = Convert.ToDateTime(row["timestamp"]),
 
-                    // hydrated later
-                    SenderName = null,
-                    SenderProfilePicUrl = null
+                    SenderName = $"{sFirst} {sLast}".Trim(),
+                    SenderProfilePicUrl = row["s_pic"]?.ToString(),
+
+                    ReceiverName = $"{rFirst} {rLast}".Trim(),
+                    ReceiverProfilePicUrl = row["r_pic"]?.ToString()
                 };
             }
-
             return messages;
         }
     }
 }
-

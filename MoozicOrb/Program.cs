@@ -27,13 +27,12 @@ builder.Services.AddScoped<IDirectMessageApiService, DirectMessageApiService>();
 builder.Services.AddScoped<ILoginService, LoginService>();
 
 // 2. Register the Broadcaster (The Sink)
-// When you switch to WebRTC later, you only change THIS line.
 builder.Services.AddSingleton<IAudioBroadcaster, SignalRAudioBroadcaster>();
 
 // 3. Register the Radio Station (The DJ)
 builder.Services.AddHostedService<RadioStationService>();
 
-// SignalR services remain untouched
+// SignalR services 
 
 builder.Services.AddSingleton<UserConnectionManager>();
 

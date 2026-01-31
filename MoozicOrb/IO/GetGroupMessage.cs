@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using MoozicOrb.Api.Models;
 
 namespace MoozicOrb.IO
@@ -7,42 +8,56 @@ namespace MoozicOrb.IO
     {
         public GetGroupMessages() { }
 
-        public object[] GetMessagesByGroupId(long groupId)
+        public GroupMessageDto[] GetMessagesByGroupId(long groupId)
         {
             try
             {
-                string queryString = $"SELECT * FROM group_messages WHERE group_id = {groupId} ORDER BY timestamp ASC";
+                // JOIN user table
+                string queryString = $@"
+                    SELECT m.*, u.first_name, u.last_name, u.profile_pic 
+                    FROM group_messages m
+                    JOIN user u ON m.sender_id = u.user_id
+                    WHERE m.group_id = {groupId} 
+                    ORDER BY m.timestamp ASC";
+
                 Query query = new Query();
                 DataTable dt = query.Run(queryString);
 
                 return MapDataTable(dt);
-
             }
             catch (Exception ex)
             {
-                // Log the exception (you can replace this with your logging mechanism)
-                Console.WriteLine($"An error occurred while fetching group messages: {ex.Message}");
-                return new object[0];
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                return Array.Empty<GroupMessageDto>();
             }
         }
-        public object[] GetMessageById(long groupId, long messageId)
+
+        public GroupMessageDto[] GetMessageById(long groupId, long messageId)
         {
-            string queryString = $"SELECT * FROM group_messages WHERE group_id = {groupId} AND message_id = {messageId}";
+            string queryString = $@"
+                SELECT m.*, u.first_name, u.last_name, u.profile_pic 
+                FROM group_messages m
+                JOIN user u ON m.sender_id = u.user_id
+                WHERE m.group_id = {groupId} AND m.message_id = {messageId}";
+
             Query query = new Query();
             DataTable dt = query.Run(queryString);
 
             return MapDataTable(dt);
         }
 
-        private object[] MapDataTable(DataTable dt)
+        private GroupMessageDto[] MapDataTable(DataTable dt)
         {
-            if (dt == null || dt.Rows.Count == 0) return new object[0];
+            if (dt == null || dt.Rows.Count == 0) return Array.Empty<GroupMessageDto>();
 
             GroupMessageDto[] messages = new GroupMessageDto[dt.Rows.Count];
             int i = 0;
 
             foreach (DataRow row in dt.Rows)
             {
+                string first = row["first_name"] != DBNull.Value ? row["first_name"].ToString() : "";
+                string last = row["last_name"] != DBNull.Value ? row["last_name"].ToString() : "";
+
                 messages[i++] = new GroupMessageDto
                 {
                     MessageId = long.Parse(row["message_id"].ToString()),
@@ -50,8 +65,10 @@ namespace MoozicOrb.IO
                     SenderId = int.Parse(row["sender_id"].ToString()),
                     Text = row["message_text"].ToString(),
                     Timestamp = (DateTime)row["timestamp"],
-                    SenderName = "",             // hydrate in service/controller
-                    SenderProfilePicUrl = ""     // hydrate in service/controller
+
+                    // ✅ NOW POPULATED
+                    SenderName = $"{first} {last}".Trim(),
+                    SenderProfilePicUrl = row["profile_pic"] != DBNull.Value ? row["profile_pic"].ToString() : null
                 };
             }
 

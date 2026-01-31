@@ -61,6 +61,9 @@
     function appendMessage(msg, isHistory = false) {
         if (!chatMessagesContainer) return;
 
+        // Robust name check for both casing styles
+        const sName = msg.senderName || msg.SenderName || "User";
+
         const isForCurrentChat =
             (AppState.activeChat.type === "direct" && (msg.senderId == AppState.activeChat.id || msg.receiverId == AppState.activeChat.id)) ||
             (AppState.activeChat.type === "group" && msg.groupId == AppState.activeChat.id);
@@ -76,7 +79,7 @@
 
         div.innerHTML = `
             <div class="msg-bubble">
-                <small><strong>${msg.senderName ?? "User"}</strong></small>
+                <small><strong>${sName}</strong></small>
                 <div>${msg.text}</div>
             </div>
         `;
@@ -86,7 +89,7 @@
     }
 
     // =============================
-    // 4. LOAD MESSAGES (UPDATED FOR MOBILE)
+    // 4. LOAD MESSAGES
     // =============================
     async function loadDirectMessages(userId, username) {
         AppState.activeChat = { type: "direct", id: userId };
@@ -102,10 +105,7 @@
             messages.forEach(m => appendMessage(m, true));
         }
 
-        // 1. Open the Overlay
         document.getElementById("chatOverlay").classList.add("active");
-
-        // 2. TRIGGER MOBILE VIEW (The Fix)
         const container = document.querySelector('.chat-app-container');
         if (container) container.classList.add('conversation-active');
     }
@@ -124,16 +124,13 @@
             messages.forEach(m => appendMessage(m, true));
         }
 
-        // 1. Open the Overlay
         document.getElementById("chatOverlay").classList.add("active");
-
-        // 2. TRIGGER MOBILE VIEW (The Fix)
         const container = document.querySelector('.chat-app-container');
         if (container) container.classList.add('conversation-active');
     }
 
     // =============================
-    // 5. SIGNALR EVENTS
+    // 5. SIGNALR EVENTS (THE FIX)
     // =============================
     messageConn.on("OnDirectMessage", async ({ senderId, messageId }) => {
         const res = await fetch(`/api/direct/messages/single/${messageId}`, {
@@ -142,8 +139,19 @@
 
         if (res.ok) {
             const msg = await res.json();
+
+            // 1. Identify Partner ID
             const partnerId = (msg.senderId == AuthState.userId) ? msg.receiverId : msg.senderId;
-            const partnerName = (msg.senderId == AuthState.userId) ? `User ${partnerId}` : msg.senderName;
+
+            // 2. Identify Partner Name (Check CamelCase AND PascalCase)
+            // If I am sender, I need ReceiverName. If I am receiver, I need SenderName.
+            const rName = msg.receiverName || msg.ReceiverName;
+            const sName = msg.senderName || msg.SenderName;
+
+            let partnerName = (msg.senderId == AuthState.userId) ? rName : sName;
+
+            // Fallback to "User ID" only if name is strictly missing
+            if (!partnerName) partnerName = `User ${partnerId}`;
 
             if (window.AuthState && window.AuthState.ensureThread) {
                 window.AuthState.ensureThread({
@@ -202,7 +210,6 @@
     // 7. INITIALIZATION
     // =============================
     document.addEventListener("DOMContentLoaded", () => {
-        // Chat Input
         const input = document.getElementById("msgInput");
         const btn = document.getElementById("msgSendBtn");
 
@@ -223,7 +230,6 @@
             });
         }
 
-        // Start Call
         const startVideoBtn = document.getElementById("startVideoCallBtn");
         if (startVideoBtn) {
             startVideoBtn.addEventListener("click", () => {
@@ -235,7 +241,6 @@
             });
         }
 
-        // Hangup
         const hangupBtn = document.getElementById("hangupBtn");
         if (hangupBtn) {
             hangupBtn.addEventListener("click", (e) => {

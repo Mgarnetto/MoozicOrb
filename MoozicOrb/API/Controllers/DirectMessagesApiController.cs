@@ -70,6 +70,9 @@ public class DirectMessagesController : ControllerBase
         if (msg.SenderId != me && msg.ReceiverId != me)
             return Forbid();
 
+        //var sender = new MoozicOrb.IO.UserQuery().GetUserById(msg.SenderId);
+        //msg.SenderName = sender.FirstName + " " + sender.LastName;
+
         return Ok(msg);
     }
 

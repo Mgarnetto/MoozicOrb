@@ -56,6 +56,9 @@ public class GroupMessagesController : ControllerBase
         if (msg == null)
             return NotFound();
 
+        //var sender = new MoozicOrb.IO.UserQuery().GetUserById(msg.SenderId);
+        //msg.SenderName = sender.FirstName + " " + sender.LastName;
+
         return Ok(msg);
     }
 
