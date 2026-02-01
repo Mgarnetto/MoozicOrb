@@ -4,21 +4,35 @@ using System.Collections.Generic;
 namespace MoozicOrb.API.Models
 {
     // --- POSTS ---
-    public class CreatePostRequest
-    {
-        public string Content { get; set; }
-        public int Type { get; set; } // 1=Status, 2=Article, 3=Classified
-        public List<MediaAttachmentDto> MediaAttachments { get; set; }
-    }
-
     public class PostDto
     {
-        public long PostId { get; set; }
-        public int UserId { get; set; }
-        public string Content { get; set; }
-        public int Type { get; set; }
+        public long Id { get; set; }
+        public int AuthorId { get; set; }
+        public string AuthorName { get; set; }
+        public string AuthorPic { get; set; }
+
+        // Context (Where was this posted?)
+        public string ContextType { get; set; } // "loc", "user", "page"
+        public string ContextId { get; set; }
+
+        // Core Content
+        public string Type { get; set; }        // "status", "article", "classified", "media"
+        public string Title { get; set; }
+        public string Text { get; set; }        // The main content
+        public string ImageUrl { get; set; }
         public DateTime CreatedAt { get; set; }
-        public List<MediaAttachmentDto> Attachments { get; set; }
+        public string CreatedAgo { get; set; }  // Formatted string (e.g., "2h ago")
+
+        // Polymorphic Extras (Nullable)
+        public decimal? Price { get; set; }             // Classifieds
+        public string LocationLabel { get; set; }       // Classifieds
+        public string DifficultyLevel { get; set; }     // Tutorials
+        public string VideoUrl { get; set; }            // Tutorials/Media
+        public long? MediaId { get; set; }              // Single Attached Song ID
+        public string Category { get; set; }            // Generic Category
+
+        // Gallery / Multi-Media
+        public List<MediaAttachmentDto> Attachments { get; set; } = new List<MediaAttachmentDto>();
     }
 
     // --- COLLECTIONS ---
