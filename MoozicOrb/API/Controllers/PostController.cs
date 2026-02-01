@@ -40,15 +40,27 @@ namespace MoozicOrb.API.Controllers
             {
                 int userId = GetUserId();
 
+                // A. Insert Post
                 var postIo = new InsertPost();
                 long postId = postIo.Execute(userId, req);
 
-                // Construct DTO for Broadcast (Manual Mapping for Speed)
+                // B. Insert Attachments (The loop)
+                if (req.MediaAttachments != null && req.MediaAttachments.Count > 0)
+                {
+                    var mediaIo = new InsertPostMedia();
+                    int sort = 0;
+                    foreach (var item in req.MediaAttachments)
+                    {
+                        mediaIo.Execute(postId, item.MediaId, item.MediaType, sort++);
+                    }
+                }
+
+                // C. Construct DTO for Broadcast
                 var livePost = new PostDto
                 {
                     Id = postId,
                     AuthorId = userId,
-                    AuthorName = "Me", // In prod, fetch user name from session cache
+                    AuthorName = "Me", // TODO: Fetch real name
                     AuthorPic = "/img/default.png",
                     ContextType = req.ContextType,
                     ContextId = req.ContextId,
@@ -58,6 +70,7 @@ namespace MoozicOrb.API.Controllers
                     ImageUrl = req.ImageUrl,
                     CreatedAt = DateTime.UtcNow,
                     CreatedAgo = "Just now",
+                    Attachments = req.MediaAttachments, // Pass them back!
                     Price = req.Price,
                     LocationLabel = req.LocationLabel,
                     DifficultyLevel = req.DifficultyLevel,
@@ -66,7 +79,7 @@ namespace MoozicOrb.API.Controllers
                     Category = req.Category
                 };
 
-                // Broadcast
+                // D. Broadcast
                 string targetGroup = GetSignalRGroupName(req.ContextType, req.ContextId);
                 await _hub.Clients.Group(targetGroup).SendAsync("ReceivePost", new
                 {
@@ -80,7 +93,7 @@ namespace MoozicOrb.API.Controllers
             catch (Exception ex) { return BadRequest(ex.Message); }
         }
 
-        // 2. GET FEED (List)
+        // 2. GET FEED
         [HttpGet]
         public IActionResult GetPosts(
             [FromQuery] string contextType,
@@ -89,7 +102,6 @@ namespace MoozicOrb.API.Controllers
         {
             try
             {
-                // Uses Method Overload B
                 var io = new GetPost();
                 var posts = io.Execute(contextType, contextId, page);
                 return Ok(posts);
@@ -97,18 +109,15 @@ namespace MoozicOrb.API.Controllers
             catch (Exception ex) { return BadRequest(ex.Message); }
         }
 
-        // 3. GET SINGLE (By ID)
+        // 3. GET SINGLE
         [HttpGet("{id}")]
         public IActionResult GetSingle(long id)
         {
             try
             {
-                // Uses Method Overload A
                 var io = new GetPost();
                 var post = io.Execute(id);
-
                 if (post == null) return NotFound("Post not found");
-
                 return Ok(post);
             }
             catch (Exception ex) { return BadRequest(ex.Message); }

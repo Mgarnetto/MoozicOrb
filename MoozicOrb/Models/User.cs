@@ -1,35 +1,40 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
+using System.Text.Json;
 
 namespace MoozicOrb.Models
 {
     public class User
     {
         public int UserId { get; set; }
+        public string Email { get; set; }        // New Login Key
+        public string Username { get; set; }     // URL Slug
+        public string DisplayName { get; set; }  // UI Name
+        public string ProfilePicUrl { get; set; }
+        public string CoverImageUrl { get; set; }
 
-        public string FirstName { get; set; }
-        public string MiddleName { get; set; }
-        public string LastName { get; set; }
+        public string UserGroups { get; set; } = "9"; // Comma-separated group IDs
+        public string Bio { get; set; }
+        public bool IsCreator { get; set; }
 
-        public string UserName { get; set; } // email as username
+        // The Layout Engine
+        public string ProfileLayoutJson { get; set; }
 
-        public string ProfilePic { get; set; }
-
-        // Comma-delimited group IDs: "12,19,44"
-        public string UserGroups { get; set; }
-
-        public bool IsArtist { get; set; }
-
-        public HashSet<long> GetGroupIds()
+        public List<string> LayoutOrder
         {
-            if (string.IsNullOrWhiteSpace(UserGroups))
-                return new HashSet<long>();
+            get
+            {
+                if (string.IsNullOrEmpty(ProfileLayoutJson))
+                    return new List<string> { "posts", "music", "store" };
 
-            return UserGroups
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(x => long.Parse(x.Trim()))
-                .ToHashSet();
+                try
+                {
+                    return JsonSerializer.Deserialize<List<string>>(ProfileLayoutJson);
+                }
+                catch
+                {
+                    return new List<string> { "posts", "music", "store" };
+                }
+            }
         }
     }
 }

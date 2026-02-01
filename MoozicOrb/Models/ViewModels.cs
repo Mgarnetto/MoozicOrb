@@ -17,7 +17,6 @@ namespace MoozicOrb.Models
 
     public class HomeViewModel : BaseSignalRViewModel
     {
-        public List<PostDto> Posts { get; set; } = new();
     }
 
     public class LocationViewModel : BaseSignalRViewModel
@@ -26,7 +25,6 @@ namespace MoozicOrb.Models
         public string Name { get; set; }
         public string Description { get; set; }
         public List<ArtistDto> TopArtists { get; set; } = new();
-        public List<PostDto> Posts { get; set; } = new();
     }
 
     public class CreatorViewModel : BaseSignalRViewModel
@@ -37,13 +35,11 @@ namespace MoozicOrb.Models
         public string CoverImage { get; set; }
         public string Bio { get; set; }
         public List<CollectionDto> Collections { get; set; } = new();
-        public List<PostDto> Posts { get; set; } = new();
     }
 
     public class PageViewModel : BaseSignalRViewModel
     {
         public string Title { get; set; }
-        public List<PostDto> Posts { get; set; } = new();
     }
 
     public class RadioViewModel : BaseSignalRViewModel
@@ -79,25 +75,7 @@ namespace MoozicOrb.Models
     // ==========================================
     // These represent the small chunks of data inside lists
 
-    public class PostDto
-    {
-        public int Id { get; set; }
-        public int AuthorId { get; set; }
-        public string AuthorName { get; set; }
-        public string AuthorPic { get; set; }
-        public string Title { get; set; }
-        public string Summary { get; set; }     // For Articles
-        public string Text { get; set; }        // For Status
-        public string ImageUrl { get; set; }
-        public string Type { get; set; }        // "article", "status", "classified", "media"
-
-        // Specifics
-        public decimal? Price { get; set; }     // For Classifieds
-        public string Location { get; set; }    // For Classifieds
-        public string DifficultyLevel { get; set; } // For Tutorials
-        public int MediaId { get; set; }        // For Playable Media
-        public string Category { get; set; }
-    }
+    
 
     public class ArtistDto
     {

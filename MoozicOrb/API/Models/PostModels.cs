@@ -3,37 +3,47 @@ using System.Collections.Generic;
 
 namespace MoozicOrb.API.Models
 {
-    // --- POSTS ---
-    public class PostDto
-    {
-        public long Id { get; set; }
-        public int AuthorId { get; set; }
-        public string AuthorName { get; set; }
-        public string AuthorPic { get; set; }
+    
+        // --- POSTS ---
+        public class PostDto
+        {
+            public long Id { get; set; }
+            public int AuthorId { get; set; }
+            public string AuthorName { get; set; }
+            public string AuthorPic { get; set; }
 
-        // Context (Where was this posted?)
-        public string ContextType { get; set; } // "loc", "user", "page"
-        public string ContextId { get; set; }
+            // Context
+            public string ContextType { get; set; }
+            public string ContextId { get; set; }
 
-        // Core Content
-        public string Type { get; set; }        // "status", "article", "classified", "media"
-        public string Title { get; set; }
-        public string Text { get; set; }        // The main content
-        public string ImageUrl { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public string CreatedAgo { get; set; }  // Formatted string (e.g., "2h ago")
+            // Content
+            public string Type { get; set; }
+            public string Title { get; set; }
+            public string Text { get; set; }
+            public string ImageUrl { get; set; } // Cover Image
+            public DateTime CreatedAt { get; set; }
+            public string CreatedAgo { get; set; }
 
-        // Polymorphic Extras (Nullable)
-        public decimal? Price { get; set; }             // Classifieds
-        public string LocationLabel { get; set; }       // Classifieds
-        public string DifficultyLevel { get; set; }     // Tutorials
-        public string VideoUrl { get; set; }            // Tutorials/Media
-        public long? MediaId { get; set; }              // Single Attached Song ID
-        public string Category { get; set; }            // Generic Category
+            // Polymorphic Extras
+            public decimal? Price { get; set; }
+            public string LocationLabel { get; set; }
+            public string DifficultyLevel { get; set; }
+            public string VideoUrl { get; set; }    // External Video
+            public long? MediaId { get; set; }      // Single Audio Attachment
+            public string Category { get; set; }
 
-        // Gallery / Multi-Media
-        public List<MediaAttachmentDto> Attachments { get; set; } = new List<MediaAttachmentDto>();
-    }
+            // --- THE GALLERY (CRITICAL FIX) ---
+            public List<MediaAttachmentDto> Attachments { get; set; } = new List<MediaAttachmentDto>();
+        }
+
+        // --- SHARED ---
+        public class MediaAttachmentDto
+        {
+            public long MediaId { get; set; }
+            public int MediaType { get; set; } // 1=Audio, 2=Video, 3=Image
+            public string Url { get; set; }    // We will populate this in the GET
+        }
+    
 
     // --- COLLECTIONS ---
     public class CreateCollectionRequest
@@ -66,14 +76,6 @@ namespace MoozicOrb.API.Models
         public long TargetId { get; set; }
         public int TargetType { get; set; }
         public string Title { get; set; }
-        public string Url { get; set; }
-    }
-
-    // --- SHARED ---
-    public class MediaAttachmentDto
-    {
-        public long MediaId { get; set; }
-        public int MediaType { get; set; } // 1=Audio, 2=Video, 3=Image
         public string Url { get; set; }
     }
 }

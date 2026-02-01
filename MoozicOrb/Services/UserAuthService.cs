@@ -21,7 +21,7 @@ namespace MoozicOrb.Services
         public bool CreateUser(User user, string password)
         {
             // Insert user row
-            long userId = _insertUser.Insert(user);
+            long userId = _insertUser.Execute(user);
 
             if (userId == 0)
                 return false;

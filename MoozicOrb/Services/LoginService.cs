@@ -20,7 +20,7 @@ namespace MoozicOrb.Services
         public int Login(string username, string password)
         {
             // 1. Lookup user
-            User user = _userQuery.GetUserByUsername(username);
+            User user = _userQuery.GetUserByEmail(username);
             if (user == null || user.UserId <= 0)
                 return 0;
 

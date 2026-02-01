@@ -1,80 +1,94 @@
-﻿using MoozicOrb.Api.Models;
+﻿using MySql.Data.MySqlClient;
 using MoozicOrb.Models;
-using System.Data;
+using System;
 
 namespace MoozicOrb.IO
 {
     public class UserQuery
     {
-        public UserQuery() { }
-
-        public User[] GetUsers()
-        {
-            string query = "SELECT * FROM `user`";
-            Query q = new Query();
-            DataTable dt = q.Run(query);
-
-            User[] users = new User[dt.Rows.Count];
-            int it = 0;
-
-            foreach (DataRow dr in dt.Rows)
-            {
-                users[it] = new User();
-                users[it].UserId = int.Parse(dr["user_id"].ToString());
-                users[it].FirstName = dr["first_name"].ToString();
-                //users[it].MiddleName = dr["middle_name"].ToString();
-                users[it].LastName = dr["last_name"].ToString();
-                it++;
-            }
-
-            return users;
-        }
+        // ==========================================
+        // 1. GET USER BY ID (For Profile Pages)
+        // ==========================================
         public User GetUserById(int userId)
         {
-            string query = $"SELECT * FROM user WHERE user_id = {userId}";
+            User user = null;
+            string sql = "SELECT * FROM user WHERE user_id = @uid";
 
-            Query q = new Query();
-            DataTable dt = q.Run(query);
-
-            if (dt == null || dt.Rows.Count == 0)
-                return null;
-
-            var row = dt.Rows[0];
-
-            return new User
+            using (var conn = new MySqlConnection(DBConn1.ConnectionString))
             {
-                UserId = int.Parse(row["user_id"].ToString()),
-                FirstName = row["first_name"].ToString(),
-                MiddleName = row["middle_name"].ToString(),
-                LastName = row["last_name"].ToString(),
-                ProfilePic = row["profile_pic"].ToString(),
-                UserGroups = row["user_groups"].ToString(),
-                IsArtist = row["is_artist"].ToString() == "1"
-            };
+                conn.Open();
+                using (var cmd = new MySqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@uid", userId);
+                    using (var rdr = cmd.ExecuteReader())
+                    {
+                        if (rdr.Read()) user = MapReaderToUser(rdr);
+                    }
+                }
+            }
+            return user;
         }
 
-        public User GetUserByUsername(string username)
+        // ==========================================
+        // 2. GET USER BY EMAIL (For Login)
+        // ==========================================
+        public User GetUserByEmail(string email)
         {
-            string query = $"SELECT * FROM user WHERE username = '{username}'";
+            User user = null;
+            string sql = "SELECT * FROM user WHERE email = @email";
 
-            Query q = new Query();
-            DataTable dt = q.Run(query);
+            using (var conn = new MySqlConnection(DBConn1.ConnectionString))
+            {
+                conn.Open();
+                using (var cmd = new MySqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@email", email);
+                    using (var rdr = cmd.ExecuteReader())
+                    {
+                        if (rdr.Read()) user = MapReaderToUser(rdr);
+                    }
+                }
+            }
+            return user;
+        }
 
-            if (dt == null || dt.Rows.Count == 0)
-                return null;
-
-            var row = dt.Rows[0];
-
+        // ==========================================
+        // HELPER: MAPPER
+        // ==========================================
+        private User MapReaderToUser(MySqlDataReader rdr)
+        {
             return new User
             {
-                UserId = int.Parse(row["user_id"].ToString()),
-                FirstName = row["first_name"].ToString(),
-                MiddleName = row["middle_name"].ToString(),
-                LastName = row["last_name"].ToString(),
-                UserName = row["username"].ToString(), // email as username
-                ProfilePic = row["profile_pic"].ToString(),
-                UserGroups = row["user_groups"].ToString(),
-                IsArtist = row["is_artist"].ToString() == "1"
+                UserId = rdr.GetInt32("user_id"),
+                Email = rdr["email"].ToString(),
+                Username = rdr["username"].ToString(),
+                DisplayName = rdr["display_name"].ToString(),
+
+                // Handle optional profile images
+                ProfilePicUrl = rdr["profile_pic"] == DBNull.Value
+                    ? "/img/default.png"
+                    : rdr["profile_pic"].ToString(),
+
+                CoverImageUrl = rdr["cover_image_url"] == DBNull.Value
+                    ? "/img/default_cover.jpg"
+                    : rdr["cover_image_url"].ToString(),
+
+                Bio = rdr["bio"] == DBNull.Value
+                    ? ""
+                    : rdr["bio"].ToString(),
+
+                // Map boolean flag
+                IsCreator = rdr["is_creator"] != DBNull.Value && (Convert.ToInt32(rdr["is_creator"]) == 1),
+
+                // Map JSON Layout (Stored as string here, Model parses it)
+                ProfileLayoutJson = rdr["profile_layout"] == DBNull.Value
+                    ? null
+                    : rdr["profile_layout"].ToString(),
+
+                // Map the User Groups (Defaults to "9" if null/empty in DB)
+                UserGroups = rdr["user_groups"] == DBNull.Value
+                    ? "9"
+                    : rdr["user_groups"].ToString()
             };
         }
     }
