@@ -6,90 +6,69 @@ namespace MoozicOrb.IO
 {
     public class UserQuery
     {
-        // ==========================================
-        // 1. GET USER BY ID (For Profile Pages)
-        // ==========================================
         public User GetUserById(int userId)
         {
-            User user = null;
-            string sql = "SELECT * FROM user WHERE user_id = @uid";
-
-            using (var conn = new MySqlConnection(DBConn1.ConnectionString))
-            {
-                conn.Open();
-                using (var cmd = new MySqlCommand(sql, conn))
-                {
-                    cmd.Parameters.AddWithValue("@uid", userId);
-                    using (var rdr = cmd.ExecuteReader())
-                    {
-                        if (rdr.Read()) user = MapReaderToUser(rdr);
-                    }
-                }
-            }
-            return user;
+            return FetchUser("SELECT * FROM `user` WHERE user_id = @val", "@val", userId);
         }
 
-        // ==========================================
-        // 2. GET USER BY EMAIL (For Login)
-        // ==========================================
         public User GetUserByEmail(string email)
         {
-            User user = null;
-            string sql = "SELECT * FROM user WHERE email = @email";
+            return FetchUser("SELECT * FROM `user` WHERE email = @val", "@val", email);
+        }
 
+        // Helper to avoid duplicate code
+        private User FetchUser(string sql, string paramName, object paramValue)
+        {
+            User user = null;
             using (var conn = new MySqlConnection(DBConn1.ConnectionString))
             {
                 conn.Open();
                 using (var cmd = new MySqlCommand(sql, conn))
                 {
-                    cmd.Parameters.AddWithValue("@email", email);
+                    cmd.Parameters.AddWithValue(paramName, paramValue);
                     using (var rdr = cmd.ExecuteReader())
                     {
-                        if (rdr.Read()) user = MapReaderToUser(rdr);
+                        if (rdr.Read())
+                        {
+                            user = new User
+                            {
+                                UserId = rdr.GetInt32("user_id"), // Fixed: Mapped to UserId
+
+                                // Legal Names
+                                FirstName = rdr["first_name"].ToString(),
+                                MiddleName = rdr["middle_name"].ToString(),
+                                LastName = rdr["last_name"].ToString(),
+
+                                UserName = rdr["username"].ToString(),
+                                Email = rdr["email"] == DBNull.Value ? "" : rdr["email"].ToString(),
+
+                                // Safe check if 'display_name' column exists yet, fallback to username
+                                DisplayName = HasColumn(rdr, "display_name") ? rdr["display_name"].ToString() : rdr["username"].ToString(),
+
+                                ProfilePic = rdr["profile_pic"] == DBNull.Value ? "/img/default.png" : rdr["profile_pic"].ToString(),
+                                CoverImageUrl = HasColumn(rdr, "cover_image_url") ? rdr["cover_image_url"].ToString() : "",
+                                Bio = HasColumn(rdr, "bio") ? rdr["bio"].ToString() : "",
+
+                                IsCreator = HasColumn(rdr, "is_creator") && (Convert.ToInt32(rdr["is_creator"]) == 1),
+                                
+                                UserGroups = rdr["user_groups"].ToString()
+                            };
+                        }
                     }
                 }
             }
             return user;
         }
 
-        // ==========================================
-        // HELPER: MAPPER
-        // ==========================================
-        private User MapReaderToUser(MySqlDataReader rdr)
+        // Safety helper in case column doesn't exist yet
+        private bool HasColumn(MySqlDataReader rdr, string columnName)
         {
-            return new User
+            for (int i = 0; i < rdr.FieldCount; i++)
             {
-                UserId = rdr.GetInt32("user_id"),
-                Email = rdr["email"].ToString(),
-                Username = rdr["username"].ToString(),
-                DisplayName = rdr["display_name"].ToString(),
-
-                // Handle optional profile images
-                ProfilePicUrl = rdr["profile_pic"] == DBNull.Value
-                    ? "/img/default.png"
-                    : rdr["profile_pic"].ToString(),
-
-                CoverImageUrl = rdr["cover_image_url"] == DBNull.Value
-                    ? "/img/default_cover.jpg"
-                    : rdr["cover_image_url"].ToString(),
-
-                Bio = rdr["bio"] == DBNull.Value
-                    ? ""
-                    : rdr["bio"].ToString(),
-
-                // Map boolean flag
-                IsCreator = rdr["is_creator"] != DBNull.Value && (Convert.ToInt32(rdr["is_creator"]) == 1),
-
-                // Map JSON Layout (Stored as string here, Model parses it)
-                ProfileLayoutJson = rdr["profile_layout"] == DBNull.Value
-                    ? null
-                    : rdr["profile_layout"].ToString(),
-
-                // Map the User Groups (Defaults to "9" if null/empty in DB)
-                UserGroups = rdr["user_groups"] == DBNull.Value
-                    ? "9"
-                    : rdr["user_groups"].ToString()
-            };
+                if (rdr.GetName(i).Equals(columnName, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
         }
     }
 }
