@@ -1,0 +1,22 @@
+﻿@* @model PageViewModel *@
+
+<input type="hidden" id="page-signalr-context" value="page_articles" />
+
+<div class="section">
+    <h2 class="section-heading">News & Editorials</h2>
+
+    <div id="feed_page_articles" class="masonry-grid">
+        @foreach (var post in Model.Posts)
+        {
+            <div class="feed-item article-card">
+                <div class="article-thumb" style="background-image: url('@post.ImageUrl')"></div>
+                <div class="article-content">
+                    <span class="badge">@post.Category</span>
+                    <h3>@post.Title</h3>
+                    <p>@post.Summary</p>
+                    <button class="btn-text">Read More</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>

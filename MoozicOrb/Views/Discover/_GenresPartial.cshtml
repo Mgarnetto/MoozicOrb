@@ -1,0 +1,21 @@
+﻿@* @model GenresViewModel *@
+
+<input type="hidden" id="page-signalr-context" value="page_genres" />
+
+<div class="section">
+    <h2 class="section-heading">Explore Genres</h2>
+
+    <div class="genre-container">
+        <input type="text" class="genre-search" placeholder="Filter genres...">
+    </div>
+
+    <div class="genre-grid-large">
+        @foreach (var genre in Model.Genres)
+        {
+            <div class="genre-tile" style="background-color: @genre.Color">
+                <h3>@genre.Name</h3>
+                <i class="@genre.IconClass"></i>
+            </div>
+        }
+    </div>
+</div>

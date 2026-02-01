@@ -1,0 +1,25 @@
+﻿@* @model PageViewModel *@
+
+<input type="hidden" id="page-signalr-context" value="page_classifieds" />
+
+<div class="section">
+    <div class="header-split">
+        <h2 class="section-heading">Marketplace</h2>
+        <button class="btn-sidebar-outline">Post Ad</button>
+    </div>
+
+    <div id="feed_page_classifieds" class="classifieds-grid">
+        @foreach (var item in Model.Posts)
+        {
+            <div class="feed-item classified-card">
+                <div class="classified-badge">$@item.Price</div>
+                <div class="classified-thumb" style="background-image: url('@item.ImageUrl')"></div>
+                <div class="classified-body">
+                    <h4>@item.Title</h4>
+                    <p>@item.Location</p>
+                    <button class="btn-contact" onclick="startChat(@item.AuthorId)">Contact</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>

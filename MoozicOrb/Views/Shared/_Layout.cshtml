@@ -4,91 +4,219 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - MoozicOrb</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Outfit:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/MoozicOrb.styles.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/auth-gate.css" />
-    <style>
-        /* Custom quick styles */
-        #video-container {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
 
-        video {
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        #call-controls button {
-            min-width: 120px;
-        }
-
-        .group-chat .messages {
-            background: #f8f9fa;
-            border-radius: 4px;
-        }
-    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/geodata/worldLow.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">MoozicOrb</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul style="color: white !important;" class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a style="color: white !important;" class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        @* <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Mainpage">Mainpage</a>
-                        </li> *@
-                        <li class="nav-item">
-                            <a style="color: white !important; background-color: black !important;" class="nav-link text-dark" asp-area="" asp-controller="TestStream" asp-action="Index">Test Page</a>
-                        </li>
-                    </ul>
+<body class="auth-off">
+    <nav class="navbar">
+        <div class="nav-left">
+            <button class="navbar-toggler" id="sidebarToggle">
+                <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+            </button>
+            <a class="logo-container" href="/">
+                <span class="logo-text">Moozic</span>
+                <div class="eclipse-orb"></div>
+                <span class="logo-text">rb</span>
+            </a>
+        </div>
+        <div class="nav-right">
+            <div id="auth-guest">
+                <button class="btn-login" id="loginToggleBtn">LOGIN</button>
+            </div>
+            <div id="auth-user" style="display:none;">
+                <button class="btn-login" id="logoutBtn">LOGOUT</button>
+            </div>
+
+            <div class="login-dropdown" id="loginDropdown">
+                <div class="form-wrapper">
+                    <div class="slide-controls">
+                        <input type="radio" name="slider" id="loginRadio" checked>
+                        <input type="radio" name="slider" id="signupRadio">
+                        <label for="loginRadio" class="slide login">Login</label>
+                        <label for="signupRadio" class="slide signup">Signup</label>
+                        <div class="slider-tab"></div>
+                    </div>
+
+                    <div class="form-inner">
+                        <form id="loginForm" onsubmit="return false;">
+                            <div class="field">
+                                <input type="text" id="loginUser" placeholder="Username" required>
+                            </div>
+                            <div class="field">
+                                <input type="password" id="loginPass" placeholder="Password" required>
+                            </div>
+                            <div class="pass-link"><a href="#">Forgot password?</a></div>
+                            <div class="field btn">
+                                <div class="btn-layer"></div>
+                                <input type="submit" value="Login" id="loginSubmitBtn">
+                            </div>
+                            <div class="signup-link">Not a member? <a href="#" id="switchToSignup">Signup now</a></div>
+                            <div id="loginStatus" class="status-msg"></div>
+                        </form>
+
+                        <form id="signupForm" onsubmit="return false;">
+                            <div class="field"><input type="text" placeholder="Full Name" required></div>
+                            <div class="field"><input type="email" placeholder="Email Address" required></div>
+                            <div class="field"><input type="password" placeholder="Password" required></div>
+                            <div class="field"><input type="password" placeholder="Confirm Password" required></div>
+                            <div class="age-gate">
+                                <input type="checkbox" id="ageCheck" required>
+                                <label for="ageCheck">I am 18 years or older</label>
+                            </div>
+                            <div class="field btn">
+                                <div class="btn-layer"></div>
+                                <input type="submit" value="Signup">
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </nav>
-    </header>
+        </div>
+    </nav>
 
-    <div class="container py-4">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-profile auth-required">
+            <div class="profile-img"></div>
+            <div class="profile-stats">
+                <span><strong>1.2k</strong> Followers</span>
+                <span><strong>450</strong> Following</span>
+            </div>
+            <div class="profile-actions">
+                <button class="btn-sidebar-outline">Edit</button>
+                <button class="btn-sidebar-fill">Save</button>
+            </div>
+        </div>
+
+        <div class="sidebar-search">
+            <i class="fa fa-search"></i>
+            <input type="text" placeholder="Search...">
+        </div>
+
+        <ul class="sidebar-nav">
+            <li><a href="/" class="nav-link active"><i class="fa fa-home"></i> Home</a></li>
+            <li>
+                <a href="#" class="nav-link auth-trigger" id="messages-trigger">
+                    <i class="fa fa-envelope"></i> Messages
+                </a>
+            </li>
+            <li><a href="#"><i class="fa fa-music"></i> Discover</a></li>
+            <li><a href="#"><i class="fa fa-list"></i> Playlist</a></li>
+            <li><a href="#"><i class="fa fa-radio"></i> RadioOrb</a></li>
+            <li class="separator"></li>
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">Support</a></li>
+        </ul>
+    </aside>
+
+    <div class="main-wrapper" id="mainContent">
+        @RenderBody()
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - MoozicOrb - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    <div class="chat-overlay" id="chatOverlay">
+        <div class="chat-app-container">
+            <aside class="chat-sidebar">
+                <header class="chat-header">
+                    <h2>Messages</h2>
+                    <div class="chat-header-actions">
+                        <button class="icon-btn new-chat"><i class="fas fa-plus"></i></button>
+                        <button class="icon-btn close-overlay" id="closeOverlaySidebar"><i class="fas fa-times"></i></button>
+                    </div>
+                </header>
+                <ul class="chat-list" id="chatList"></ul>
+            </aside>
+
+            <main class="chat-window" id="chatWindow">
+                <header class="chat-window-header">
+                    <div class="header-left">
+                        <button class="icon-btn back-btn" id="chatBackBtn"><i class="fas fa-chevron-left"></i></button>
+                        <img id="chatAvatar" src="" class="avatar-sm" style="display:none;">
+                        <div>
+                            <h3 id="chatTitle">Select a Chat</h3>
+                            <span class="status" id="chatStatus"></span>
+                        </div>
+                    </div>
+                    <div class="header-right">
+                        <button class="icon-btn" id="startVideoCallBtn"><i class="fas fa-video"></i></button>
+                        <button class="icon-btn"><i class="fas fa-ellipsis-v"></i></button>
+                        <button class="icon-btn close-overlay" id="closeOverlayWindow"><i class="fas fa-times"></i></button>
+                    </div>
+                </header>
+
+                <div class="chat-messages" id="chatMessages"></div>
+
+                <footer class="chat-input-area">
+                    <button class="icon-btn"><i class="fas fa-microphone"></i></button>
+                    <input type="text" placeholder="Type a message..." id="msgInput">
+                    <button class="send-btn" id="msgSendBtn"><i class="fas fa-paper-plane"></i></button>
+                </footer>
+            </main>
         </div>
-    </footer>
+    </div>
 
-    @* <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/microsoft-signalr/signalr.js" asp-append-version="true"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/auth-state.js"></script>
-    <script src="~/js/stream.js"></script>
-    <script src="~/js/message.js" asp-append-version="true"></script>
+    <div id="videoCallModal" class="video-modal">
+        <div class="video-content">
+            <div class="video-grid">
+                <video id="remote-video" autoplay playsinline class="remote-feed"></video>
+                <video id="local-video" autoplay playsinline muted class="local-feed"></video>
+            </div>
+            <div class="video-controls">
+                <button class="v-btn bg-danger" id="hangupBtn"><i class="fas fa-phone-slash"></i></button>
+                <button class="v-btn" onclick="toggleMute()"><i class="fas fa-microphone"></i></button>
+                <button class="v-btn" onclick="toggleCam()"><i class="fas fa-video"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="incomingCallModal" class="incoming-modal">
+        <div class="incoming-content">
+            <div class="incoming-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <h3 id="incomingCallerName">Unknown Caller</h3>
+            <p>Incoming Call...</p>
+
+            <div class="incoming-actions">
+                <button id="btnRejectCall" class="btn-action reject">
+                    <i class="fas fa-phone-slash"></i>
+                </button>
+                <button id="btnAcceptCall" class="btn-action accept">
+                    <i class="fas fa-phone"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="player-bar-centered">
+        <div class="main-controls">
+            <button class="ctrl-btn sm"><i class="fa-solid fa-backward-step"></i></button>
+            <button class="ctrl-btn play-glow" id="playBtn"><i class="fa-solid fa-play"></i></button>
+            <button class="ctrl-btn sm"><i class="fa-solid fa-forward-step"></i></button>
+        </div>
+        <div class="scrubber-container">
+            <span class="time">0:00</span>
+            <div class="track-line"><div class="track-fill"></div></div>
+            <span class="time">--:--</span>
+        </div>
+        <div id="status" style="display:none;"></div>
+    </div>
+
+    <script src="~/js/auth-state.js" asp-append-version="true"></script>
     <script src="~/js/LoginService.js" asp-append-version="true"></script>
-    <script src="~/js/Login-Init.js" asp-append-version="true"></script> *@
-
-    @* <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            AuthState.setLoggedOut();
-        });
-    </script> *@
-
-    @* <script>
-        StreamService.init("radio-1");
-    </script> *@
-
+    <script src="~/js/Login-Init.js" asp-append-version="true"></script>
+    <script src="~/js/message.js" asp-append-version="true"></script>
+    <script src="~/js/router.js" asp-append-version="true"></script>
+    <script src="~/js/main.js" asp-append-version="true"></script>
+    <script src="~/js/player.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

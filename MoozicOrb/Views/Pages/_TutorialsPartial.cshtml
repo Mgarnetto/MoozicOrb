@@ -1,0 +1,23 @@
+﻿@* @model PageViewModel *@
+
+<input type="hidden" id="page-signalr-context" value="page_tutorials" />
+
+<div class="section">
+    <h2 class="section-heading">Learn & Grow</h2>
+
+    <div id="feed_page_tutorials" class="tutorials-list">
+        @foreach (var tut in Model.Posts)
+        {
+            <div class="feed-item tutorial-row">
+                <div class="tut-video-preview">
+                    <i class="fas fa-play-circle"></i>
+                </div>
+                <div class="tut-info">
+                    <h3>@tut.Title</h3>
+                    <span class="badge-skill">@tut.DifficultyLevel</span>
+                    <p>By @tut.AuthorName</p>
+                </div>
+            </div>
+        }
+    </div>
+</div>

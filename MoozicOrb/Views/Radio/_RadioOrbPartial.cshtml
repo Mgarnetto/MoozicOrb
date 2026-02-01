@@ -1,0 +1,31 @@
+﻿@* @model RadioViewModel *@
+
+<input type="hidden" id="page-signalr-context" value="page_radio" />
+
+<div class="orb-visualizer-container">
+    <div class="giant-eclipse-orb pulsing"></div>
+    <h2 class="now-playing-title">Live on MoozicOrb FM</h2>
+</div>
+
+<div class="section">
+    <div class="radio-tuner-grid">
+        <div class="station-card active">
+            <i class="fas fa-broadcast-tower"></i>
+            <span>Global Hits</span>
+        </div>
+        <div class="station-card">
+            <i class="fas fa-guitar"></i>
+            <span>Rock Central</span>
+        </div>
+        <div class="station-card">
+            <i class="fas fa-drum"></i>
+            <span>Bass Basement</span>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <h3>Live Requests</h3>
+    <div id="feed_page_radio" class="chat-style-feed">
+    </div>
+</div>

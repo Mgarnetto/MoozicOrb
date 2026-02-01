@@ -1,0 +1,42 @@
+﻿@model CreatorViewModel
+
+<input type="hidden" id="page-signalr-context" value="@Model.SignalRGroup" />
+
+<div class="hero profile-hero">
+    @* <div class="hero-bg" style="background-image: url('@Model.CoverImage')"></div>
+    <div class="hero-content">
+        <div class="profile-img-large" style="background-image: url('@Model.ProfilePic')"></div>
+        <h1 class="hero-title">@Model.DisplayName</h1>
+        <p class="hero-tag">@Model.Bio</p>
+
+        <div class="profile-meta">
+            <button class="btn-hero btn-follow" data-id="@Model.UserId">Follow</button>
+            <button class="btn-hero btn-message" onclick="startChat(@Model.UserId)">Message</button>
+        </div>
+    </div> *@
+</div>
+
+<div class="page-layout-grid">
+    <aside class="side-column">
+        <h3>Collections</h3>
+        <div class="collections-grid">
+            @* @foreach (var col in Model.Collections)
+            {
+                <div class="collection-item">
+                    <img src="@col.ArtUrl" alt="@col.Title">
+                    <span>@col.Title</span>
+                </div>
+            } *@
+        </div>
+    </aside>
+
+    <main class="main-column">
+        <h3>Recent Posts</h3>
+        <div id="feed_@Model.SignalRGroup" class="feed-stream">
+            @foreach (var post in Model.Posts)
+            {
+                <partial name="_PostCard" model="post" />
+            }
+        </div>
+    </main>
+</div>

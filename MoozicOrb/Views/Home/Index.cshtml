@@ -1,164 +1,19 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
-    MoozicOrb.Models.User[] userss = null;
-
-
-    try
-    {
-        MoozicOrb.Models.User[] users = new MoozicOrb.IO.UserQuery().GetUsers();
-        userss = users;
-
-    }catch (Exception ex)
-    {
-        <p>@ex.ToString()</p>
-    }   
+    ViewData["Title"] = "Home";
+    Layout = "_Layout"; // This loads the Persistent Player & Sidebar
 }
 
-<div class="container py-4">
+<partial name="_HomePartial" />
 
-    <!-- LOGIN CARD -->
-    <div id="login-card" class="card mb-4 shadow-sm">
-        <div class="card-header bg-primary text-white fw-bold">
-            Account Login
-        </div>
-        <div class="card-body">
-            <div class="row g-2 align-items-center">
-                <div class="col-md">
-                    <input type="text" id="login-username" class="form-control" placeholder="Username">
-                </div>
-                <div class="col-md">
-                    <input type="password" id="login-password" class="form-control" placeholder="Password">
-                </div>
-                <div class="col-md-auto d-flex gap-2">
-                    <button class="btn btn-success" id="login-button">Login</button>
-                    <button class="btn btn-secondary" id="logout-button">Logout</button>
-                </div>
-            </div>
-            <div id="login-status" class="mt-2 text-danger small"></div>
-        </div>
-    </div>
-
-    <!-- STREAM PANEL -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-            <span class="fw-bold">Live Stream</span>
-            <span id="stream-status" class="badge bg-secondary">OFFLINE</span>
-        </div>
-        <div class="card-body">
-            <div class="row g-3 align-items-center">
-
-                <div class="col-md-auto d-flex gap-2 flex-wrap">
-                    <button id="btn-start-broadcast" class="btn btn-success auth-required">🎙 Start Broadcast</button>
-                    <button id="btn-join-stream" class="btn btn-primary auth-required">🎧 Join Stream</button>
-                </div>
-
-                <div class="col d-flex gap-3 align-items-center justify-content-md-end flex-wrap">
-                    <div class="d-flex flex-column align-items-center">
-                        <small class="fw-bold text-muted">Preview</small>
-                        <video id="stream-local-video"
-                               autoplay muted playsinline
-                               class="border rounded"
-                               style="width:240px; height:180px; display:none;">
-                        </video>
-                    </div>
-                    <audio id="audio-player" controls autoplay class="d-none"></audio>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- CALL PANEL -->
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-warning text-dark fw-bold">Audio / Video Call (1 ↔ 1)</div>
-        <div class="card-body">
-            <div class="row g-4 align-items-start">
-
-                <div class="col-md-auto d-flex gap-3">
-                    <div class="d-flex flex-column align-items-center">
-                        <label class="fw-bold">Local</label>
-                        <video id="local-video"
-                               autoplay muted playsinline
-                               class="border rounded"
-                               style="width:200px; height:150px;">
-                        </video>
-                    </div>
-
-                    <div class="d-flex flex-column align-items-center">
-                        <label class="fw-bold">Remote</label>
-                        <video id="remote-video"
-                               autoplay playsinline
-                               class="border rounded"
-                               style="width:200px; height:150px;">
-                        </video>
-                    </div>
-                </div>
-
-                <div class="col">
-                    <div id="call-status" class="mb-2 text-muted">Status: Idle</div>
-
-                    <select id="call-target-user" class="form-select mb-3">
-                        <option value="">-- Select Target User --</option>
-                        @try
-                        {
-                           foreach (var user in userss)
-                            {
-                                <option value="@user.UserId">@user.FirstName (@user.UserId)</option>
-                            }
-                        }catch( Exception ex)
-                        {
-                            <option value="">Error loading users: @ex.Message</option>
-                        }
-)
-                        
-                    </select>
-
-                    <div class="d-flex gap-2 flex-wrap">
-                        <button class="btn btn-success auth-required"
-                                onclick="
-                                    const select = document.getElementById('call-target-user');
-                                    const targetId = Number(select.value);
-                                    if (!targetId) { alert('Please select a valid user'); return; }
-                                    startCall(targetId);
-                                ">
-                            Start Call
-                        </button>
-
-                        <button class="btn btn-danger auth-required" onclick="hangupCall()">
-                            Hang Up
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================= -->
-    <!-- CHAT PANEL (THREAD-BASED) -->
-    <!-- ============================= -->
-
-    <h3 class="mb-3">Chats</h3>
-
-    <div id="chat-container"
-         class="card shadow-sm mb-4"
-         style="display:flex; flex-direction:column; height:500px;"
-         data-chat-type="direct"
-         data-chat-id="0">
-
-        <!-- THREAD HOLDER -->
-        <div class="thread-container"
-             style="flex:1; overflow-y:auto; padding:0.5rem;">
-
-            <!-- REQUIRED BY message.js -->
-            <div class="dm-threads"></div>
-            <div class="group-threads"></div>
-
-        </div>
-
-        <!-- ❌ GLOBAL INPUT REMOVED -->
-        <!-- Each thread now injects its own input/footer -->
-    </div>
-
-</div>
+@section Scripts {
+    <script>
+        // Initial Page Load Logic
+        document.addEventListener("DOMContentLoaded", () => {
+             // If you have home-specific JS (like the Map), trigger it here
+             if(window.initHomeScripts) window.initHomeScripts();
+        });
+    </script>
+}
 
 
 

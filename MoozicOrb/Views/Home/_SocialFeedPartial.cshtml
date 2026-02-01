@@ -1,0 +1,33 @@
+﻿@* @model HomeViewModel
+ *@
+<input type="hidden" id="page-signalr-context" value="@Model.SignalRGroup" />
+
+<header class="hero">
+    <div class="hero-bg" style="background-image: url('/images/hero-social.jpg')"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <div class="hero-tag">TRENDING NOW</div>
+        <h1 class="hero-title">MOOZIC<br>ORB<br>SOCIAL</h1>
+        <button class="btn-hero" onclick="document.getElementById('post-composer').scrollIntoView()">SHARE SOMETHING</button>
+    </div>
+</header>
+
+<section class="section">
+    <h2 class="section-heading">YOUR FEED</h2>
+
+    <div id="post-composer" class="composer-box">
+        <textarea placeholder="What's happening?"></textarea>
+        <div class="composer-actions">
+            <button class="icon-btn"><i class="fas fa-image"></i></button>
+            <button class="icon-btn"><i class="fas fa-music"></i></button>
+            <button class="btn-sidebar-fill">POST</button>
+        </div>
+    </div>
+
+    <div id="feed_@Model.SignalRGroup" class="feed-stream">
+        @foreach (var post in Model.Posts)
+        {
+            <partial name="_PostCard" model="post" />
+        }
+    </div>
+</section>

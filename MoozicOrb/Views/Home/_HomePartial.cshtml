@@ -1,0 +1,115 @@
+﻿@{
+    // No Layout defined here!
+}
+
+<input type="hidden" id="page-signalr-context" value="page_home" />
+
+<header class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <div class="hero-tag">ARTIST OF THE WEEK</div>
+        <h1 class="hero-title">MEET<br>MICHAEL<br>KAY</h1>
+        <a href="/article/michael-kay" class="btn-hero">READ MORE</a>
+    </div>
+</header>
+
+<section class="section">
+    <h2 class="section-heading">TOP ARTIST</h2>
+    <div class="scroller">
+        <div class="scroller-track">
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/111/ff0055?text=DJ+Thunder')"></div>
+                <div class="card-info"><h4>DJ Thunder</h4><p>New EDM Album</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/111/00AEEF?text=Soul+Vibes')"></div>
+                <div class="card-info"><h4>Soul Vibes</h4><p>Live Tour 2026</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/111/ffff00?text=Neon+Pulse')"></div>
+                <div class="card-info"><h4>Neon Pulse</h4><p>Electro-Pop Sensation</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/111/00ff88?text=The+Echoes')"></div>
+                <div class="card-info"><h4>The Echoes</h4><p>New Indie Rock Single</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/111/aa66ff?text=R+Breeze')"></div>
+                <div class="card-info"><h4>R Breeze</h4><p>R&B Chart Topper</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <h2 class="section-heading">BY MAP OR GENRE</h2>
+    <div class="genre-container">
+        <input type="text" class="genre-search" placeholder="Search genres...">
+        <div class="genre-pills scroller-thin">
+            <span class="pill">Acid-House</span><span class="pill">Afro-Beat</span><span class="pill">Alternative</span>
+            <span class="pill">Bass</span><span class="pill">Blues</span><span class="pill">Country</span>
+            <span class="pill">Dance</span><span class="pill">Dubstep</span><span class="pill">EDM</span>
+            <span class="pill">Folk</span><span class="pill">Hip-Hop</span><span class="pill">House</span>
+            <span class="pill">Indie</span><span class="pill">Jazz</span><span class="pill">Metal</span>
+            <span class="pill">Pop</span><span class="pill">R&B</span><span class="pill">Rap</span>
+            <span class="pill">Rock</span><span class="pill">Techno</span><span class="pill">Trance</span>
+        </div>
+    </div>
+    <div class="globe-box">
+        <div id="chartdiv"></div>
+    </div>
+</section>
+
+<section class="section">
+    <h2 class="section-heading">TOP PRODUCERS</h2>
+    <div class="scroller">
+        <div class="scroller-track">
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/222/fff?text=Metro')"></div>
+                <div class="card-info"><h4>Metro Beats</h4><p>Platinum Status</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/222/fff?text=Wave')"></div>
+                <div class="card-info"><h4>Soundwave</h4><p>Beat Maker</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/222/fff?text=Freq')"></div>
+                <div class="card-info"><h4>Frequency</h4><p>Mastering</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/222/fff?text=Analog')"></div>
+                <div class="card-info"><h4>Analog</h4><p>Synth Specialist</p></div>
+            </div>
+            <div class="card">
+                <div class="card-image" style="background-image: url('https://placehold.co/300x200/222/fff?text=Dr+Drum')"></div>
+                <div class="card-info"><h4>Dr. Drum</h4><p>Percussion King</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <h2 class="section-heading">EVENTS CALENDAR</h2>
+    <div class="calendar-layout">
+        <div class="calendar-box">
+            <div class="cal-header">
+                <button class="cal-nav prev-month">&lt;</button>
+                <span class="cal-month-label">January 2026</span>
+                <button class="cal-nav next-month">&gt;</button>
+            </div>
+            <div class="cal-weekdays">
+                <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+            </div>
+            <div class="cal-days"></div>
+        </div>
+        <div class="event-info-box">
+            <div class="selected-date-big">
+                <span class="sel-weekday">Wednesday</span>
+                <span class="sel-full-date">Jan 15, 2026</span>
+            </div>
+            <div class="events-list-container"></div>
+            <button class="btn-add-event">ADD EVENT +</button>
+        </div>
+    </div>
+</section>

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using MoozicOrb.Extensions;
 using MoozicOrb.IO;
 using MoozicOrb.Models;
 using System.Diagnostics;
@@ -6,14 +7,7 @@ using System.Diagnostics;
 namespace MoozicOrb.Controllers
 {
     public class HomeController : Controller
-    {
-        private readonly ILogger<HomeController> _logger;
-
-        public HomeController(ILogger<HomeController> logger)
-        {
-            _logger = logger;
-        }
-
+    { 
         public IActionResult Index()
         {
             //string fail = "success";
@@ -65,26 +59,39 @@ namespace MoozicOrb.Controllers
             //}
             //fail = "completed";
             //ViewBag.Error = fail;
+
+            if (Request.IsSpaRequest())
+            {
+                return PartialView("_HomePartial");
+            }
             return View();
         }
 
-        public IActionResult Mainpage()
-        {
-            return View();
-        }
-        public IActionResult Test()
-        {
-            return View();
-        }
-        public IActionResult Privacy()
-        {
-            return View();
-        }
+        //public class HomeController : Controller
+        //{
+        //    private readonly IPostService _postService;
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+        //    public HomeController(IPostService postService)
+        //    {
+        //        _postService = postService;
+        //    }
+
+        //    // URL: / (The Social Feed)
+        //    public async Task<IActionResult> Index()
+        //    {
+        //        // TODO: Get current user ID to customize feed
+        //        var model = new HomeViewModel
+        //        {
+        //            // CONVENTION: "feed_global" or "feed_user_{id}"
+        //            SignalRGroup = "feed_global",
+        //            Posts = await _postService.GetGlobalFeedAsync()
+        //        };
+
+        //        if (Request.IsSpaRequest()) return PartialView("_SocialFeedPartial", model);
+
+        //        // On refresh, load Layout + Partial
+        //        return View("Index", model);
+        //    }
+        //}
     }
 }

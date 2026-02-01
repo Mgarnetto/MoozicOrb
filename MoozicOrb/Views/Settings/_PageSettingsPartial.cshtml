@@ -1,0 +1,24 @@
+﻿<div class="settings-panel">
+    <h2>Creator Page Settings</h2>
+
+    <div class="banner-upload">
+        <label>Cover Image</label>
+        <div class="preview" style="background-image: url('@Model.CoverImage')"></div>
+        <button class="btn-upload">Upload New</button>
+    </div>
+
+    <form class="settings-form">
+        <div class="form-group">
+            <label>Bio</label>
+            <textarea rows="4">@Model.Bio</textarea>
+        </div>
+        <div class="form-group">
+            <label>Booking Contact</label>
+            <input type="text" value="@Model.BookingEmail">
+        </div>
+
+        <div class="form-actions">
+            <button class="btn-sidebar-fill">Update Page</button>
+        </div>
+    </form>
+</div>
