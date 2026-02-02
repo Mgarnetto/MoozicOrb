@@ -4,7 +4,7 @@
      data-context-type="@Model.ContextType"
      data-context-id="@Model.ContextId">
 
-    @* --- 1. DYNAMIC INPUT SECTION --- *@
+    @* --- 1. DYNAMIC INPUT AREA --- *@
     @if (Model.AllowPosting)
     {
         <div class="post-input-area mb-4">
@@ -70,12 +70,13 @@
         {
             @foreach (var post in Model.InitialPosts)
             {
+                // Reuses the Partial View for consistency
                 <partial name="_PostCard" model="post" />
             }
         }
     </div>
 
-    @* --- 3. LOAD MORE --- *@
+    @* --- 3. LOAD MORE BUTTON --- *@
     @if (Model.InitialPosts != null && Model.InitialPosts.Count >= 20)
     {
         <div class="text-center mt-3">

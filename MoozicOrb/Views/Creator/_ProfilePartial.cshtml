@@ -33,37 +33,37 @@
     <div class="row">
         
         <div class="col-md-8 main-column">
-            @foreach (var section in Model.LayoutOrder)
+            @foreach (var layoutItem in Model.LayoutOrder)
             {
-                <div class="profile-section mb-5" id="section-@section">
-                    
-                    @if (section == "posts")
+                <div class="profile-section mb-5" id="section-@layoutItem">
+
+                    @if (layoutItem == "posts")
                     {
                         <h4 class="mb-3 border-bottom pb-2">Updates</h4>
-                        @await Component.InvokeAsync("PostFeed", new { 
-                            contextType = "user", 
-                            contextId = Model.UserId.ToString(), 
-                            allowPosting = Model.IsCurrentUser,
-                            inputType = "standard" 
-                        })
-                    }
-                    else if (section == "music")
-                    {
-                        <h4 class="mb-3 border-bottom pb-2">Discography</h4>
-                        <div class="alert alert-light border">Music Component Loading...</div>
-                    }
-                    else if (section == "store")
-                    {
-                        <h4 class="mb-3 border-bottom pb-2">Merch Store</h4>
-                        @await Component.InvokeAsync("PostFeed", new { 
-                            contextType = "user_store", 
-                            contextId = Model.UserId.ToString(), 
-                            allowPosting = Model.IsCurrentUser,
-                            inputType = "classified" // Changes input to "List Item" button
-                        })
-                    }
+                        @await Component.InvokeAsync("PostFeed", new {
+                        contextType = "user",
+                                contextId = Model.UserId,
+                                allowPosting = Model.IsCurrentUser,
+                                inputType = "standard"
+                                })
+                                }
+                                else if (layoutItem == "music")
+                {
+                    <h4 class="mb-3 border-bottom pb-2">Discography</h4>
+                    <div class="alert alert-light border">Music Component Loading...</div>
+                }
+                else if (layoutItem == "store")
+                {
+                    <h4 class="mb-3 border-bottom pb-2">Merch Store</h4>
+                    @await Component.InvokeAsync("PostFeed", new {
+                    contextType = "user_store",
+                                contextId = Model.UserId,
+                                allowPosting = Model.IsCurrentUser,
+                                inputType = "classified"
+                                })
+                                }
                 </div>
-            }
+            }    
         </div>
 
         <aside class="col-md-4 side-column">

@@ -8,6 +8,7 @@ using MoozicOrb.Services;
 using MoozicOrb.Services.Interfaces;
 using MoozicOrb.Services.Radio;
 using StackExchange.Redis;
+using Microsoft.Extensions.FileProviders; // Required for PhysicalFileProvider
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +47,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IMediaFileService, MediaFileService>();
 builder.Services.AddScoped<IMediaProcessor, MediaProcessor>();
 
+builder.Services.AddSession();
+
 // Register the Stream Service
 //builder.Services.AddScoped<IStreamApiService, StreamApiService>();
 
@@ -80,9 +83,21 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+// Serves your "MoozicOrb/media" folder at the URL "/media"
+string mediaPath = Path.Combine(builder.Environment.ContentRootPath, "MoozicOrb", "media");
+if (!Directory.Exists(mediaPath)) Directory.CreateDirectory(mediaPath);
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(mediaPath),
+    RequestPath = "/media"
+});
+
 app.UseRouting();
 
 app.UseAuthorization();
+
+app.UseSession();
 
 app.MapHub<GroupHub>("/GroupHub");
 app.MapHub<MessageHub>("/MessageHub");

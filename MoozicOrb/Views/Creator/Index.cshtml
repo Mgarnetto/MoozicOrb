@@ -1,0 +1,8 @@
+﻿@model MoozicOrb.Models.CreatorViewModel
+
+@{
+    ViewData["Title"] = Model.DisplayName;
+    // This will automatically use _Layout.cshtml because of _ViewStart.cshtml
+}
+
+<partial name="_ProfilePartial" model="Model" />
