@@ -13,11 +13,11 @@ namespace MoozicOrb.IO
             p.post_id, p.user_id, p.context_type, p.context_id,
             p.post_type, p.title, p.content_text, p.image_url, p.created_at,
             p.price, p.location_label, p.difficulty_level, p.video_url, p.media_id, p.category,
-            u.display_name, u.profile_pic_url";
+            u.display_name, u.profile_pic"; // Fixed column name
 
         private const string Joins = @"
             FROM posts p
-            JOIN users u ON p.user_id = u.id";
+            JOIN `user` u ON p.user_id = u.user_id"; // Fixed Join column
 
         // ==========================================
         // 1. GET SINGLE POST
@@ -96,16 +96,6 @@ namespace MoozicOrb.IO
             var ids = string.Join(",", posts.Select(p => p.Id));
 
             // 2. Query post_media
-            // Note: We JOIN to 'media' table (assuming you have one) to get the URL
-            // If you don't have a central media table yet, you might need to adjust this join.
-            // For now, I'll assume we can construct the URL or fetch it.
-
-            /* Assumption: You have a 'media' table with 'file_path'. 
-               If not, and you just store paths in post_media, change this.
-               Based on UploadController, you likely store file paths in specific tables (audio/video/images).
-               For simplicity, let's assume post_media has what we need or we construct it.
-            */
-
             string sql = $@"
                 SELECT pm.post_id, pm.media_id, pm.media_type, pm.sort_order 
                 FROM post_media pm
@@ -126,9 +116,6 @@ namespace MoozicOrb.IO
                             {
                                 MediaId = rdr.GetInt64("media_id"),
                                 MediaType = rdr.GetByte("media_type"),
-                                // TODO: In a real system, you'd JOIN to get the real filename.
-                                // For now, the frontend will likely fetch the media details by ID 
-                                // OR we add a specific IO to get URLs.
                                 Url = "" // Placeholder until we link the specific media tables
                             });
                         }
@@ -147,7 +134,8 @@ namespace MoozicOrb.IO
                 Id = rdr.GetInt64("post_id"),
                 AuthorId = rdr.GetInt32("user_id"),
                 AuthorName = rdr["display_name"].ToString(),
-                AuthorPic = rdr["profile_pic_url"] == DBNull.Value ? "/img/default.png" : rdr["profile_pic_url"].ToString(),
+                // Fixed key to "profile_pic"
+                AuthorPic = rdr["profile_pic"] == DBNull.Value ? "/img/default.png" : rdr["profile_pic"].ToString(),
                 ContextType = rdr["context_type"].ToString(),
                 ContextId = rdr["context_id"].ToString(),
                 Type = rdr["post_type"].ToString(),

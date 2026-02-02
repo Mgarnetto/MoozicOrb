@@ -25,6 +25,8 @@ namespace MoozicOrb.Controllers
             int userId = _loginService.Login(username, password);
             if (userId <= 0)
                 return Unauthorized(new { message = "Invalid credentials" });
+           
+            HttpContext.Session.SetInt32("UserId", userId);
 
             var session = SessionStore.CreateSession(userId);
             return Ok(new { sessionId = session.SessionId, userId = session.UserId });

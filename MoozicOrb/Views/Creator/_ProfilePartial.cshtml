@@ -4,11 +4,11 @@
 
 <div class="hero profile-hero position-relative mb-4">
     <div class="hero-bg" style="background-image: url('@Model.CoverImage'); height: 250px; background-size: cover; background-position: center;"></div>
-    
+
     <div class="hero-content container position-relative" style="margin-top: -60px;">
         <div class="d-flex align-items-end">
             <img src="@Model.ProfilePic" class="rounded-circle border border-4 border-white shadow" style="width: 150px; height: 150px; object-fit: cover;">
-            
+
             <div class="ms-3 mb-2 text-shadow-sm">
                 <h1 class="hero-title fw-bold mb-0">@Model.DisplayName</h1>
                 <p class="hero-tag text-muted mb-0">@Model.Bio</p>
@@ -31,7 +31,7 @@
 
 <div class="container page-layout-grid">
     <div class="row">
-        
+
         <div class="col-md-8 main-column">
             @foreach (var layoutItem in Model.LayoutOrder)
             {
@@ -42,7 +42,7 @@
                         <h4 class="mb-3 border-bottom pb-2">Updates</h4>
                         @await Component.InvokeAsync("PostFeed", new {
                         contextType = "user",
-                                contextId = Model.UserId,
+                                contextId = Model.UserId.ToString(), // Added .ToString() here
                                 allowPosting = Model.IsCurrentUser,
                                 inputType = "standard"
                                 })
@@ -57,13 +57,13 @@
                     <h4 class="mb-3 border-bottom pb-2">Merch Store</h4>
                     @await Component.InvokeAsync("PostFeed", new {
                     contextType = "user_store",
-                                contextId = Model.UserId,
+                                contextId = Model.UserId.ToString(), // Added .ToString() here
                                 allowPosting = Model.IsCurrentUser,
                                 inputType = "classified"
                                 })
                                 }
-                </div>
-            }    
+            </div>
+                        }
         </div>
 
         <aside class="col-md-4 side-column">
@@ -73,7 +73,7 @@
                     <p class="small text-muted">Member since 2026</p>
                 </div>
             </div>
-            
+
             <div class="card shadow-sm border-0">
                 <div class="card-body">
                     <h5>Connect</h5>
