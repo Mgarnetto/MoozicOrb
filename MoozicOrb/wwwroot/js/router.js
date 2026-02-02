@@ -29,12 +29,10 @@
     }
 
     async loadHtml(url) {
-        // A. Visual Feedback
         this.rootElement.style.opacity = "0.5";
         this.rootElement.style.pointerEvents = "none";
 
         try {
-            // B. Fetch Partial
             const res = await fetch(url, {
                 headers: {
                     "X-Spa-Request": "true",
@@ -45,16 +43,17 @@
             if (res.ok) {
                 const html = await res.text();
 
-                // C. Swap Content
                 this.rootElement.innerHTML = html;
                 this.rootElement.style.opacity = "1";
                 this.rootElement.style.pointerEvents = "auto";
                 window.scrollTo(0, 0);
 
-                // D. Handle SignalR Group Context
+                // === THE FIX: Connect Router to SignalR Bridge ===
                 const contextEl = document.getElementById("page-signalr-context");
                 if (contextEl && window.MessageService) {
                     const newGroup = contextEl.value;
+
+                    // Switch rooms if needed
                     if (this.currentGroup !== newGroup) {
                         if (this.currentGroup) window.MessageService.leaveGroup(this.currentGroup);
                         window.MessageService.joinGroup(newGroup);
@@ -62,7 +61,6 @@
                     }
                 }
 
-                // E. Re-Initialize Page Scripts (Map, Calendar)
                 this.reinitScripts();
 
             } else {
@@ -75,15 +73,10 @@
         }
     }
 
-    // This runs every time a new page loads via AJAX
     reinitScripts() {
-        // 1. Re-Draw Map (AmCharts checks for div existence automatically, 
-        //    but you might need to call your createMap() function)
         if (document.getElementById("chartdiv") && window.initGlobe) {
             window.initGlobe();
         }
-
-        // 2. Re-Bind Calendar Events if they are not delegated
         if (document.querySelector(".calendar-box") && window.initCalendar) {
             window.initCalendar();
         }
