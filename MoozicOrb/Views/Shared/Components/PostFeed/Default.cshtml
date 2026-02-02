@@ -1,0 +1,85 @@
+﻿@model MoozicOrb.API.Models.PostFeedViewModel
+
+<div class="feed-wrapper" id="feed-context-@Model.ContextId"
+     data-context-type="@Model.ContextType"
+     data-context-id="@Model.ContextId">
+
+    @* --- 1. DYNAMIC INPUT SECTION --- *@
+    @if (Model.AllowPosting)
+    {
+        <div class="post-input-area mb-4">
+
+            @if (Model.InputType == "standard")
+            {
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-3">
+                        <div class="d-flex gap-2">
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center text-secondary" style="width:40px;height:40px;">
+                                <i class="fas fa-user"></i>
+                            </div>
+
+                            <textarea id="post-text-input" class="form-control border-0 bg-light"
+                              placeholder="What's spinning?" rows="2" style="resize:none;"></textarea>
+                        </div>
+
+                        <div id="media-preview-area" class="d-flex gap-2 mt-2 overflow-auto"></div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                            <div class="tools">
+                                <button class="btn btn-sm btn-light text-primary" onclick="document.getElementById('post-media-upload').click()">
+                                    <i class="fas fa-camera"></i> Media
+                                </button>
+                                <input type="file" id="post-media-upload" multiple accept="image/*,video/*,audio/*" style="display:none;" onchange="handleFileSelect(this)">
+                            </div>
+                            <button class="btn btn-primary btn-sm px-4 rounded-pill" onclick="submitPost()">Post</button>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (Model.InputType == "article")
+            {
+                <div class="d-grid">
+                    <a href="/editor/new?type=article" class="btn btn-outline-dark border-dashed p-4">
+                        <i class="fas fa-feather-alt fa-2x mb-2"></i><br>
+                        <strong>Write an Article</strong><br>
+                        <small class="text-muted">Share reviews, news, or tutorials.</small>
+                    </a>
+                </div>
+            }
+            else if (Model.InputType == "classified")
+            {
+                <div class="d-flex justify-content-end mb-3">
+                    <button class="btn btn-success" onclick="openClassifiedModal()">
+                        <i class="fas fa-tag"></i> List Item for Sale
+                    </button>
+                </div>
+            }
+        </div>
+    }
+
+    @* --- 2. THE FEED STREAM --- *@
+    <div id="feed-stream-container">
+        @if (Model.InitialPosts == null || Model.InitialPosts.Count == 0)
+        {
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-stream fa-2x mb-3 opacity-50"></i>
+                <p>No posts yet. Be the first!</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var post in Model.InitialPosts)
+            {
+                <partial name="_PostCard" model="post" />
+            }
+        }
+    </div>
+
+    @* --- 3. LOAD MORE --- *@
+    @if (Model.InitialPosts != null && Model.InitialPosts.Count >= 20)
+    {
+        <div class="text-center mt-3">
+            <button class="btn btn-link text-muted" onclick="loadMorePosts()">Load More</button>
+        </div>
+    }
+</div>

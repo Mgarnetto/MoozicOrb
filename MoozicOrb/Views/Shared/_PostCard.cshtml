@@ -1,0 +1,96 @@
+﻿@using MoozicOrb.API.Models
+@model PostDto
+
+<div class="card mb-3 shadow-sm border-0 post-card" id="post-@Model.Id">
+    <div class="card-header bg-white border-0 d-flex align-items-center pt-3 pb-0">
+        <a href="/creator/@Model.AuthorId" class="text-decoration-none">
+            <img src="@Model.AuthorPic" class="rounded-circle me-2 object-fit-cover" width="40" height="40" alt="@Model.AuthorName">
+        </a>
+        <div class="lh-sm">
+            <a href="/creator/@Model.AuthorId" class="fw-bold text-dark text-decoration-none">@Model.AuthorName</a>
+
+            @if (Model.ContextType == "state")
+            {
+                <span class="text-muted small"> <i class="fas fa-caret-right"></i> @Model.ContextId</span>
+            }
+
+            <div class="text-muted small">
+                @Model.CreatedAgo
+                @if (!string.IsNullOrEmpty(Model.LocationLabel))
+                {
+                    <span>&bull; <i class="fas fa-map-marker-alt"></i> @Model.LocationLabel</span>
+                }
+            </div>
+        </div>
+        <div class="ms-auto">
+            <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-h"></i></button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="#">Report</a></li>
+                @if (Model.AuthorName == "Me")
+                {
+                    <li><a class="dropdown-item text-danger" href="#">Delete</a></li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <div class="card-body">
+
+        @if (!string.IsNullOrEmpty(Model.Title))
+        {
+            <h5 class="card-title fw-bold">@Model.Title</h5>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.Text))
+        {
+            <div class="card-text mb-2">@Html.Raw(Model.Text)</div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.ImageUrl) && (Model.Attachments == null || Model.Attachments.Count == 0))
+        {
+            <img src="@Model.ImageUrl" class="img-fluid rounded mt-2 w-100" alt="Post Image">
+        }
+
+        @if (Model.Type == "classified" && Model.Price.HasValue)
+        {
+            <div class="alert alert-light border d-flex justify-content-between align-items-center mt-2">
+                <span class="fw-bold text-success fs-5">@Model.Price.Value.ToString("C")</span>
+                <button class="btn btn-sm btn-success">Contact Seller</button>
+            </div>
+        }
+
+        @if (Model.Attachments != null && Model.Attachments.Count > 0)
+        {
+            <div class="row g-1 mt-2 rounded overflow-hidden">
+                @foreach (var media in Model.Attachments)
+                {
+                    // Logic: If only 1 item, full width. If 2+, half width.
+                    var colClass = Model.Attachments.Count == 1 ? "col-12" : "col-6";
+
+                    <div class="@colClass">
+                        @if (media.MediaType == 3) // Image
+                        {
+                            <img src="@media.Url" class="img-fluid w-100 h-100 object-fit-cover" style="max-height:400px; min-height:200px;">
+                        }
+                        else if (media.MediaType == 2) // Video
+                        {
+                            <video src="@media.Url" controls class="img-fluid w-100"></video>
+                        }
+                        else if (media.MediaType == 1) // Audio
+                        {
+                            <div class="p-2 border rounded bg-light mt-1">
+                                <audio src="@media.Url" controls class="w-100"></audio>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="card-footer bg-white border-top-0 d-flex justify-content-between pt-0 pb-3">
+        <button class="btn btn-sm btn-link text-decoration-none text-muted"><i class="far fa-heart"></i> Like</button>
+        <button class="btn btn-sm btn-link text-decoration-none text-muted"><i class="far fa-comment"></i> Comment</button>
+        <button class="btn btn-sm btn-link text-decoration-none text-muted"><i class="far fa-share-square"></i> Share</button>
+    </div>
+</div>

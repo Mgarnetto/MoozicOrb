@@ -1,42 +1,86 @@
-﻿@model CreatorViewModel
+﻿@model MoozicOrb.Models.CreatorViewModel
 
 <input type="hidden" id="page-signalr-context" value="@Model.SignalRGroup" />
 
-<div class="hero profile-hero">
-    @* <div class="hero-bg" style="background-image: url('@Model.CoverImage')"></div>
-    <div class="hero-content">
-        <div class="profile-img-large" style="background-image: url('@Model.ProfilePic')"></div>
-        <h1 class="hero-title">@Model.DisplayName</h1>
-        <p class="hero-tag">@Model.Bio</p>
+<div class="hero profile-hero position-relative mb-4">
+    <div class="hero-bg" style="background-image: url('@Model.CoverImage'); height: 250px; background-size: cover; background-position: center;"></div>
+    
+    <div class="hero-content container position-relative" style="margin-top: -60px;">
+        <div class="d-flex align-items-end">
+            <img src="@Model.ProfilePic" class="rounded-circle border border-4 border-white shadow" style="width: 150px; height: 150px; object-fit: cover;">
+            
+            <div class="ms-3 mb-2 text-shadow-sm">
+                <h1 class="hero-title fw-bold mb-0">@Model.DisplayName</h1>
+                <p class="hero-tag text-muted mb-0">@Model.Bio</p>
+            </div>
 
-        <div class="profile-meta">
-            <button class="btn-hero btn-follow" data-id="@Model.UserId">Follow</button>
-            <button class="btn-hero btn-message" onclick="startChat(@Model.UserId)">Message</button>
+            <div class="ms-auto mb-3">
+                @if (Model.IsCurrentUser)
+                {
+                    <a href="/settings" class="btn btn-light shadow-sm"><i class="fas fa-cog"></i> Edit Profile</a>
+                }
+                else
+                {
+                    <button class="btn btn-primary shadow-sm btn-follow" data-id="@Model.UserId">Follow</button>
+                    <button class="btn btn-outline-primary shadow-sm bg-white" onclick="startChat(@Model.UserId)">Message</button>
+                }
+            </div>
         </div>
-    </div> *@
+    </div>
 </div>
 
-<div class="page-layout-grid">
-    <aside class="side-column">
-        <h3>Collections</h3>
-        <div class="collections-grid">
-            @* @foreach (var col in Model.Collections)
+<div class="container page-layout-grid">
+    <div class="row">
+        
+        <div class="col-md-8 main-column">
+            @foreach (var section in Model.LayoutOrder)
             {
-                <div class="collection-item">
-                    <img src="@col.ArtUrl" alt="@col.Title">
-                    <span>@col.Title</span>
+                <div class="profile-section mb-5" id="section-@section">
+                    
+                    @if (section == "posts")
+                    {
+                        <h4 class="mb-3 border-bottom pb-2">Updates</h4>
+                        @await Component.InvokeAsync("PostFeed", new { 
+                            contextType = "user", 
+                            contextId = Model.UserId.ToString(), 
+                            allowPosting = Model.IsCurrentUser,
+                            inputType = "standard" 
+                        })
+                    }
+                    else if (section == "music")
+                    {
+                        <h4 class="mb-3 border-bottom pb-2">Discography</h4>
+                        <div class="alert alert-light border">Music Component Loading...</div>
+                    }
+                    else if (section == "store")
+                    {
+                        <h4 class="mb-3 border-bottom pb-2">Merch Store</h4>
+                        @await Component.InvokeAsync("PostFeed", new { 
+                            contextType = "user_store", 
+                            contextId = Model.UserId.ToString(), 
+                            allowPosting = Model.IsCurrentUser,
+                            inputType = "classified" // Changes input to "List Item" button
+                        })
+                    }
                 </div>
-            } *@
+            }
         </div>
-    </aside>
 
-    <main class="main-column">
-        <h3>Recent Posts</h3>
-        <div id="feed_@Model.SignalRGroup" class="feed-stream">
-           @*  @foreach (var post in Model.Posts)
-            {
-                <partial name="_PostCard" model="post" />
-            } *@
-        </div>
-    </main>
+        <aside class="col-md-4 side-column">
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-body">
+                    <h5>About</h5>
+                    <p class="small text-muted">Member since 2026</p>
+                </div>
+            </div>
+            
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5>Connect</h5>
+                    <p class="text-muted small">Followers list coming soon.</p>
+                </div>
+            </div>
+        </aside>
+
+    </div>
 </div>

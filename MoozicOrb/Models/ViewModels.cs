@@ -31,9 +31,15 @@ namespace MoozicOrb.Models
     {
         public int UserId { get; set; }
         public string DisplayName { get; set; }
+        public string UserName { get; set; } // Added for URL generation
         public string ProfilePic { get; set; }
         public string CoverImage { get; set; }
         public string Bio { get; set; }
+
+        // --- NEW FIELDS FOR LOGIC ---
+        public bool IsCurrentUser { get; set; } // True if viewing own profile
+        public List<string> LayoutOrder { get; set; } = new List<string>(); // ["posts", "music", "store"]
+
         public List<CollectionDto> Collections { get; set; } = new();
     }
 

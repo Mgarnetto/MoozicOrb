@@ -1,50 +1,55 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting;
-using MoozicOrb.Extensions;
+using MoozicOrb.IO;
 using MoozicOrb.Models;
-using MoozicOrb.Services;
-using MoozicOrb.Services.Interfaces;
+using MoozicOrb.Extensions; // Ensure you have this for IsSpaRequest()
+using System.Collections.Generic;
 
 namespace MoozicOrb.Controllers
 {
     public class CreatorController : Controller
     {
-        //<a href = "/creator/105" > View Profile</a>
-        //<a href = "/creator/@post.AuthorId" > @post.AuthorName </ a >
+        private readonly UserQuery _userQuery;
 
-        //private readonly IUserService _userService;
-        //private readonly IPostService _postService;
+        public CreatorController()
+        {
+            _userQuery = new UserQuery();
+        }
 
-        //public CreatorController(IUserService userService, IPostService postService)
-        //{
-        //    _userService = userService;
-        //    _postService = postService;
-        //}
+        // URL: /creator/105
+        [HttpGet("creator/{id}")]
+        public IActionResult Index(int id)
+        {
+            // 1. Fetch Profile Data
+            var user = _userQuery.GetUserById(id);
+            if (user == null || user.UserId == 0) return NotFound();
 
-        //// URL: /creator/105
-        //[HttpGet("creator/{id}")]
-        //public async Task<IActionResult> Index(int id)
-        //{
-        //    var user = await _userService.GetUserByIdAsync(id);
-        //    if (user == null) return NotFound();
+            // 2. Determine if this is "Me"
+            // (Assumes you store the logged-in UserId in Session as an int)
+            int currentUserId = HttpContext.Session.GetInt32("UserId") ?? 0;
+            bool isMe = (currentUserId == id);
 
-        //    var model = new CreatorViewModel
-        //    {
-        //        UserId = user.Id,
-        //        DisplayName = user.DisplayName,
-        //        ProfilePicUrl = user.ProfilePicUrl,
-        //        Bio = user.Bio,
-        //        // CONVENTION: "user_" + DB ID
-        //        SignalRGroup = $"user_{user.Id}",
-        //        Posts = await _postService.GetPostsForContextAsync("user", user.Id)
-        //    };
+            // 3. Build Model
+            var model = new CreatorViewModel
+            {
+                UserId = user.UserId,
+                DisplayName = user.DisplayName,
+                UserName = user.UserName,
+                ProfilePic = user.ProfilePic, // Now using the direct string from DB
+                CoverImage = user.CoverImageUrl,
+                Bio = user.Bio,
+                IsCurrentUser = isMe,
+                LayoutOrder = user.LayoutOrder, // Uses the JSON parser we added to User.cs
+                SignalRGroup = $"user_{user.UserId}"
+            };
 
-        //    if (Request.IsSpaRequest())
-        //    {
-        //        return PartialView("_CreatorPartial", model);
-        //    }
+            // 4. Return View
+            // If SPA (AJAX navigation), return just the partial. Otherwise, full layout.
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest" || Request.Query["spa"] == "1")
+            {
+                return PartialView("_ProfilePartial", model);
+            }
 
-        //    return View("Index", model);
-        //}
+            return View("Index", model);
+        }
     }
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using MoozicOrb.Api.Services;
 using MoozicOrb.Api.Services.Interfaces;
+using MoozicOrb.API.Services;
 using MoozicOrb.Hubs;
 using MoozicOrb.Infrastructure;
 using MoozicOrb.Services;
@@ -42,7 +43,9 @@ builder.Services.AddSingleton<IUserIdProvider, SignalRUserIdProvider>();
 builder.Services.AddHttpContextAccessor();
 
 // Register the Upload Service
-//builder.Services.AddScoped<IMediaUploadService, MediaUploadService>();
+builder.Services.AddScoped<IMediaFileService, MediaFileService>();
+builder.Services.AddScoped<IMediaProcessor, MediaProcessor>();
+
 // Register the Stream Service
 //builder.Services.AddScoped<IStreamApiService, StreamApiService>();
 
