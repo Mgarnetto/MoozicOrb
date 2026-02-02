@@ -3,84 +3,113 @@
 <input type="hidden" id="page-signalr-context" value="@Model.SignalRGroup" />
 
 <div class="hero profile-hero position-relative mb-4">
-    <div class="hero-bg" style="background-image: url('@Model.CoverImage'); height: 250px; background-size: cover; background-position: center;"></div>
+    <div class="hero-bg" style="background-image: url('@Model.CoverImage'); height: 280px; background-size: cover; background-position: center;">
+        <div style="width: 100%; height: 100%; background: linear-gradient(to bottom, transparent, rgba(18,18,18,0.95));"></div>
+    </div>
 
-    <div class="hero-content container position-relative" style="margin-top: -60px;">
-        <div class="d-flex align-items-end">
-            <img src="@Model.ProfilePic" class="rounded-circle border border-4 border-white shadow" style="width: 150px; height: 150px; object-fit: cover;">
+    <div class="profile-hero-content container">
+        <div class="d-flex flex-wrap align-items-end hero-flex-wrapper">
 
-            <div class="ms-3 mb-2 text-shadow-sm">
-                <h1 class="hero-title fw-bold mb-0">@Model.DisplayName</h1>
-                <p class="hero-tag text-muted mb-0">@Model.Bio</p>
-            </div>
+            <img src="@Model.ProfilePic" class="profile-avatar">
 
-            <div class="ms-auto mb-3">
-                @if (Model.IsCurrentUser)
-                {
-                    <a href="/settings" class="btn btn-light shadow-sm"><i class="fas fa-cog"></i> Edit Profile</a>
-                }
-                else
-                {
-                    <button class="btn btn-primary shadow-sm btn-follow" data-id="@Model.UserId">Follow</button>
-                    <button class="btn btn-outline-primary shadow-sm bg-white" onclick="startChat(@Model.UserId)">Message</button>
-                }
+            <div class="hero-text-block flex-grow-1">
+                <h1 class="text-white fw-bold mb-1" style="font-size: 2.5rem; text-shadow: 0 4px 8px rgba(0,0,0,0.8);">@Model.DisplayName</h1>
+                <p class="text-muted mb-3" style="font-size: 1.1rem; max-width: 600px;">@Model.Bio</p>
+
+                <div class="action-buttons-container">
+                    @if (Model.IsCurrentUser)
+                    {
+                        <a href="/settings" class="btn-sidebar-fill">
+                            <i class="fas fa-cog me-2"></i>Edit Profile
+                        </a>
+                    }
+                    else
+                    {
+                        <button class="btn-login me-2" data-id="@Model.UserId">Follow</button>
+                        <button class="btn-sidebar-outline" onclick="startChat(@Model.UserId)">
+                            <i class="fas fa-comment-alt me-2"></i>Message
+                        </button>
+                    }
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="container page-layout-grid">
-    <div class="row">
+<div class="page-grid-layout">
 
-        <div class="col-md-8 main-column">
-            @foreach (var layoutItem in Model.LayoutOrder)
+    <div class="main-column">
+        @foreach (var layoutItem in Model.LayoutOrder)
+        {
+            <div class="mb-5" id="section-@layoutItem">
+                @if (layoutItem == "posts")
+                {
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h4 class="section-heading mb-0">Updates</h4>
+                    </div>
+
+                    @await Component.InvokeAsync("PostFeed", new {
+                    contextType = "user",
+                        contextId = Model.UserId.ToString(),
+                        allowPosting = Model.IsCurrentUser,
+                        inputType = "standard"
+                        })
+                        }
+                        else if (layoutItem == "music")
             {
-                <div class="profile-section mb-5" id="section-@layoutItem">
-
-                    @if (layoutItem == "posts")
-                    {
-                        <h4 class="mb-3 border-bottom pb-2">Updates</h4>
-                        @await Component.InvokeAsync("PostFeed", new {
-                        contextType = "user",
-                                contextId = Model.UserId.ToString(), // Added .ToString() here
-                                allowPosting = Model.IsCurrentUser,
-                                inputType = "standard"
-                                })
-                                }
-                                else if (layoutItem == "music")
-                {
-                    <h4 class="mb-3 border-bottom pb-2">Discography</h4>
-                    <div class="alert alert-light border">Music Component Loading...</div>
-                }
-                else if (layoutItem == "store")
-                {
-                    <h4 class="mb-3 border-bottom pb-2">Merch Store</h4>
+                <h4 class="section-heading">Discography</h4>
+                <div class="profile-card text-center text-muted py-5">
+                    <i class="fas fa-compact-disc mb-3 fa-3x" style="opacity: 0.5;"></i>
+                    <p>No tracks uploaded yet.</p>
+                </div>
+            }
+            else if (layoutItem == "store")
+            {
+                <h4 class="section-heading">Merch Store</h4>
+                <div class="profile-card">
                     @await Component.InvokeAsync("PostFeed", new {
                     contextType = "user_store",
-                                contextId = Model.UserId.ToString(), // Added .ToString() here
+                                contextId = Model.UserId.ToString(),
                                 allowPosting = Model.IsCurrentUser,
                                 inputType = "classified"
                                 })
-                                }
             </div>
                         }
         </div>
-
-        <aside class="col-md-4 side-column">
-            <div class="card shadow-sm border-0 mb-3">
-                <div class="card-body">
-                    <h5>About</h5>
-                    <p class="small text-muted">Member since 2026</p>
-                </div>
-            </div>
-
-            <div class="card shadow-sm border-0">
-                <div class="card-body">
-                    <h5>Connect</h5>
-                    <p class="text-muted small">Followers list coming soon.</p>
-                </div>
-            </div>
-        </aside>
-
+                }
     </div>
+
+    <aside class="side-column">
+
+        <div class="widget-card">
+            <h5 class="widget-title">About</h5>
+            <p class="widget-text text-muted">
+                User Bio goes here. This is a placeholder for extended information about the creator.
+            </p>
+            <div class="separator my-3" style="background: #333;"></div>
+            <div class="text-muted small">
+                <i class="far fa-calendar-alt me-2 text-accent"></i> Joined Jan 2026
+            </div>
+        </div>
+
+        <div class="widget-card">
+            <h5 class="widget-title mb-3">Network</h5>
+            <div class="d-flex justify-content-between text-center mb-3">
+                <div>
+                    <strong class="d-block text-white fs-5">1.2k</strong>
+                    <span class="text-muted small">Followers</span>
+                </div>
+                <div>
+                    <strong class="d-block text-white fs-5">450</strong>
+                    <span class="text-muted small">Following</span>
+                </div>
+                <div>
+                    <strong class="d-block text-white fs-5">85</strong>
+                    <span class="text-muted small">Tracks</span>
+                </div>
+            </div>
+        </div>
+
+    </aside>
+
 </div>

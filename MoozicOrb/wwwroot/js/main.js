@@ -1,24 +1,38 @@
 ﻿// =========================================
+// GLOBAL VARIABLES
+// =========================================
+let globeRoot = null; // Track the amCharts instance to dispose of it later
+
+// =========================================
 // GLOBAL INIT FUNCTIONS (Called by Router)
 // =========================================
 
 window.initGlobe = function () {
     const chartDiv = document.getElementById('chartdiv');
 
-    // Safety checks
+    // 1. Safety Checks
     if (!chartDiv) return;
-    // Prevent double-initialization if amCharts is already running in this div
-    if (chartDiv.innerHTML !== "") return;
     if (typeof am5 === 'undefined') return;
 
-    am5.ready(function () {
-        // 1. Create Root
-        var root = am5.Root.new("chartdiv");
+    // 2. CRITICAL: Dispose of the previous instance if it exists.
+    // This fixes the issue where the globe doesn't render when returning to Home.
+    if (globeRoot) {
+        globeRoot.dispose();
+        globeRoot = null;
+    }
 
-        // 2. Set Themes
+    // 3. Prevent double-initialization if div is somehow already populated
+    if (chartDiv.innerHTML !== "") return;
+
+    am5.ready(function () {
+        // 4. Create Root and save to global variable
+        var root = am5.Root.new("chartdiv");
+        globeRoot = root;
+
+        // 5. Set Themes
         root.setThemes([am5themes_Animated.new(root)]);
 
-        // 3. Create Chart
+        // 6. Create Chart
         var chart = root.container.children.push(am5map.MapChart.new(root, {
             panX: "rotateX",
             panY: "rotateY",
@@ -26,12 +40,12 @@ window.initGlobe = function () {
             paddingBottom: 20, paddingTop: 20, paddingLeft: 20, paddingRight: 20
         }));
 
-        // 4. Create Polygon Series
+        // 7. Create Polygon Series
         var polygonSeries = chart.series.push(am5map.MapPolygonSeries.new(root, {
             geoJSON: am5geodata_worldLow
         }));
 
-        // 5. Apply User Colors (Dark Grey + Cyan Stroke)
+        // 8. Apply User Colors (Dark Grey + Cyan Stroke)
         polygonSeries.mapPolygons.template.setAll({
             fill: am5.color(0x333333),
             stroke: am5.color(0x00AEEF),
@@ -45,7 +59,7 @@ window.initGlobe = function () {
             stroke: am5.color(0xffffff)
         });
 
-        // 6. Add Background (Starfield/Space effect)
+        // 9. Add Background (Starfield/Space effect)
         var backgroundSeries = chart.series.push(am5map.MapPolygonSeries.new(root, {}));
         backgroundSeries.mapPolygons.template.setAll({
             fill: am5.color(0x000000),
@@ -56,7 +70,7 @@ window.initGlobe = function () {
             geometry: am5map.getGeoRectangle(90, 180, -90, -180)
         });
 
-        // 7. Auto-Rotation Animation
+        // 10. Auto-Rotation Animation
         chart.animate({
             key: "rotationX",
             from: 0,

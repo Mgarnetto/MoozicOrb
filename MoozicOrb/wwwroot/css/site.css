@@ -1356,3 +1356,200 @@ input[type="radio"] {
         box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
     }
 }
+
+/* =========================================
+   7. PROFILE & LAYOUT (Improved)
+   ========================================= */
+
+/* The Container */
+.page-grid-layout {
+    display: flex; /* Mobile Default: Flex Column */
+    flex-direction: column;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+/* MOBILE FIX: 
+   This moves the sidebar (order -1) to the TOP visually 
+   without changing the HTML structure.
+*/
+.side-column {
+    order: -1;
+}
+
+/* DESKTOP LAYOUT (Screens larger than 900px) */
+@media (min-width: 900px) {
+    .page-grid-layout {
+        display: grid;
+        grid-template-columns: 1fr 320px; /* Fluid Content | Fixed Sidebar */
+        align-items: start;
+        gap: 30px;
+    }
+
+    /* Reset order so it appears on the right (DOM order) */
+    .side-column {
+        order: initial;
+        position: sticky; /* Keeps it in view while scrolling */
+        top: 20px;
+    }
+}
+
+/* =========================================
+   8. VISUAL POLISH (The "Better Look")
+   ========================================= */
+
+/* Main Cards (Profile, Widgets, Posts) */
+.profile-card, .widget-card {
+    background: #1a1a1a; /* Dark Card Background */
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    margin-bottom: 20px;
+}
+
+/* Typography Headers */
+.section-heading {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #00AEEF; /* Cyan Accent */
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+/* Widget Text */
+.widget-title {
+    color: #e0e0e0;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.widget-text {
+    color: #a0a0a0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Hero Section Tweaks */
+.profile-hero-content {
+    margin-top: -75px; /* Pull overlap up */
+    padding: 0 20px;
+    position: relative;
+    z-index: 2;
+}
+
+.profile-avatar {
+    width: 160px;
+    height: 160px;
+    border: 5px solid #121212; /* Matches page bg */
+    border-radius: 50%;
+    background: #000;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+}
+
+.hero-text-block {
+    margin-top: 80px; /* Spacing for mobile when stacked */
+}
+
+@media (min-width: 600px) {
+    .hero-text-block {
+        margin-top: 0;
+        margin-left: 20px;
+    }
+}
+
+/* =========================================
+   9. FORCED INPUT STYLES (The "Ugly Fixer")
+   ========================================= */
+
+/* Force all text inputs to be dark and rounded */
+.create-post-input,
+textarea.form-control,
+input[type="text"].form-control {
+    background-color: #0a0a0a !important;
+    border: 1px solid #333 !important;
+    color: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 15px !important;
+    font-family: 'Outfit', sans-serif !important;
+    font-size: 1rem !important;
+    outline: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    min-height: 100px;
+    resize: none;
+}
+
+    /* Add a glow when you click inside */
+    .create-post-input:focus,
+    textarea.form-control:focus {
+        border-color: #00AEEF !important;
+        background-color: #000 !important;
+        box-shadow: 0 0 0 2px rgba(0, 174, 239, 0.2) !important;
+    }
+
+/* Style the Card Container */
+.create-post-card {
+    background: #1a1a1a;
+    border: 1px solid #222;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 30px;
+}
+
+/* =========================================
+   10. PROFILE HEADER - CENTERED (GLOBAL)
+   ========================================= */
+
+/* 1. Main Flex Container: Force Center & Wrap on ALL screens */
+.hero-flex-wrapper {
+    display: flex !important;
+    flex-direction: column !important; /* Stack items vertically */
+    justify-content: center !important;
+    align-items: center !important; /* Center items horizontally */
+    text-align: center !important;
+    width: 100%;
+}
+
+/* 2. Avatar: Remove margins, add shadows */
+.profile-avatar {
+    display: block;
+    margin: 0 auto 15px auto !important; /* Center the image itself */
+    width: 160px;
+    height: 160px;
+    border: 5px solid #121212;
+    border-radius: 50%;
+    background: #000;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+}
+
+/* 3. Text Block: Force full width and center text */
+.hero-text-block {
+    width: 100%;
+    margin-left: 0 !important; /* Reset any desktop margins */
+    margin-top: 10px;
+    text-align: center !important;
+}
+
+/* 4. Action Buttons: Center the row */
+.action-buttons-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+    width: 100%;
+}
+
+/* Optional: Make the cover image taller on desktop to balance the centered look */
+@media (min-width: 900px) {
+    .hero-bg {
+        height: 350px !important;
+    }
+}
