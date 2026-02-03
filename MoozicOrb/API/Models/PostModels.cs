@@ -62,7 +62,7 @@ namespace MoozicOrb.API.Models
     {
         public long MediaId { get; set; }   // ID of the media record
         public int MediaType { get; set; }  // Enum Code: 1=Audio, 2=Video, 3=Image
-        public string Url { get; set; }     // The full URL to the file (populated during GET)
+        public string? Url { get; set; }     // The full URL to the file (populated during GET)
     }
 
 

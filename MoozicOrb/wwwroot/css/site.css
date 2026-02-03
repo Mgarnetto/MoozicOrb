@@ -1555,47 +1555,6 @@ input[type="text"].form-control {
 }
 
 /* =========================================
-   SIDEBAR TWEAKS (Profile Left-Aligned)
-   ========================================= */
-.sidebar-profile {
-    display: flex;
-    flex-direction: row; /* FIX: Aligns items side-by-side */
-    align-items: center; /* Vertically centers them */
-    justify-content: flex-start;
-    text-align: left;
-    gap: 15px; /* Space between Pic and Text */
-    padding-bottom: 20px;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #222;
-}
-
-.profile-img {
-    width: 60px; /* Slightly smaller to fit side-by-side */
-    height: 60px;
-    border-radius: 50%;
-    background-size: cover;
-    background-position: center;
-    border: 2px solid var(--accent-secondary);
-    flex-shrink: 0; /* Prevents squishing */
-    margin-bottom: 0; /* Remove old margin */
-}
-
-/* Container for Name & Stats next to the image */
-.profile-info-col {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.profile-stats {
-    font-size: 0.8rem;
-    color: #aaa;
-    margin: 3px 0 0 0;
-    display: flex;
-    gap: 10px;
-}
-
-/* =========================================
    POST & UPLOAD BUTTONS (Bigger & Spaced)
    ========================================= */
 
@@ -1627,10 +1586,15 @@ input[type="text"].form-control {
     align-items: center;
     justify-content: space-between;
     margin-top: 15px;
+    width: 100%; /* Ensure full width */
 }
 
+    /* Force the icon container to be a row */
     .create-post-actions .d-flex {
-        gap: 15px !important; /* Spread them out */
+        display: flex !important;
+        flex-direction: row !important; /* Stop vertical stacking */
+        align-items: center !important;
+        gap: 15px !important;
     }
 
 /* 2. Submit Button */
@@ -1643,11 +1607,21 @@ input[type="text"].form-control {
     font-weight: 600;
     font-size: 1rem;
     letter-spacing: 0.5px;
-    transition: 0.3s;
+    transition: all 0.2s ease;
+    cursor: pointer !important; /* Force pointer cursor */
+    text-transform: uppercase; /* More "Button-like" */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3); /* Lift it off the page */
 }
 
     .btn-post-submit:hover {
-        box-shadow: 0 0 15px rgba(255, 0, 85, 0.6);
+        background: #d40044; /* Darker shade on hover */
+        transform: translateY(-2px); /* Move up slightly */
+        box-shadow: 0 6px 12px rgba(255, 0, 85, 0.4); /* Glow */
+    }
+
+    .btn-post-submit:active {
+        transform: translateY(0); /* Click effect */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
 
 /* 3. Post Card Actions (Like, Comment, Share) */

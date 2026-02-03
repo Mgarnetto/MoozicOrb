@@ -66,7 +66,12 @@
                     <div class="@colClass">
                         @if (media.MediaType == 3) // Image
                         {
-                            <img src="@media.Url" class="img-fluid w-100 h-100 object-fit-cover" style="max-height:500px; min-height:200px;">
+                            // NEW: Container for centering without stretch
+                            <div style="background: #000; border-radius: 4px; overflow: hidden; display: flex; justify-content: center; align-items: center; width: 100%;">
+                                <img src="@media.Url"
+                                     class="img-fluid"
+                                     style="max-height: 500px; width: auto; max-width: 100%; object-fit: contain;">
+                            </div>
                         }
                         else if (media.MediaType == 2) // Video
                         {

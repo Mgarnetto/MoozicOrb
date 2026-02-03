@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using MoozicOrb.API.Models;      // For PostDto
+using MoozicOrb.API.Models;
 using MoozicOrb.Hubs;
 using MoozicOrb.IO;
-using MoozicOrb.Services;        // For SessionStore
+using MoozicOrb.Services;
+using MoozicOrb.Services.Interfaces; // [Added] For IUserService
 using System;
 using System.Threading.Tasks;
 
@@ -16,11 +17,17 @@ namespace MoozicOrb.API.Controllers
     {
         private readonly IHubContext<PostHub> _hub;
         private readonly IHttpContextAccessor _http;
+        private readonly IUserService _userService; // [Added]
 
-        public PostController(IHubContext<PostHub> hub, IHttpContextAccessor http)
+        // [Updated Constructor]
+        public PostController(
+            IHubContext<PostHub> hub,
+            IHttpContextAccessor http,
+            IUserService userService)
         {
             _hub = hub;
             _http = http;
+            _userService = userService;
         }
 
         private int GetUserId()
@@ -40,11 +47,16 @@ namespace MoozicOrb.API.Controllers
             {
                 int userId = GetUserId();
 
+                // [Added] Fetch Real User Info for the live update
+                var user = new UserQuery().GetUserById(userId);
+                string authorName = user?.UserName ?? "Unknown";
+                string authorPic = user?.ProfilePic ?? "/img/profile_default.jpg";
+
                 // A. Insert Post
                 var postIo = new InsertPost();
                 long postId = postIo.Execute(userId, req);
 
-                // B. Insert Attachments (The loop)
+                // B. Insert Attachments
                 if (req.MediaAttachments != null && req.MediaAttachments.Count > 0)
                 {
                     var mediaIo = new InsertPostMedia();
@@ -60,8 +72,8 @@ namespace MoozicOrb.API.Controllers
                 {
                     Id = postId,
                     AuthorId = userId,
-                    AuthorName = "Me", // TODO: Fetch real name
-                    AuthorPic = "/img/default.png",
+                    AuthorName = authorName, // [Fixed] Real Name
+                    AuthorPic = authorPic,   // [Fixed] Real Pic
                     ContextType = req.ContextType,
                     ContextId = req.ContextId,
                     Type = req.Type,
@@ -70,7 +82,10 @@ namespace MoozicOrb.API.Controllers
                     ImageUrl = req.ImageUrl,
                     CreatedAt = DateTime.UtcNow,
                     CreatedAgo = "Just now",
-                    Attachments = req.MediaAttachments, // Pass them back!
+                    Attachments = req.MediaAttachments,
+                    // If we have new attachments, we might need to populate their URLs manually
+                    // for the immediate UI update, OR rely on the client to guess them.
+                    // For now, let's leave as is, the text/image should appear.
                     Price = req.Price,
                     LocationLabel = req.LocationLabel,
                     DifficultyLevel = req.DifficultyLevel,
@@ -93,7 +108,8 @@ namespace MoozicOrb.API.Controllers
             catch (Exception ex) { return BadRequest(ex.Message); }
         }
 
-        // 2. GET FEED
+        // ... (GetPosts, GetSingle, GetSignalRGroupName methods remain unchanged) ...
+
         [HttpGet]
         public IActionResult GetPosts(
             [FromQuery] string contextType,
@@ -109,7 +125,6 @@ namespace MoozicOrb.API.Controllers
             catch (Exception ex) { return BadRequest(ex.Message); }
         }
 
-        // 3. GET SINGLE
         [HttpGet("{id}")]
         public IActionResult GetSingle(long id)
         {

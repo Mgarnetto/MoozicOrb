@@ -88,17 +88,32 @@ namespace MoozicOrb.IO
         }
 
         // ==========================================
-        // HELPER: FETCH AND STITCH MEDIA
+        // HELPER: FETCH AND STITCH MEDIA (FIXED)
         // ==========================================
         private void AttachMediaToPosts(MySqlConnection conn, List<PostDto> posts)
         {
+            if (posts == null || posts.Count == 0) return;
+
             // 1. Get all Post IDs
             var ids = string.Join(",", posts.Select(p => p.Id));
 
-            // 2. Query post_media
+            // 2. Query post_media AND Join specific tables to get the path
             string sql = $@"
-                SELECT pm.post_id, pm.media_id, pm.media_type, pm.sort_order 
+                SELECT 
+                    pm.post_id, 
+                    pm.media_id, 
+                    pm.media_type, 
+                    pm.sort_order,
+                    -- Pick the correct path based on which table matched
+                    COALESCE(img.file_path, vid.file_path, aud.file_path) AS final_url
                 FROM post_media pm
+                -- Join Image Table (Type 3)
+                LEFT JOIN media_images img ON pm.media_id = img.image_id AND pm.media_type = 3
+                -- Join Video Table (Type 2)
+                LEFT JOIN media_video vid ON pm.media_id = vid.video_id AND pm.media_type = 2
+                -- Join Audio Table (Type 1)
+                LEFT JOIN media_audio aud ON pm.media_id = aud.audio_id AND pm.media_type = 1
+                
                 WHERE pm.post_id IN ({ids})
                 ORDER BY pm.sort_order ASC";
 
@@ -110,13 +125,23 @@ namespace MoozicOrb.IO
                     {
                         long pId = rdr.GetInt64("post_id");
                         var post = posts.FirstOrDefault(p => p.Id == pId);
+
                         if (post != null)
                         {
+                            // Retrieve the path from DB
+                            string dbPath = rdr["final_url"] == DBNull.Value ? "" : rdr["final_url"].ToString();
+
+                            // Ensure it starts with "/" for web if not empty
+                            if (!string.IsNullOrEmpty(dbPath) && !dbPath.StartsWith("/"))
+                            {
+                                dbPath = "/" + dbPath;
+                            }
+
                             post.Attachments.Add(new MediaAttachmentDto
                             {
                                 MediaId = rdr.GetInt64("media_id"),
-                                MediaType = rdr.GetByte("media_type"),
-                                Url = "" // Placeholder until we link the specific media tables
+                                MediaType = rdr.GetInt32("media_type"),
+                                Url = dbPath // <--- THE FIX: Real URL from DB
                             });
                         }
                     }

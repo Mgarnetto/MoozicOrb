@@ -88,7 +88,7 @@ document.addEventListener('submit', async function (e) {
 
                 if (uploadRes.ok) {
                     const mediaResult = await uploadRes.json();
-                    attachments.push({ MediaId: mediaResult.id, MediaType: mediaResult.type });
+                    attachments.push({ MediaId: mediaResult.id, MediaType: mediaResult.type, Url: mediaResult.url });
                 }
             }
 
