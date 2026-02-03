@@ -29,13 +29,12 @@
                     <i class="fas fa-map-marker-alt"></i>
                 </button>
             </div>
-
             <button type="submit" class="btn-post-submit">Post Orb</button>
         </div>
     </form>
 </div>
 
-<div id="feed-stream-container" class="feed-stream">
+<div id="feed-stream-container" class="feed-stream feed-wrapper">
     @if (Model.InitialPosts != null && Model.InitialPosts.Any())
     {
         @foreach (var post in Model.InitialPosts)

@@ -3,12 +3,10 @@
         this.rootElement = document.getElementById("mainContent");
         this.currentGroup = null;
 
-        // 1. Back/Forward Buttons
         window.addEventListener("popstate", () => {
             this.loadHtml(window.location.pathname);
         });
 
-        // 2. Click Interceptor
         document.body.addEventListener("click", (e) => {
             const link = e.target.closest("a");
             if (link &&
@@ -48,13 +46,13 @@
                 this.rootElement.style.pointerEvents = "auto";
                 window.scrollTo(0, 0);
 
-                // === THE FIX: Use FeedService for Page Context ===
-                // This connects to PostHub (Public)
+                // === THE FIX: Use FeedService for Public Page Context ===
                 const contextEl = document.getElementById("page-signalr-context");
+
+                // Only FeedService is relevant here (Public Groups)
                 if (contextEl && window.FeedService) {
                     const newGroup = contextEl.value;
 
-                    // Switch rooms if needed
                     if (this.currentGroup !== newGroup) {
                         if (this.currentGroup) window.FeedService.leaveGroup(this.currentGroup);
                         window.FeedService.joinGroup(newGroup);

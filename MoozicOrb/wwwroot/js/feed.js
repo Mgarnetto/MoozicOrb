@@ -2,7 +2,7 @@
    FEED & POST LOGIC (Public Layer)
    ========================================= */
 
-// 1. PUBLIC CONNECTION (PostHub)
+// 1. PUBLIC CONNECTION (Connects to PostHub)
 // This runs immediately so guests can see the feed.
 const feedConnection = new signalR.HubConnectionBuilder()
     .withUrl("/PostHub")
@@ -11,8 +11,7 @@ const feedConnection = new signalR.HubConnectionBuilder()
 
 feedConnection.start().catch(err => console.error("[Feed] Connection failed", err));
 
-// 2. FEED SERVICE (New Service Name!)
-// Router uses this to switch "Public Contexts" (e.g. User 105's Feed vs Home Feed)
+// 2. FEED SERVICE (Renamed from MessageService to avoid conflicts)
 window.FeedService = {
     currentGroup: null,
 
@@ -28,11 +27,16 @@ window.FeedService = {
     }
 };
 
-// 3. SIGNALR LISTENER
+// 3. LISTEN FOR POSTS
 feedConnection.on("ReceivePost", function (message) {
+    // We look for a wrapper class to know if we are on a feed page
     const feedWrapper = document.querySelector('.feed-wrapper');
+
     if (feedWrapper) {
-        const pageContext = feedWrapper.dataset.contextType + "_" + feedWrapper.dataset.contextId;
+        // Read the Context ID from the hidden input on the page
+        const contextInput = document.getElementById('page-signalr-context');
+        const pageContext = contextInput ? contextInput.value : null;
+
         // Render if Global or Specific Match
         if (message.targetGroup === pageContext || message.targetGroup === "feed_global") {
             renderNewPost(message.data);
@@ -50,7 +54,7 @@ document.addEventListener('submit', async function (e) {
         const textArea = form.querySelector('textarea[name="Content"]');
         const fileInput = form.querySelector('input[name="mediaFile"]');
 
-        // Grab Context to prevent 400 Errors
+        // Grab Context
         const cType = form.querySelector('input[name="ContextType"]')?.value;
         const cId = form.querySelector('input[name="ContextId"]')?.value;
 
@@ -71,7 +75,7 @@ document.addEventListener('submit', async function (e) {
         try {
             let attachments = [];
 
-            // A. Upload File
+            // A. Upload
             if (fileInput.files.length > 0) {
                 const uploadData = new FormData();
                 uploadData.append("file", fileInput.files[0]);
@@ -84,14 +88,11 @@ document.addEventListener('submit', async function (e) {
 
                 if (uploadRes.ok) {
                     const mediaResult = await uploadRes.json();
-                    attachments.push({
-                        MediaId: mediaResult.id,
-                        MediaType: mediaResult.type
-                    });
+                    attachments.push({ MediaId: mediaResult.id, MediaType: mediaResult.type });
                 }
             }
 
-            // B. Create Post
+            // B. Create
             const payload = {
                 ContextType: cType,
                 ContextId: cId,
@@ -118,8 +119,14 @@ document.addEventListener('submit', async function (e) {
                 }
             } else {
                 const errText = await postRes.text();
-                console.error("Post Error:", errText);
-                alert("Failed to create post. " + errText);
+                // Parse generic 400 errors for better alerts
+                try {
+                    const errJson = JSON.parse(errText);
+                    const msg = errJson.title || "Validation Error";
+                    alert("Failed: " + msg);
+                } catch {
+                    alert("Failed to create post. " + errText);
+                }
             }
 
         } catch (error) {
@@ -131,14 +138,14 @@ document.addEventListener('submit', async function (e) {
     }
 });
 
-// Helpers
 function renderNewPost(post) {
     const container = document.getElementById('feed-stream-container');
-    if (!container) return;
+    if (!container) return; // This ID must exist in your HTML!
 
     const div = document.createElement('div');
+    // Using simple HTML string - ensure this matches your _PostCard logic if possible
     div.innerHTML = `
-        <div class="card mb-3 shadow-sm border-0 post-card">
+        <div class="card mb-3 shadow-sm border-0 post-card" style="animation: fadeIn 0.5s ease;">
             <div class="card-header bg-white border-0 d-flex align-items-center pt-3">
                 <img src="${post.authorPic || '/img/default.png'}" class="rounded-circle me-2 object-fit-cover" width="40" height="40">
                 <div>
@@ -152,7 +159,6 @@ function renderNewPost(post) {
             </div>
         </div>`;
 
-    div.firstElementChild.style.animation = "fadeIn 0.5s ease";
     container.insertBefore(div.firstElementChild, container.firstChild);
 }
 
