@@ -1,9 +1,7 @@
 ﻿@model MoozicOrb.API.Models.PostFeedViewModel
 
-<div class="create-post-card">
-
+<div class="create-post-card mb-4">
     <div class="create-post-header">
-        @* <img src="@Model.UserProfile" class="create-post-avatar" alt="User"> *@
         <span class="text-muted small">What's creating noise today?</span>
     </div>
 
@@ -19,27 +17,39 @@
         <div id="mediaPreview" class="mt-3 d-none"></div>
 
         <div class="create-post-actions">
-
             <div class="d-flex gap-2">
                 <label class="post-action-btn" title="Upload Audio/Video">
                     <i class="fas fa-photo-video"></i>
                     <input type="file" name="mediaFile" accept="image/*,video/*,audio/*" hidden onchange="previewMedia(this)">
                 </label>
-
                 <button type="button" class="post-action-btn" title="Add Link">
                     <i class="fas fa-link"></i>
                 </button>
-
                 <button type="button" class="post-action-btn" title="Location">
                     <i class="fas fa-map-marker-alt"></i>
                 </button>
             </div>
 
-            <button type="submit" class="btn-post-submit">
-                Post Orb
-            </button>
+            <button type="submit" class="btn-post-submit">Post Orb</button>
         </div>
     </form>
+</div>
+
+<div id="feed-stream-container" class="feed-stream">
+    @if (Model.InitialPosts != null && Model.InitialPosts.Any())
+    {
+        @foreach (var post in Model.InitialPosts)
+        {
+            <partial name="_PostCard" model="post" />
+        }
+    }
+    else
+    {
+        <div class="text-center text-muted py-5" id="empty-feed-msg">
+            <i class="fas fa-ghost fa-2x mb-3" style="opacity: 0.3;"></i>
+            <p>It's quiet here... be the first to post!</p>
+        </div>
+    }
 </div>
 
 <script>

@@ -61,7 +61,7 @@
     };
 
     // =============================
-    // 1. SIGNALR CONNECTIONS
+    // 1. SIGNALR CONNECTIONS (PRIVATE - MESSAGING ONLY)
     // =============================
     const messageConn = new signalR.HubConnectionBuilder()
         .withUrl("/MessageHub")

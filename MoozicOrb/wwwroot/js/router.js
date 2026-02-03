@@ -48,15 +48,16 @@
                 this.rootElement.style.pointerEvents = "auto";
                 window.scrollTo(0, 0);
 
-                // === THE FIX: Connect Router to SignalR Bridge ===
+                // === THE FIX: Use FeedService for Page Context ===
+                // This connects to PostHub (Public)
                 const contextEl = document.getElementById("page-signalr-context");
-                if (contextEl && window.MessageService) {
+                if (contextEl && window.FeedService) {
                     const newGroup = contextEl.value;
 
                     // Switch rooms if needed
                     if (this.currentGroup !== newGroup) {
-                        if (this.currentGroup) window.MessageService.leaveGroup(this.currentGroup);
-                        window.MessageService.joinGroup(newGroup);
+                        if (this.currentGroup) window.FeedService.leaveGroup(this.currentGroup);
+                        window.FeedService.joinGroup(newGroup);
                         this.currentGroup = newGroup;
                     }
                 }
