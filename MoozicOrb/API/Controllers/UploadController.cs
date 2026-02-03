@@ -66,18 +66,26 @@ namespace MoozicOrb.API.Controllers
         {
             try
             {
-                // 1. Save
-                string dbPath = await _fileService.SaveFileAsync(file, "Image");
+                // 1. Save (Now returns "media/Image/guid.jpg")
+                string relativePath = await _fileService.SaveFileAsync(file, "Image");
 
-                // 2. Process (Get Width/Height)
-                string physPath = _fileService.GetPhysicalPath(dbPath);
-                var meta = await _processor.ProcessImageAsync(physPath, dbPath);
+                // 2. Process Metadata
+                string physPath = _fileService.GetPhysicalPath(relativePath);
+                int width = 0, height = 0;
+                try
+                {
+                    var meta = await _processor.ProcessImageAsync(physPath, relativePath);
+                    width = meta.Width;
+                    height = meta.Height;
+                }
+                catch { /* Metadata failure shouldn't block upload */ }
 
-                // 3. Insert using specific class
-                long newId = new InsertImage().Execute(uid, file.FileName, dbPath, meta.Width, meta.Height);
+                // 3. Insert Record
+                // Prepend "/" so it acts as an absolute web URL: "/media/Image/guid.jpg"
+                string webUrl = "/" + relativePath;
 
-                // 4. Return
-                string webUrl = "/" + dbPath.Replace("MoozicOrb/", "").Replace("\\", "/");
+                long newId = new InsertImage().Execute(uid, file.FileName, webUrl, width, height);
+
                 return Ok(new { id = newId, type = 3, url = webUrl });
             }
             catch (Exception ex) { return BadRequest(ex.Message); }

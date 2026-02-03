@@ -4,7 +4,7 @@
 <div class="card mb-3 shadow-sm border-0 post-card" id="post-@Model.Id">
     <div class="card-header bg-white border-0 d-flex align-items-center pt-3 pb-0">
         <a href="/creator/@Model.AuthorId" class="text-decoration-none">
-            <img src="@(string.IsNullOrEmpty(Model.AuthorPic) ? "/img/default.png" : Model.AuthorPic)"
+            <img src="@(string.IsNullOrEmpty(Model.AuthorPic) ? "/img/profile_default.jpg" : Model.AuthorPic)"
                  class="rounded-circle me-2 object-fit-cover" width="40" height="40" alt="@Model.AuthorName">
         </a>
         <div class="lh-sm">

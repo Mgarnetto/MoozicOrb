@@ -23,13 +23,14 @@ namespace MoozicOrb.API.Services
 
         public async Task<string> SaveFileAsync(IFormFile file, string typeFolder)
         {
-            // Path: ProjectRoot/MoozicOrb/media/[Type]
-            string uploadPath = Path.Combine(_env.ContentRootPath, "MoozicOrb", "media", typeFolder);
+            // FIX: Use WebRootPath to save into 'wwwroot'
+            string uploadPath = Path.Combine(_env.WebRootPath, "media", typeFolder);
 
             if (!Directory.Exists(uploadPath))
                 Directory.CreateDirectory(uploadPath);
 
             string ext = Path.GetExtension(file.FileName).ToLower();
+            // Using GUID to prevent name collisions
             string uniqueName = $"{Guid.NewGuid()}{ext}";
             string fullPath = Path.Combine(uploadPath, uniqueName);
 
@@ -38,13 +39,14 @@ namespace MoozicOrb.API.Services
                 await file.CopyToAsync(stream);
             }
 
-            // Return relative path for DB: "MoozicOrb/media/Audio/guid.mp3"
-            return Path.Combine("MoozicOrb", "media", typeFolder, uniqueName).Replace("\\", "/");
+            // Return clean URL path: "media/Image/file.jpg"
+            return Path.Combine("media", typeFolder, uniqueName).Replace("\\", "/");
         }
 
         public string GetPhysicalPath(string relativePath)
         {
-            return Path.Combine(_env.ContentRootPath, relativePath);
+            // FIX: Map the relative path back to wwwroot for processing
+            return Path.Combine(_env.WebRootPath, relativePath);
         }
     }
 }

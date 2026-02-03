@@ -85,18 +85,23 @@
     </nav>
 
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-profile auth-required">
+        <div class="sidebar-profile">
             <a href="/creator/profile" class="profile-link-wrapper nav-link" style="text-decoration: none; color: inherit; display: flex; width: 100%; align-items: center;">
-                <div class="profile-img"></div>
+            <div class="profile-img" style="background-image: url('/img/profile_default.jpg');"></div>
+            </a>
+            <div class="profile-info-col">
+                <div class="text-white fw-bold" style="font-size: 1.1rem;">First Name</div>
+
                 <div class="profile-stats">
                     <span><strong>1.2k</strong> Followers</span>
                     <span><strong>450</strong> Following</span>
                 </div>
-            </a>
 
-            <div class="profile-actions">
-                <button class="btn-sidebar-outline">Edit</button>
-                <button class="btn-sidebar-fill">Save</button>
+                <div class="mt-2">
+                    <a href="/settings" class="text-muted small text-decoration-none hover-white">
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </div>
             </div>
         </div>
 

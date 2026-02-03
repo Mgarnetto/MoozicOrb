@@ -21,9 +21,9 @@
 
   <ItemGroup>
     <Folder Include="Images\" />
-    <Folder Include="media\Audio\" />
-    <Folder Include="media\Image\" />
-    <Folder Include="media\Video\" />
+    <Folder Include="wwwroot\media\Audio\" />
+    <Folder Include="wwwroot\media\Image\" />
+    <Folder Include="wwwroot\media\Video\" />
     <Folder Include="Video\" />
   </ItemGroup>
 

@@ -17,11 +17,12 @@
         <div id="mediaPreview" class="mt-3 d-none"></div>
 
         <div class="create-post-actions">
-            <div class="d-flex gap-2">
-                <label class="post-action-btn" title="Upload Audio/Video">
+            <div class="d-flex">
+                <label class="post-action-btn" title="Upload Media">
                     <i class="fas fa-photo-video"></i>
                     <input type="file" name="mediaFile" accept="image/*,video/*,audio/*" hidden onchange="previewMedia(this)">
                 </label>
+
                 <button type="button" class="post-action-btn" title="Add Link">
                     <i class="fas fa-link"></i>
                 </button>
@@ -29,6 +30,7 @@
                     <i class="fas fa-map-marker-alt"></i>
                 </button>
             </div>
+
             <button type="submit" class="btn-post-submit">Post Orb</button>
         </div>
     </form>

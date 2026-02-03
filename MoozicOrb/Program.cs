@@ -84,14 +84,14 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 // Serves your "MoozicOrb/media" folder at the URL "/media"
-string mediaPath = Path.Combine(builder.Environment.ContentRootPath, "MoozicOrb", "media");
-if (!Directory.Exists(mediaPath)) Directory.CreateDirectory(mediaPath);
+//string mediaPath = Path.Combine(builder.Environment.ContentRootPath, "MoozicOrb", "media");
+//if (!Directory.Exists(mediaPath)) Directory.CreateDirectory(mediaPath);
 
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(mediaPath),
-    RequestPath = "/media"
-});
+//app.UseStaticFiles(new StaticFileOptions
+//{
+//    FileProvider = new PhysicalFileProvider(mediaPath),
+//    RequestPath = "/media"
+//});
 
 app.UseRouting();
 
