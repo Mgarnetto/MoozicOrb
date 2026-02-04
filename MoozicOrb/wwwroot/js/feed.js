@@ -2,7 +2,7 @@
    FEED & POST LOGIC (Public Layer)
    ========================================= */
 
-// 1. PUBLIC CONNECTION (Connects to PostHub)
+// 1. PUBLIC CONNECTION
 const feedConnection = new signalR.HubConnectionBuilder()
     .withUrl("/PostHub")
     .withAutomaticReconnect()
@@ -10,197 +10,62 @@ const feedConnection = new signalR.HubConnectionBuilder()
 
 feedConnection.start().catch(err => console.error("[Feed] Connection failed", err));
 
-// 2. MOBILE LIFECYCLE: Reconnect on Wakeup
 document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-        if (feedConnection.state === "Disconnected") {
-            console.log("[Feed] Waking up SignalR...");
-            feedConnection.start().catch(err => console.error("[Feed] Reconnect failed", err));
-        }
+    if (document.visibilityState === "visible" && feedConnection.state === "Disconnected") {
+        feedConnection.start();
     }
 });
 
-// 3. FEED SERVICE
+// 2. FEED SERVICE
 window.FeedService = {
-    currentGroup: null,
-
-    joinGroup: function (groupName) {
-        if (feedConnection.state !== "Connected") return;
-        feedConnection.invoke("JoinGroup", groupName).catch(err => console.error(err));
-        this.currentGroup = groupName;
-    },
-
-    leaveGroup: function (groupName) {
-        if (feedConnection.state !== "Connected") return;
-        feedConnection.invoke("LeaveGroup", groupName).catch(err => console.error(err));
-    }
+    joinGroup: (g) => feedConnection.state === "Connected" && feedConnection.invoke("JoinGroup", g),
+    leaveGroup: (g) => feedConnection.state === "Connected" && feedConnection.invoke("LeaveGroup", g)
 };
 
-// 4. LISTEN FOR POSTS
+// 3. LISTEN FOR POSTS
 feedConnection.on("ReceivePost", function (message) {
-    const feedWrapper = document.querySelector('.feed-wrapper');
-
-    if (feedWrapper) {
-        const contextInput = document.getElementById('page-signalr-context');
-        const pageContext = contextInput ? contextInput.value : null;
-
-        if (message.targetGroup === pageContext || message.targetGroup === "feed_global") {
-            renderNewPost(message.data);
-        }
+    const contextInput = document.getElementById('page-signalr-context');
+    const pageContext = contextInput ? contextInput.value : null;
+    if (message.targetGroup === pageContext || message.targetGroup === "feed_global") {
+        renderNewPost(message.data);
     }
 });
 
-// 5. FORM INTERCEPTOR (With Persistence)
-document.addEventListener('submit', async function (e) {
-    if (e.target && e.target.id === 'createPostForm') {
-        e.preventDefault();
-
-        const form = e.target;
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const textArea = form.querySelector('textarea[name="Content"]');
-        const fileInput = form.querySelector('input[name="mediaFile"]');
-
-        // Grab Context
-        const cType = form.querySelector('input[name="ContextType"]')?.value;
-        const cId = form.querySelector('input[name="ContextId"]')?.value;
-
-        if (!cType || !cId) {
-            alert("Error: Page Context is missing. Please refresh.");
-            return;
-        }
-
-        if (!textArea.value.trim() && (!fileInput.files || fileInput.files.length === 0)) {
-            alert("Please enter text or select a file.");
-            return;
-        }
-
-        const originalText = submitBtn.innerText;
-        submitBtn.disabled = true;
-        submitBtn.innerText = "Posting...";
-
-        try {
-            let attachments = [];
-
-            // A. Upload
-            if (fileInput.files.length > 0) {
-                const uploadData = new FormData();
-                uploadData.append("file", fileInput.files[0]);
-
-                const uploadRes = await fetch('/api/upload', {
-                    method: 'POST',
-                    headers: { 'X-Session-Id': window.AuthState?.sessionId || '' },
-                    body: uploadData
-                });
-
-                if (uploadRes.ok) {
-                    const mediaResult = await uploadRes.json();
-                    attachments.push({ MediaId: mediaResult.id, MediaType: mediaResult.type, Url: mediaResult.url });
-                }
-            }
-
-            // B. Create
-            const payload = {
-                ContextType: cType,
-                ContextId: cId,
-                Type: "standard",
-                Text: textArea.value,
-                MediaAttachments: attachments
-            };
-
-            const postRes = await fetch('/api/posts', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Session-Id': window.AuthState?.sessionId || ''
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (postRes.ok) {
-                form.reset();
-
-                // CLEAR DRAFT ON SUCCESS
-                localStorage.removeItem("moozic_post_draft");
-
-                const preview = document.getElementById('mediaPreview');
-                if (preview) {
-                    preview.classList.add('d-none');
-                    preview.innerHTML = '';
-                }
-            } else {
-                const errText = await postRes.text();
-                try {
-                    const errJson = JSON.parse(errText);
-                    const msg = errJson.title || "Validation Error";
-                    alert("Failed: " + msg);
-                } catch {
-                    alert("Failed to create post. " + errText);
-                }
-            }
-
-        } catch (error) {
-            console.error("Network Error:", error);
-            alert("Network Error. Your post has been saved to drafts.");
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerText = originalText;
-        }
-    }
-});
-
-// 6. DRAFT PERSISTENCE LOGIC
-document.addEventListener("DOMContentLoaded", () => {
-    const textArea = document.querySelector('#createPostForm textarea[name="Content"]');
-    if (textArea) {
-        // Restore Draft
-        const savedDraft = localStorage.getItem("moozic_post_draft");
-        if (savedDraft) {
-            textArea.value = savedDraft;
-        }
-
-        // Save Draft on Input
-        textArea.addEventListener("input", () => {
-            localStorage.setItem("moozic_post_draft", textArea.value);
-        });
-    }
-});
-
-// 7. RENDER LOGIC (UPDATED WITH COMMENT HOOKS)
+// 4. POST RENDERING (Match Server HTML)
 function renderNewPost(post) {
     const container = document.getElementById('feed-stream-container');
     if (!container) return;
 
-    // Determine Author Pic
     const authorPic = post.authorPic && post.authorPic !== "null" ? post.authorPic : "/img/profile_default.jpg";
 
     const div = document.createElement('div');
+    // Using structure from _PostCard.cshtml (Updated Inputs)
     div.innerHTML = `
         <div class="post-card" id="post-${post.id}" style="animation: fadeIn 0.5s ease;">
-            
             <div class="post-header">
                 <div class="d-flex align-items-center">
                     <a href="/creator/${post.authorId}" class="post-avatar-link">
-                        <img src="${authorPic}" class="post-avatar-img" alt="${post.authorName}">
+                        <img src="${authorPic}" class="post-avatar-img" alt="${post.authorName}" onerror="this.src='/img/profile_default.jpg'">
                     </a>
                     <div class="post-info-col">
                         <div class="d-flex align-items-center gap-2">
                             <a href="/creator/${post.authorId}" class="post-author-name">${post.authorName || 'User'}</a>
                         </div>
-                        <div class="post-meta-line">
-                            <span>Just now</span>
-                        </div>
+                        <div class="post-meta-line"><span>Just now</span></div>
                     </div>
                 </div>
-                <div class="ms-auto">
-                    <button class="btn btn-link text-muted p-0"><i class="fas fa-ellipsis-h"></i></button>
+                <div class="ms-auto position-relative">
+                    <button class="btn btn-link text-muted p-0 btn-post-options" type="button"><i class="fas fa-ellipsis-h"></i></button>
+                    <ul class="post-options-menu">
+                        <li><a href="#"><i class="fas fa-flag me-2"></i> Report Post</a></li>
+                        <li><a href="#"><i class="fas fa-link me-2"></i> Copy Link</a></li>
+                    </ul>
                 </div>
             </div>
 
             <div class="post-body">
                 ${post.title ? `<h5 class="post-title">${post.title}</h5>` : ''}
-                
                 ${post.text ? `<div class="post-text text-break">${post.text}</div>` : ''}
-                
                 ${renderAttachments(post.attachments)}
             </div>
 
@@ -212,9 +77,14 @@ function renderNewPost(post) {
 
             <div id="comments-${post.id}" class="d-none border-top border-secondary p-3">
                 <div id="comments-list-${post.id}" class="mb-3"></div>
-                <div class="d-flex">
-                    <input type="text" id="comment-input-${post.id}" class="form-control form-control-sm bg-dark text-white border-secondary me-2" placeholder="Write a comment...">
-                    <button class="btn btn-sm btn-primary" onclick="submitReply(${post.id}, null)">Post</button>
+                <div class="d-flex flex-column align-items-end gap-2">
+                    <div class="d-flex w-100 align-items-center">
+                        <img src="/img/profile_default.jpg" class="rounded-circle me-3" width="32" height="32" style="opacity:0.8;">
+                        <input type="text" id="comment-input-${post.id}" 
+                               class="form-control bg-dark text-white border-secondary rounded-pill" 
+                               placeholder="Write a comment...">
+                    </div>
+                    <button class="btn btn-sm btn-primary rounded-pill px-4" onclick="submitReply(${post.id}, null)">Post</button>
                 </div>
             </div>
         </div>`;
@@ -222,89 +92,70 @@ function renderNewPost(post) {
     container.insertBefore(div.firstElementChild, container.firstChild);
 }
 
-// Updated Attachment Renderer
 function renderAttachments(attachments) {
     if (!attachments || attachments.length === 0) return '';
-
     let html = `<div class="row g-2 mt-3">`;
-
     attachments.forEach(media => {
         const colClass = attachments.length === 1 ? "col-12" : "col-6";
-
-        html += `<div class="${colClass}">`;
-
-        if (media.mediaType === 3) { // Image
-            html += `
-                <div class="post-media-container">
-                    <img src="${media.url}" class="img-fluid full-media" loading="lazy">
-                </div>`;
-        }
-        else if (media.mediaType === 2) { // Video
-            html += `
-                <div class="post-media-container">
-                    <video src="${media.url}" controls class="img-fluid full-media"></video>
-                </div>`;
-        }
-        else if (media.mediaType === 1) { // Audio
-            html += `
-                <div class="p-3 border border-secondary rounded bg-dark mt-1">
-                    <audio src="${media.url}" controls class="w-100"></audio>
-                </div>`;
-        }
-
-        html += `</div>`;
+        html += `<div class="${colClass}"><div class="post-media-container">`;
+        if (media.mediaType === 3) html += `<img src="${media.url}" class="img-fluid full-media" loading="lazy">`;
+        else if (media.mediaType === 2) html += `<video src="${media.url}" controls class="img-fluid full-media"></video>`;
+        else if (media.mediaType === 1) html += `<audio src="${media.url}" controls class="w-100 p-2"></audio>`;
+        html += `</div></div>`;
     });
-
-    html += `</div>`;
-    return html;
+    return html + `</div>`;
 }
 
-window.previewMedia = function (input) {
-    const preview = document.getElementById('mediaPreview');
-    if (input.files && input.files[0]) {
-        preview.classList.remove('d-none');
-        preview.innerHTML = `<div class="text-white small p-2"><i class="fas fa-paperclip"></i> ${input.files[0].name}</div>`;
-    }
-};
-
-/* ============================================
-   8. NEW: COMMENTS & LIKES LOGIC
-   ============================================ */
+// ============================================
+// 5. EVENT LISTENERS
+// ============================================
 
 document.addEventListener('click', async (e) => {
 
-    // LIKE BUTTON
+    // A. HAMBURGER MENU (Manual Toggle)
+    const optBtn = e.target.closest('.btn-post-options');
+    if (optBtn) {
+        e.stopPropagation();
+        const menu = optBtn.nextElementSibling; // The <ul>
+        // Close others
+        document.querySelectorAll('.post-options-menu').forEach(el => {
+            if (el !== menu) el.classList.remove('show');
+        });
+        // Toggle current
+        if (menu) menu.classList.toggle('show');
+        return;
+    }
+    // Close menus if clicking anywhere else
+    if (!e.target.closest('.post-options-menu')) {
+        document.querySelectorAll('.post-options-menu').forEach(el => el.classList.remove('show'));
+    }
+
+    // B. LIKE BUTTON
     const likeBtn = e.target.closest('.btn-like');
     if (likeBtn) {
         const postId = likeBtn.dataset.id;
         try {
-            const res = await fetch(`/api/posts/${postId}/like`, {
-                method: "POST",
-                headers: { "X-Session-Id": window.AuthState?.sessionId || "" }
-            });
+            const res = await fetch(`/api/posts/${postId}/like`, { method: "POST", headers: { "X-Session-Id": window.AuthState?.sessionId || "" } });
             if (res.ok) {
                 const data = await res.json();
                 const icon = likeBtn.querySelector('i');
                 if (data.liked) {
-                    icon.classList.remove('far');
-                    icon.classList.add('fas', 'text-danger');
+                    icon.classList.remove('far'); icon.classList.add('fas', 'text-danger');
                 } else {
-                    icon.classList.remove('fas', 'text-danger');
-                    icon.classList.add('far');
+                    icon.classList.remove('fas', 'text-danger'); icon.classList.add('far');
                 }
             }
         } catch (err) { console.error(err); }
     }
 
-    // COMMENT TOGGLE
+    // C. COMMENT TOGGLE
     const commentBtn = e.target.closest('.btn-comment-toggle');
     if (commentBtn) {
         const postId = commentBtn.dataset.id;
         const section = document.getElementById(`comments-${postId}`);
         if (section) {
             section.classList.toggle('d-none');
-            // Only load if we are opening it and it's not already populated? 
-            // For now, load every time to get fresh data
+            // Only load if it's opening
             if (!section.classList.contains('d-none')) {
                 loadComments(postId);
             }
@@ -312,63 +163,65 @@ document.addEventListener('click', async (e) => {
     }
 });
 
-// Fetch & Render Recursive Comments
-async function loadComments(postId) {
-    const listContainer = document.getElementById(`comments-list-${postId}`);
-    listContainer.innerHTML = '<div class="text-muted small">Loading...</div>';
+// ============================================
+// 6. COMMENT SYSTEM
+// ============================================
 
+async function loadComments(postId) {
+    const container = document.getElementById(`comments-list-${postId}`);
+    container.innerHTML = '<div class="text-muted small ps-2">Loading comments...</div>';
     try {
         const res = await fetch(`/api/posts/${postId}/comments`);
         if (res.ok) {
             const comments = await res.json();
-            listContainer.innerHTML = '';
-
+            container.innerHTML = '';
             if (comments.length === 0) {
-                listContainer.innerHTML = '<div class="text-muted small">No comments yet.</div>';
+                container.innerHTML = '<div class="text-muted small ps-2">No comments yet.</div>';
                 return;
             }
-
-            comments.forEach(c => {
-                listContainer.appendChild(createCommentElement(c));
-            });
+            comments.forEach(c => container.appendChild(createCommentElement(c)));
         }
-    } catch (err) { console.error(err); }
+    } catch (err) { container.innerHTML = '<div class="text-danger small">Error loading comments.</div>'; }
 }
 
 function createCommentElement(c) {
     const wrapper = document.createElement('div');
-    wrapper.className = "mb-3";
+    wrapper.className = "comment-item";
     wrapper.id = `comment-${c.commentId}`;
 
+    const picUrl = c.authorPic && c.authorPic !== "null" ? c.authorPic : "/img/profile_default.jpg";
+
     let html = `
-        <div class="d-flex">
-            <img src="${c.authorPic}" class="rounded-circle me-2" width="30" height="30" style="object-fit:cover;">
+        <div class="d-flex align-items-start">
+            <img src="${picUrl}" class="comment-avatar" onerror="this.src='/img/profile_default.jpg'">
+            
             <div class="flex-grow-1">
-                <div class="bg-dark border border-secondary p-2 rounded">
-                    <div class="d-flex justify-content-between">
-                        <span class="fw-bold text-white small">${c.authorName}</span>
-                        <small class="text-muted" style="font-size:0.75rem">${c.createdAgo}</small>
-                    </div>
-                    <div class="text-light small mt-1">${c.content}</div>
+                <div class="comment-content-box">
+                    <span class="comment-author">${c.authorName || 'User'}</span>
+                    <div class="comment-text">${c.content}</div>
                 </div>
-                <div class="mt-1 ms-1">
-                    <button class="btn btn-link btn-sm p-0 text-muted text-decoration-none" 
-                            style="font-size:0.75rem;" 
-                            onclick="toggleReplyBox(${c.commentId})">Reply</button>
+
+                <div class="comment-meta-line">
+                    <span class="comment-time">${c.createdAgo}</span>
+                    <button class="btn-reply-toggle" onclick="toggleReplyBox(${c.commentId})">Reply</button>
                 </div>
-                <div id="reply-box-${c.commentId}" class="d-none mt-2">
-                    <div class="d-flex">
-                        <input type="text" id="reply-input-${c.commentId}" class="form-control form-control-sm bg-black text-white border-secondary me-2" placeholder="Reply...">
-                        <button class="btn btn-sm btn-primary" onclick="submitReply(${c.postId}, ${c.commentId})">Send</button>
+
+                <div id="reply-box-${c.commentId}" class="reply-input-wrapper d-none">
+                    <div class="d-flex flex-column align-items-end gap-2">
+                        <input type="text" id="reply-input-${c.commentId}" 
+                               class="form-control form-control-sm bg-black text-white border-secondary" 
+                               placeholder="Reply to ${c.authorName}...">
+                        <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="submitReply(${c.postId}, ${c.commentId})">
+                            Reply
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     `;
 
-    // RECURSION: Nested Replies
     const repliesContainer = document.createElement('div');
-    repliesContainer.className = "ms-5 mt-2 border-start border-secondary ps-2"; // Indentation
+    repliesContainer.className = "replies-container";
 
     if (c.replies && c.replies.length > 0) {
         c.replies.forEach(reply => {
@@ -400,17 +253,59 @@ window.submitReply = async function (postId, parentId) {
     try {
         const res = await fetch('/api/posts/comment', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Session-Id': window.AuthState?.sessionId || ''
-            },
+            headers: { 'Content-Type': 'application/json', 'X-Session-Id': window.AuthState?.sessionId || '' },
             body: JSON.stringify({ PostId: postId, ParentId: parentId, Content: content })
         });
 
         if (res.ok) {
             input.value = '';
             if (parentId) document.getElementById(`reply-box-${parentId}`).classList.add('d-none');
-            loadComments(postId); // Refresh tree
+            loadComments(postId);
         }
     } catch (err) { console.error(err); }
 };
+
+document.addEventListener('submit', async function (e) {
+    if (e.target && e.target.id === 'createPostForm') {
+        e.preventDefault();
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const textArea = form.querySelector('textarea[name="Content"]');
+        const fileInput = form.querySelector('input[name="mediaFile"]');
+        const cType = form.querySelector('input[name="ContextType"]')?.value;
+        const cId = form.querySelector('input[name="ContextId"]')?.value;
+
+        if (!cType || !cId) { alert("Error: Page Context is missing."); return; }
+        if (!textArea.value.trim() && (!fileInput.files || fileInput.files.length === 0)) { alert("Please enter text or select a file."); return; }
+
+        const originalText = submitBtn.innerText;
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Posting...";
+
+        try {
+            let attachments = [];
+            if (fileInput.files.length > 0) {
+                const uploadData = new FormData();
+                uploadData.append("file", fileInput.files[0]);
+                const uploadRes = await fetch('/api/upload', { method: 'POST', headers: { 'X-Session-Id': window.AuthState?.sessionId || '' }, body: uploadData });
+                if (uploadRes.ok) {
+                    const mediaResult = await uploadRes.json();
+                    attachments.push({ MediaId: mediaResult.id, MediaType: mediaResult.type, Url: mediaResult.url });
+                }
+            }
+
+            const payload = { ContextType: cType, ContextId: cId, Type: "standard", Text: textArea.value, MediaAttachments: attachments };
+            const postRes = await fetch('/api/posts', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Id': window.AuthState?.sessionId || '' }, body: JSON.stringify(payload) });
+
+            if (postRes.ok) {
+                form.reset();
+                const preview = document.getElementById('mediaPreview');
+                if (preview) { preview.classList.add('d-none'); preview.innerHTML = ''; }
+            } else {
+                const errText = await postRes.text();
+                alert("Failed to post: " + errText);
+            }
+        } catch (error) { console.error(error); }
+        finally { submitBtn.disabled = false; submitBtn.innerText = originalText; }
+    }
+});

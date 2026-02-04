@@ -8,36 +8,31 @@
             <a href="/creator/@Model.AuthorId" class="post-avatar-link">
                 <img src="@(string.IsNullOrEmpty(Model.AuthorPic) ? "/img/profile_default.jpg" : Model.AuthorPic)"
                      class="post-avatar-img"
-                     alt="@Model.AuthorName">
+                     alt="@Model.AuthorName"
+                     onerror="this.src='/img/profile_default.jpg'">
             </a>
 
             <div class="post-info-col">
                 <div class="d-flex align-items-center gap-2">
                     <a href="/creator/@Model.AuthorId" class="post-author-name">@Model.AuthorName</a>
-
-                    @if (Model.ContextType == "state")
-                    {
-                        <span class="text-muted small"><i class="fas fa-caret-right"></i> @Model.ContextId</span>
-                    }
                 </div>
-
                 <div class="post-meta-line">
                     <span>@Model.CreatedAgo</span>
-                    @if (!string.IsNullOrEmpty(Model.LocationLabel))
-                    {
-                        <span>&bull; @Model.LocationLabel</span>
-                    }
                 </div>
             </div>
         </div>
 
-        <div class="ms-auto">
-            <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+        <div class="ms-auto position-relative">
+            <button class="btn btn-link text-muted p-0 btn-post-options" type="button">
                 <i class="fas fa-ellipsis-h"></i>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
-                <li><a class="dropdown-item" href="#">Report</a></li>
-                <li><a class="dropdown-item" href="#">Copy Link</a></li>
+            <ul class="post-options-menu">
+                <li><a href="#"><i class="fas fa-flag me-2"></i> Report Post</a></li>
+                <li><a href="#"><i class="fas fa-link me-2"></i> Copy Link</a></li>
+                @if (Model.AuthorId == 0)
+                {
+                    <li><a href="#" class="text-danger"><i class="fas fa-trash me-2"></i> Delete</a></li>
+                }
             </ul>
         </div>
     </div>
@@ -47,25 +42,9 @@
         {
             <h5 class="post-title">@Model.Title</h5>
         }
-
         @if (!string.IsNullOrEmpty(Model.Text))
         {
             <div class="post-text text-break">@Html.Raw(Model.Text)</div>
-        }
-
-        @if (!string.IsNullOrEmpty(Model.ImageUrl) && (Model.Attachments == null || Model.Attachments.Count == 0))
-        {
-            <div class="post-media-container mt-3">
-                <img src="@Model.ImageUrl" class="img-fluid" alt="Post Image">
-            </div>
-        }
-
-        @if (Model.Type == "classified" && Model.Price.HasValue)
-        {
-            <div class="classified-badge">
-                <span class="price-tag">@Model.Price.Value.ToString("C")</span>
-                <button class="btn btn-sm btn-success rounded-pill px-3">Contact Seller</button>
-            </div>
         }
 
         @if (Model.Attachments != null && Model.Attachments.Count > 0)
@@ -74,26 +53,21 @@
                 @foreach (var media in Model.Attachments)
                 {
                     var colClass = Model.Attachments.Count == 1 ? "col-12" : "col-6";
-
                     <div class="@colClass">
-                        @if (media.MediaType == 3) // Image
-                        {
-                            <div class="post-media-container">
+                        <div class="post-media-container">
+                            @if (media.MediaType == 3)
+                            {
                                 <img src="@media.Url" class="img-fluid full-media" loading="lazy">
-                            </div>
-                        }
-                        else if (media.MediaType == 2) // Video
-                        {
-                            <div class="post-media-container">
+                            }
+                            else if (media.MediaType == 2)
+                            {
                                 <video src="@media.Url" controls class="img-fluid full-media"></video>
-                            </div>
-                        }
-                        else if (media.MediaType == 1) // Audio
-                        {
-                            <div class="p-3 border border-secondary rounded bg-dark mt-1">
-                                <audio src="@media.Url" controls class="w-100"></audio>
-                            </div>
-                        }
+                            }
+                            else if (media.MediaType == 1)
+                            {
+                                <audio src="@media.Url" controls class="w-100 p-2"></audio>
+                            }
+                        </div>
                     </div>
                 }
             </div>
@@ -108,27 +82,28 @@
             }
             else
             {
+
                 <i class="far fa-heart"></i>
             }
             Like @(Model.LikesCount > 0 ? $"({Model.LikesCount})" : "")
         </button>
-
         <button class="btn-post-action btn-comment-toggle" data-id="@Model.Id">
             <i class="far fa-comment"></i> Comment @(Model.CommentsCount > 0 ? $"({Model.CommentsCount})" : "")
         </button>
-
         <button class="btn-post-action"><i class="far fa-share-square"></i> Share</button>
     </div>
 
     <div id="comments-@Model.Id" class="d-none border-top border-secondary p-3">
-        <div id="comments-list-@Model.Id" class="mb-3">
-        </div>
-        <div class="d-flex">
-            <input type="text" id="comment-input-@Model.Id"
-                   class="form-control form-control-sm bg-dark text-white border-secondary me-2"
-                   placeholder="Write a comment...">
-            <button class="btn btn-sm btn-primary" onclick="submitReply(@Model.Id, null)">Post</button>
+        <div id="comments-list-@Model.Id" class="mb-3"></div>
+
+        <div class="d-flex flex-column align-items-end gap-2">
+            <div class="d-flex w-100 align-items-center">
+                <img src="/img/profile_default.jpg" class="rounded-circle me-3" width="32" height="32" style="opacity:0.8;">
+                <input type="text" id="comment-input-@Model.Id"
+                       class="form-control bg-dark text-white border-secondary rounded-pill"
+                       placeholder="Write a comment...">
+            </div>
+            <button class="btn btn-sm btn-primary rounded-pill px-4" onclick="submitReply(@Model.Id, null)">Post</button>
         </div>
     </div>
-
 </div>

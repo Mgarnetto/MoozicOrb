@@ -24,6 +24,8 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: #333 #0a0a0a;
 }
 
 body {
@@ -53,11 +55,6 @@ body {
     ::-webkit-scrollbar-thumb:hover {
         background: var(--accent-secondary);
     }
-
-* {
-    scrollbar-width: thin;
-    scrollbar-color: #333 #0a0a0a;
-}
 
 /* =========================================
    2. NAVBAR & LOGIN
@@ -573,11 +570,16 @@ input[type="radio"] {
 }
 
 .section-heading {
-    font-size: 1.5rem;
-    margin-bottom: 25px;
-    border-left: 4px solid var(--accent-secondary);
-    padding-left: 15px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
     letter-spacing: 1px;
+    font-size: 0.9rem;
+    margin-bottom: 25px;
+    border-bottom: 2px solid #00AEEF;
+    display: inline-block;
+    padding-bottom: 5px;
 }
 
 .scroller {
@@ -828,7 +830,6 @@ input[type="radio"] {
     bottom: 0;
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(5px);
-    /* INCREASED Z-INDEX: Higher than navbar (2000) and player (1400) */
     z-index: 5000;
     display: none;
     align-items: center;
@@ -959,14 +960,13 @@ input[type="radio"] {
     gap: 15px;
 }
 
-/* --- UPDATED CHAT MESSAGE STYLES --- */
+/* CHAT MESSAGE STYLES */
 .message-row {
     display: flex;
     width: 100%;
     margin-bottom: 10px;
 }
 
-    /* THEM: Left aligned */
     .message-row.them {
         justify-content: flex-start;
     }
@@ -977,7 +977,6 @@ input[type="radio"] {
             border-top-left-radius: 0;
         }
 
-    /* ME: Right aligned */
     .message-row.me {
         justify-content: flex-end;
     }
@@ -1005,7 +1004,6 @@ input[type="radio"] {
         opacity: 0.7;
         margin-bottom: 4px;
     }
-/* --- END UPDATED CHAT MESSAGE STYLES --- */
 
 .chat-input-area {
     padding: 15px;
@@ -1178,7 +1176,6 @@ input[type="radio"] {
     border: 1px solid #333;
     border-radius: 50px;
     padding: 10px 30px;
-    /* LOWER Z-INDEX: Below chat (5000) but above content (1) */
     z-index: 1400;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     display: flex;
@@ -1261,7 +1258,7 @@ input[type="radio"] {
     width: 100%;
     height: 100%;
     background: rgba(0,0,0,0.85);
-    z-index: 10000; /* Highest priority */
+    z-index: 10000;
     display: none;
     align-items: center;
     justify-content: center;
@@ -1358,12 +1355,10 @@ input[type="radio"] {
 }
 
 /* =========================================
-   7. PROFILE & LAYOUT (Improved)
+   7. PROFILE & LAYOUT
    ========================================= */
-
-/* The Container */
 .page-grid-layout {
-    display: flex; /* Mobile Default: Flex Column */
+    display: flex;
     flex-direction: column;
     gap: 20px;
     max-width: 1200px;
@@ -1371,38 +1366,27 @@ input[type="radio"] {
     padding: 0 15px;
 }
 
-/* MOBILE FIX: 
-   This moves the sidebar (order -1) to the TOP visually 
-   without changing the HTML structure.
-*/
 .side-column {
     order: -1;
 }
 
-/* DESKTOP LAYOUT (Screens larger than 900px) */
 @media (min-width: 900px) {
     .page-grid-layout {
         display: grid;
-        grid-template-columns: 1fr 320px; /* Fluid Content | Fixed Sidebar */
+        grid-template-columns: 1fr 320px;
         align-items: start;
         gap: 30px;
     }
 
-    /* Reset order so it appears on the right (DOM order) */
     .side-column {
         order: initial;
-        position: sticky; /* Keeps it in view while scrolling */
+        position: sticky;
         top: 20px;
     }
 }
 
-/* =========================================
-   8. VISUAL POLISH (The "Better Look")
-   ========================================= */
-
-/* Main Cards (Profile, Widgets, Posts) */
 .profile-card, .widget-card {
-    background: #1a1a1a; /* Dark Card Background */
+    background: #1a1a1a;
     border: 1px solid #333;
     border-radius: 12px;
     padding: 20px;
@@ -1410,21 +1394,6 @@ input[type="radio"] {
     margin-bottom: 20px;
 }
 
-/* Typography Headers */
-.section-heading {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-    color: #fff;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-size: 0.9rem;
-    margin-bottom: 15px;
-    border-bottom: 2px solid #00AEEF; /* Cyan Accent */
-    display: inline-block;
-    padding-bottom: 5px;
-}
-
-/* Widget Text */
 .widget-title {
     color: #e0e0e0;
     font-weight: 600;
@@ -1437,9 +1406,9 @@ input[type="radio"] {
     line-height: 1.5;
 }
 
-/* Hero Section Tweaks */
+/* Profile Header Specifics */
 .profile-hero-content {
-    margin-top: -75px; /* Pull overlap up */
+    margin-top: -75px;
     padding: 0 20px;
     position: relative;
     z-index: 2;
@@ -1448,28 +1417,47 @@ input[type="radio"] {
 .profile-avatar {
     width: 160px;
     height: 160px;
-    border: 5px solid #121212; /* Matches page bg */
+    border: 5px solid #121212;
     border-radius: 50%;
     background: #000;
     box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+    /* Forcing centered look on all screens as requested */
+    display: block;
+    margin: 0 auto 15px auto;
 }
 
 .hero-text-block {
-    margin-top: 80px; /* Spacing for mobile when stacked */
+    width: 100%;
+    margin-top: 10px;
+    text-align: center;
 }
 
-@media (min-width: 600px) {
-    .hero-text-block {
-        margin-top: 0;
-        margin-left: 20px;
+.hero-flex-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+}
+
+.action-buttons-container {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+    width: 100%;
+}
+
+@media (min-width: 900px) {
+    .hero-bg {
+        height: 350px;
     }
 }
 
 /* =========================================
-   9. FORCED INPUT STYLES (The "Ugly Fixer")
+   8. INPUTS & POSTING
    ========================================= */
-
-/* Force all text inputs to be dark and rounded */
 .create-post-input,
 textarea.form-control,
 input[type="text"].form-control {
@@ -1483,19 +1471,21 @@ input[type="text"].form-control {
     outline: none !important;
     box-shadow: none !important;
     width: 100% !important;
-    min-height: 100px;
-    resize: none;
 }
 
-    /* Add a glow when you click inside */
     .create-post-input:focus,
-    textarea.form-control:focus {
+    textarea.form-control:focus,
+    input[type="text"].form-control:focus {
         border-color: #00AEEF !important;
         background-color: #000 !important;
         box-shadow: 0 0 0 2px rgba(0, 174, 239, 0.2) !important;
     }
 
-/* Style the Card Container */
+textarea.form-control {
+    min-height: 100px;
+    resize: none;
+}
+
 .create-post-card {
     background: #1a1a1a;
     border: 1px solid #222;
@@ -1504,72 +1494,17 @@ input[type="text"].form-control {
     margin-bottom: 30px;
 }
 
-/* =========================================
-   10. PROFILE HEADER - CENTERED (GLOBAL)
-   ========================================= */
-
-/* 1. Main Flex Container: Force Center & Wrap on ALL screens */
-.hero-flex-wrapper {
-    display: flex !important;
-    flex-direction: column !important; /* Stack items vertically */
-    justify-content: center !important;
-    align-items: center !important; /* Center items horizontally */
-    text-align: center !important;
-    width: 100%;
-}
-
-/* 2. Avatar: Remove margins, add shadows */
-.profile-avatar {
-    display: block;
-    margin: 0 auto 15px auto !important; /* Center the image itself */
-    width: 160px;
-    height: 160px;
-    border: 5px solid #121212;
-    border-radius: 50%;
-    background: #000;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-}
-
-/* 3. Text Block: Force full width and center text */
-.hero-text-block {
-    width: 100%;
-    margin-left: 0 !important; /* Reset any desktop margins */
-    margin-top: 10px;
-    text-align: center !important;
-}
-
-/* 4. Action Buttons: Center the row */
-.action-buttons-container {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 15px;
-    width: 100%;
-}
-
-/* Optional: Make the cover image taller on desktop to balance the centered look */
-@media (min-width: 900px) {
-    .hero-bg {
-        height: 350px !important;
-    }
-}
-
-/* =========================================
-   POST & UPLOAD BUTTONS (Bigger & Spaced)
-   ========================================= */
-
-/* 1. Upload Actions (Camera, Link, Loc) */
 .post-action-btn {
     background: #1a1a1a;
     border: 1px solid #333;
     color: #ccc;
     width: 45px;
-    height: 45px; /* Bigger touch target */
-    border-radius: 50%; /* Circle shape */
+    height: 45px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem; /* Bigger Icon */
+    font-size: 1.2rem;
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -1586,90 +1521,61 @@ input[type="text"].form-control {
     align-items: center;
     justify-content: space-between;
     margin-top: 15px;
-    width: 100%; /* Ensure full width */
+    width: 100%;
 }
 
-    /* Force the icon container to be a row */
     .create-post-actions .d-flex {
-        display: flex !important;
-        flex-direction: row !important; /* Stop vertical stacking */
-        align-items: center !important;
-        gap: 15px !important;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 15px;
     }
 
-/* 2. Submit Button */
 .btn-post-submit {
     background: var(--accent-primary);
     color: white;
     border: none;
-    padding: 10px 25px; /* Bigger button */
+    padding: 10px 25px;
     border-radius: 25px;
     font-weight: 600;
     font-size: 1rem;
     letter-spacing: 0.5px;
     transition: all 0.2s ease;
-    cursor: pointer !important; /* Force pointer cursor */
-    text-transform: uppercase; /* More "Button-like" */
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3); /* Lift it off the page */
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
 }
 
     .btn-post-submit:hover {
-        background: #d40044; /* Darker shade on hover */
-        transform: translateY(-2px); /* Move up slightly */
-        box-shadow: 0 6px 12px rgba(255, 0, 85, 0.4); /* Glow */
+        background: #d40044;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(255, 0, 85, 0.4);
     }
 
     .btn-post-submit:active {
-        transform: translateY(0); /* Click effect */
+        transform: translateY(0);
         box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
 
-/* 3. Post Card Actions (Like, Comment, Share) */
-.post-card .card-footer {
-    padding: 15px 20px; /* More breathing room */
-}
-
-.post-card .btn-sm {
-    font-size: 1rem; /* Increase from small to standard */
-    padding: 8px 12px;
-    color: #888;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px; /* Space between Icon and Text */
-    transition: color 0.2s;
-}
-
-    .post-card .btn-sm i {
-        font-size: 1.2rem; /* Bigger Icons */
-    }
-
-    .post-card .btn-sm:hover {
-        color: var(--accent-secondary) !important; /* Glow on hover */
-        background: rgba(255,255,255,0.05);
-        border-radius: 8px;
-    }
-
 /* =========================================
-   POST CARD STYLING (Professional Dark Theme)
+   9. POST CARD STYLING
    ========================================= */
-
 .post-card {
-    background-color: var(--bg-card); /* Matches your #111111 */
+    background-color: var(--bg-card);
     border: 1px solid #333;
     border-radius: 16px;
-    margin-bottom: 40px; /* <--- FIXED: Big space between posts */
+    margin-bottom: 40px;
     overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5); /* subtle depth */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
-/* --- HEADER --- */
 .post-header {
     padding: 15px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid rgba(255,255,255,0.05);
+    position: relative; /* Anchor for menu */
 }
 
 .post-avatar-link {
@@ -1717,7 +1623,6 @@ input[type="text"].form-control {
     font-weight: 400;
 }
 
-/* --- BODY --- */
 .post-body {
     padding: 15px 20px;
     color: #ddd;
@@ -1735,7 +1640,6 @@ input[type="text"].form-control {
     margin-bottom: 10px;
 }
 
-/* Media Containers (Centered & No Stretch) */
 .post-media-container {
     background-color: #000;
     border-radius: 12px;
@@ -1750,12 +1654,11 @@ input[type="text"].form-control {
 .full-media {
     width: 100%;
     height: auto;
-    max-height: 550px; /* Limits tall images */
-    object-fit: contain; /* Ensures the whole image is visible */
+    max-height: 550px;
+    object-fit: contain;
     display: block;
 }
 
-/* Classifieds Badge */
 .classified-badge {
     background: rgba(46, 204, 113, 0.1);
     border: 1px solid rgba(46, 204, 113, 0.3);
@@ -1773,12 +1676,11 @@ input[type="text"].form-control {
     font-size: 1.2rem;
 }
 
-/* --- FOOTER --- */
 .post-footer {
     padding: 10px 20px;
     border-top: 1px solid rgba(255,255,255,0.05);
     display: flex;
-    justify-content: space-between; /* Space buttons evenly */
+    justify-content: space-between;
 }
 
 .btn-post-action {
@@ -1806,12 +1708,47 @@ input[type="text"].form-control {
     }
 
 /* =========================================
-   11. COMMENT & LIKE VISUALS
+   10. INTERACTION & COMMENTS ("At Ease")
    ========================================= */
 
-/* Filled Heart (When Liked) */
+/* Manual Hamburger Menu */
+.post-options-menu {
+    position: absolute;
+    top: 40px;
+    right: 10px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    list-style: none;
+    padding: 5px 0;
+    z-index: 1000;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    min-width: 160px;
+    display: none;
+}
+
+    .post-options-menu.show {
+        display: block;
+        animation: fadeIn 0.2s ease;
+    }
+
+    .post-options-menu li a {
+        display: block;
+        padding: 10px 15px;
+        color: #ccc;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: 0.2s;
+    }
+
+        .post-options-menu li a:hover {
+            background: #333;
+            color: white;
+        }
+
+/* Like Heart Animation */
 .fas.text-danger {
-    color: #ff0055 !important; /* Your brand's accent-primary red */
+    color: #ff0055 !important;
     animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -1829,125 +1766,91 @@ input[type="text"].form-control {
     }
 }
 
-/* Comment Item Styling */
+/* Comment Items */
 .comment-item {
-    transition: background-color 0.2s;
-}
-
-.replies-container {
-    /* The indentation line for nested comments */
-    border-left: 2px solid #333 !important;
-    margin-left: 20px !important; /* Push child comments right */
-    padding-left: 15px !important;
-    margin-top: 10px;
-}
-
-/* Reply Link Hover */
-.btn-link:hover {
-    color: var(--accent-secondary) !important;
-    text-decoration: underline !important;
-}
-
-/* Input Focus Glow */
-#reply-input:focus,
-.comment-input:focus {
-    border-color: var(--accent-secondary) !important;
-    box-shadow: 0 0 5px rgba(0, 174, 239, 0.3);
-}
-
-/* =========================================
-   11. COMMENT VISUALS & NESTING FIX
-   ========================================= */
-
-/* 1. THE NESTING LINES (Crucial for hierarchy) */
-.replies-container {
-    border-left: 2px solid #333 !important;
-    margin-left: 22px !important; /* Push children right */
-    padding-left: 15px !important;
-    margin-top: 10px;
+    margin-bottom: 15px;
     position: relative;
 }
 
-/* 2. FIX "UGLY" BROKEN IMAGES */
 .comment-avatar {
     width: 32px;
     height: 32px;
     border-radius: 50%;
     object-fit: cover;
     border: 1px solid #333;
-    background-color: #222; /* Fallback color if image fails */
-    flex-shrink: 0; /* Prevents squishing */
+    background-color: #222;
+    margin-right: 12px;
+    flex-shrink: 0;
 }
 
-/* 3. Comment Box Styling */
-.comment-box {
-    background-color: #1a1a1a;
-    border: 1px solid #333;
-    padding: 8px 12px;
-    border-radius: 12px;
-    position: relative;
+/* Comment Bubble */
+.comment-content-box {
+    background-color: #151515;
+    border: 1px solid #2a2a2a;
+    border-radius: 0 12px 12px 12px;
+    padding: 10px 14px;
+    display: inline-block;
+    min-width: 200px;
+    max-width: 100%;
 }
 
 .comment-author {
+    color: #fff;
     font-weight: 700;
     font-size: 0.85rem;
-    color: #fff;
-    margin-right: 8px;
-}
-
-.comment-time {
-    font-size: 0.7rem;
-    color: #888;
+    margin-bottom: 2px;
+    display: block;
 }
 
 .comment-text {
-    font-size: 0.9rem;
     color: #ddd;
-    margin-top: 4px;
-    line-height: 1.3;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    word-wrap: break-word;
 }
 
-/* Reply Button */
-.btn-reply-text {
+/* Meta Line */
+.comment-meta-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-left: 4px;
+    margin-top: 4px;
     font-size: 0.75rem;
-    color: #888;
-    text-decoration: none;
-    margin-left: 42px; /* Align with text, not avatar */
-    margin-top: 4px;
-    display: inline-block;
-    cursor: pointer;
 }
 
-    .btn-reply-text:hover {
+.comment-time {
+    color: #666;
+}
+
+.btn-reply-toggle {
+    background: none;
+    border: none;
+    color: #888;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    transition: 0.2s;
+}
+
+    .btn-reply-toggle:hover {
         color: var(--accent-secondary);
     }
 
-/* Manual Post Options Menu */
-.post-options-menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    background: #1a1a1a;
-    border: 1px solid #333;
+/* Hidden Reply Input */
+.reply-input-wrapper {
+    margin-top: 8px;
+    background: #111;
+    padding: 10px;
     border-radius: 8px;
-    list-style: none;
-    padding: 5px 0;
-    margin: 5px 0 0 0;
-    z-index: 100;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    min-width: 150px;
+    border: 1px solid #333;
 }
 
-    .post-options-menu li a {
-        display: block;
-        padding: 8px 15px;
-        color: #ccc;
-        text-decoration: none;
-        font-size: 0.9rem;
-        transition: 0.2s;
-    }
-
-        .post-options-menu li a:hover {
-            background: #333;
-            color: white;
-        }
+/* Nesting (Replies) */
+.replies-container {
+    margin-left: 20px;
+    border-left: 2px solid #222;
+    padding-left: 15px;
+    margin-top: 10px;
+}
