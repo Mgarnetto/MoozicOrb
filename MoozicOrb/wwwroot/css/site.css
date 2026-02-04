@@ -1804,3 +1804,150 @@ input[type="text"].form-control {
     .btn-post-action i {
         font-size: 1.1rem;
     }
+
+/* =========================================
+   11. COMMENT & LIKE VISUALS
+   ========================================= */
+
+/* Filled Heart (When Liked) */
+.fas.text-danger {
+    color: #ff0055 !important; /* Your brand's accent-primary red */
+    animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes heartPop {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.3);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Comment Item Styling */
+.comment-item {
+    transition: background-color 0.2s;
+}
+
+.replies-container {
+    /* The indentation line for nested comments */
+    border-left: 2px solid #333 !important;
+    margin-left: 20px !important; /* Push child comments right */
+    padding-left: 15px !important;
+    margin-top: 10px;
+}
+
+/* Reply Link Hover */
+.btn-link:hover {
+    color: var(--accent-secondary) !important;
+    text-decoration: underline !important;
+}
+
+/* Input Focus Glow */
+#reply-input:focus,
+.comment-input:focus {
+    border-color: var(--accent-secondary) !important;
+    box-shadow: 0 0 5px rgba(0, 174, 239, 0.3);
+}
+
+/* =========================================
+   11. COMMENT VISUALS & NESTING FIX
+   ========================================= */
+
+/* 1. THE NESTING LINES (Crucial for hierarchy) */
+.replies-container {
+    border-left: 2px solid #333 !important;
+    margin-left: 22px !important; /* Push children right */
+    padding-left: 15px !important;
+    margin-top: 10px;
+    position: relative;
+}
+
+/* 2. FIX "UGLY" BROKEN IMAGES */
+.comment-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #333;
+    background-color: #222; /* Fallback color if image fails */
+    flex-shrink: 0; /* Prevents squishing */
+}
+
+/* 3. Comment Box Styling */
+.comment-box {
+    background-color: #1a1a1a;
+    border: 1px solid #333;
+    padding: 8px 12px;
+    border-radius: 12px;
+    position: relative;
+}
+
+.comment-author {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #fff;
+    margin-right: 8px;
+}
+
+.comment-time {
+    font-size: 0.7rem;
+    color: #888;
+}
+
+.comment-text {
+    font-size: 0.9rem;
+    color: #ddd;
+    margin-top: 4px;
+    line-height: 1.3;
+}
+
+/* Reply Button */
+.btn-reply-text {
+    font-size: 0.75rem;
+    color: #888;
+    text-decoration: none;
+    margin-left: 42px; /* Align with text, not avatar */
+    margin-top: 4px;
+    display: inline-block;
+    cursor: pointer;
+}
+
+    .btn-reply-text:hover {
+        color: var(--accent-secondary);
+    }
+
+/* Manual Post Options Menu */
+.post-options-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    list-style: none;
+    padding: 5px 0;
+    margin: 5px 0 0 0;
+    z-index: 100;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    min-width: 150px;
+}
+
+    .post-options-menu li a {
+        display: block;
+        padding: 8px 15px;
+        color: #ccc;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: 0.2s;
+    }
+
+        .post-options-menu li a:hover {
+            background: #333;
+            color: white;
+        }

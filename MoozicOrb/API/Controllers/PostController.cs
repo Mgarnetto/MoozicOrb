@@ -5,8 +5,9 @@ using MoozicOrb.API.Models;
 using MoozicOrb.Hubs;
 using MoozicOrb.IO;
 using MoozicOrb.Services;
-using MoozicOrb.Services.Interfaces; // [Added] For IUserService
+using MoozicOrb.Services.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace MoozicOrb.API.Controllers
@@ -17,9 +18,8 @@ namespace MoozicOrb.API.Controllers
     {
         private readonly IHubContext<PostHub> _hub;
         private readonly IHttpContextAccessor _http;
-        private readonly IUserService _userService; // [Added]
+        private readonly IUserService _userService;
 
-        // [Updated Constructor]
         public PostController(
             IHubContext<PostHub> hub,
             IHttpContextAccessor http,
@@ -30,112 +30,26 @@ namespace MoozicOrb.API.Controllers
             _userService = userService;
         }
 
+        // --- HELPERS ----------------------------------------------------
+
+        // Strict: Throws 401 if not logged in (For Writes like Posting/Liking)
         private int GetUserId()
         {
             var sid = _http.HttpContext?.Request.Headers["X-Session-Id"].ToString();
             if (string.IsNullOrEmpty(sid)) throw new UnauthorizedAccessException();
+
+            // Assuming SessionStore is your static helper class
             var session = SessionStore.GetSession(sid);
             if (session == null) throw new UnauthorizedAccessException();
+
             return session.UserId;
         }
 
-        // 1. CREATE
-        [HttpPost]
-        public async Task<IActionResult> CreatePost([FromBody] CreatePostDto req)
+        // Safe: Returns 0 if Guest (For Reads like Feed/Single Post)
+        private int GetViewerId()
         {
-            try
-            {
-                int userId = GetUserId();
-
-                // [Added] Fetch Real User Info for the live update
-                var user = new UserQuery().GetUserById(userId);
-                string authorName = user?.UserName ?? "Unknown";
-                string authorPic = user?.ProfilePic ?? "/img/profile_default.jpg";
-
-                // A. Insert Post
-                var postIo = new InsertPost();
-                long postId = postIo.Execute(userId, req);
-
-                // B. Insert Attachments
-                if (req.MediaAttachments != null && req.MediaAttachments.Count > 0)
-                {
-                    var mediaIo = new InsertPostMedia();
-                    int sort = 0;
-                    foreach (var item in req.MediaAttachments)
-                    {
-                        mediaIo.Execute(postId, item.MediaId, item.MediaType, sort++);
-                    }
-                }
-
-                // C. Construct DTO for Broadcast
-                var livePost = new PostDto
-                {
-                    Id = postId,
-                    AuthorId = userId,
-                    AuthorName = authorName, // [Fixed] Real Name
-                    AuthorPic = authorPic,   // [Fixed] Real Pic
-                    ContextType = req.ContextType,
-                    ContextId = req.ContextId,
-                    Type = req.Type,
-                    Title = req.Title,
-                    Text = req.Text,
-                    ImageUrl = req.ImageUrl,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedAgo = "Just now",
-                    Attachments = req.MediaAttachments,
-                    // If we have new attachments, we might need to populate their URLs manually
-                    // for the immediate UI update, OR rely on the client to guess them.
-                    // For now, let's leave as is, the text/image should appear.
-                    Price = req.Price,
-                    LocationLabel = req.LocationLabel,
-                    DifficultyLevel = req.DifficultyLevel,
-                    VideoUrl = req.VideoUrl,
-                    MediaId = req.MediaId,
-                    Category = req.Category
-                };
-
-                // D. Broadcast
-                string targetGroup = GetSignalRGroupName(req.ContextType, req.ContextId);
-                await _hub.Clients.Group(targetGroup).SendAsync("ReceivePost", new
-                {
-                    targetGroup = targetGroup,
-                    data = livePost
-                });
-
-                return Ok(new { id = postId });
-            }
-            catch (UnauthorizedAccessException) { return Unauthorized(); }
-            catch (Exception ex) { return BadRequest(ex.Message); }
-        }
-
-        // ... (GetPosts, GetSingle, GetSignalRGroupName methods remain unchanged) ...
-
-        [HttpGet]
-        public IActionResult GetPosts(
-            [FromQuery] string contextType,
-            [FromQuery] string contextId,
-            [FromQuery] int page = 1)
-        {
-            try
-            {
-                var io = new GetPost();
-                var posts = io.Execute(contextType, contextId, page);
-                return Ok(posts);
-            }
-            catch (Exception ex) { return BadRequest(ex.Message); }
-        }
-
-        [HttpGet("{id}")]
-        public IActionResult GetSingle(long id)
-        {
-            try
-            {
-                var io = new GetPost();
-                var post = io.Execute(id);
-                if (post == null) return NotFound("Post not found");
-                return Ok(post);
-            }
-            catch (Exception ex) { return BadRequest(ex.Message); }
+            try { return GetUserId(); }
+            catch { return 0; }
         }
 
         private string GetSignalRGroupName(string type, string id)
@@ -149,6 +63,158 @@ namespace MoozicOrb.API.Controllers
                 "feed" => "feed_global",
                 _ => "feed_global"
             };
+        }
+
+        // --- POSTS ------------------------------------------------------
+
+        [HttpPost]
+        public async Task<IActionResult> CreatePost([FromBody] CreatePostDto req)
+        {
+            try
+            {
+                int userId = GetUserId(); // Must be logged in
+
+                // 1. Fetch Real User Info for the live update
+                var user = new UserQuery().GetUserById(userId);
+                string authorName = user?.UserName ?? "Unknown";
+                string authorPic = user?.ProfilePic ?? "/img/profile_default.jpg";
+
+                // 2. Insert Post
+                var postIo = new InsertPost();
+                long postId = postIo.Execute(userId, req);
+
+                // 3. Insert Attachments
+                if (req.MediaAttachments != null && req.MediaAttachments.Count > 0)
+                {
+                    var mediaIo = new InsertPostMedia();
+                    int sort = 0;
+                    foreach (var item in req.MediaAttachments)
+                    {
+                        mediaIo.Execute(postId, item.MediaId, item.MediaType, sort++);
+                    }
+                }
+
+                // 4. Construct DTO for Broadcast
+                var livePost = new PostDto
+                {
+                    Id = postId,
+                    AuthorId = userId,
+                    AuthorName = authorName,
+                    AuthorPic = authorPic,
+                    ContextType = req.ContextType,
+                    ContextId = req.ContextId,
+                    Type = req.Type,
+                    Title = req.Title,
+                    Text = req.Text,
+                    ImageUrl = req.ImageUrl,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedAgo = "Just now",
+                    Attachments = req.MediaAttachments ?? new List<MediaAttachmentDto>(),
+
+                    // Polymorphic Fields
+                    Price = req.Price,
+                    LocationLabel = req.LocationLabel,
+                    DifficultyLevel = req.DifficultyLevel,
+                    VideoUrl = req.VideoUrl,
+                    MediaId = req.MediaId,
+                    Category = req.Category,
+
+                    // New Engagement Fields (Defaults for new post)
+                    IsLiked = false,
+                    LikesCount = 0,
+                    CommentsCount = 0
+                };
+
+                // 5. Broadcast via SignalR
+                string targetGroup = GetSignalRGroupName(req.ContextType, req.ContextId);
+                await _hub.Clients.Group(targetGroup).SendAsync("ReceivePost", new
+                {
+                    targetGroup = targetGroup,
+                    data = livePost
+                });
+
+                return Ok(new { id = postId });
+            }
+            catch (UnauthorizedAccessException) { return Unauthorized(); }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        [HttpGet]
+        public IActionResult GetPosts(
+            [FromQuery] string contextType,
+            [FromQuery] string contextId,
+            [FromQuery] int page = 1)
+        {
+            try
+            {
+                // [FIX] Use GetViewerId so guests can see the feed
+                int viewerId = GetViewerId();
+
+                var io = new GetPost();
+                // [FIX] Pass viewerId to calculate 'IsLiked'
+                var posts = io.Execute(contextType, contextId, viewerId, page);
+                return Ok(posts);
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        [HttpGet("{id}")]
+        public IActionResult GetSingle(long id)
+        {
+            try
+            {
+                int viewerId = GetViewerId();
+                var io = new GetPost();
+                var post = io.Execute(id, viewerId);
+
+                if (post == null) return NotFound("Post not found");
+                return Ok(post);
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        // --- COMMENTS (NEW) ---------------------------------------------
+
+        [HttpPost("comment")]
+        public IActionResult AddComment([FromBody] CreateCommentDto req)
+        {
+            try
+            {
+                int userId = GetUserId(); // Must be logged in
+                var io = new InsertComment();
+                long id = io.Execute(userId, req);
+                return Ok(new { id });
+            }
+            catch (UnauthorizedAccessException) { return Unauthorized(); }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        [HttpGet("{id}/comments")]
+        public IActionResult GetComments(long id)
+        {
+            try
+            {
+                var io = new GetComments();
+                var comments = io.Execute(id); // Returns the Tree structure
+                return Ok(comments);
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        // --- LIKES (NEW) ------------------------------------------------
+
+        [HttpPost("{id}/like")]
+        public IActionResult LikePost(long id)
+        {
+            try
+            {
+                int userId = GetUserId(); // Must be logged in
+                var io = new ToggleLike();
+                bool liked = io.Execute(userId, id);
+                return Ok(new { liked });
+            }
+            catch (UnauthorizedAccessException) { return Unauthorized(); }
+            catch (Exception ex) { return BadRequest(ex.Message); }
         }
     }
 }

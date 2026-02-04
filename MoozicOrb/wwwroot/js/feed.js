@@ -5,7 +5,7 @@
 // 1. PUBLIC CONNECTION (Connects to PostHub)
 const feedConnection = new signalR.HubConnectionBuilder()
     .withUrl("/PostHub")
-    .withAutomaticReconnect() // Helps, but explicit check on wakeup is better
+    .withAutomaticReconnect()
     .build();
 
 feedConnection.start().catch(err => console.error("[Feed] Connection failed", err));
@@ -149,7 +149,6 @@ document.addEventListener('submit', async function (e) {
 });
 
 // 6. DRAFT PERSISTENCE LOGIC
-// Initializes when the DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
     const textArea = document.querySelector('#createPostForm textarea[name="Content"]');
     if (textArea) {
@@ -166,7 +165,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// 7. RENDER LOGIC (VISUALLY UPDATED)
+// 7. RENDER LOGIC (UPDATED WITH COMMENT HOOKS)
 function renderNewPost(post) {
     const container = document.getElementById('feed-stream-container');
     if (!container) return;
@@ -206,9 +205,17 @@ function renderNewPost(post) {
             </div>
 
             <div class="post-footer">
-                <button class="btn-post-action"><i class="far fa-heart"></i> Like</button>
-                <button class="btn-post-action"><i class="far fa-comment"></i> Comment</button>
+                <button class="btn-post-action btn-like" data-id="${post.id}"><i class="far fa-heart"></i> Like</button>
+                <button class="btn-post-action btn-comment-toggle" data-id="${post.id}"><i class="far fa-comment"></i> Comment</button>
                 <button class="btn-post-action"><i class="far fa-share-square"></i> Share</button>
+            </div>
+
+            <div id="comments-${post.id}" class="d-none border-top border-secondary p-3">
+                <div id="comments-list-${post.id}" class="mb-3"></div>
+                <div class="d-flex">
+                    <input type="text" id="comment-input-${post.id}" class="form-control form-control-sm bg-dark text-white border-secondary me-2" placeholder="Write a comment...">
+                    <button class="btn btn-sm btn-primary" onclick="submitReply(${post.id}, null)">Post</button>
+                </div>
             </div>
         </div>`;
 
@@ -258,4 +265,152 @@ window.previewMedia = function (input) {
         preview.classList.remove('d-none');
         preview.innerHTML = `<div class="text-white small p-2"><i class="fas fa-paperclip"></i> ${input.files[0].name}</div>`;
     }
+};
+
+/* ============================================
+   8. NEW: COMMENTS & LIKES LOGIC
+   ============================================ */
+
+document.addEventListener('click', async (e) => {
+
+    // LIKE BUTTON
+    const likeBtn = e.target.closest('.btn-like');
+    if (likeBtn) {
+        const postId = likeBtn.dataset.id;
+        try {
+            const res = await fetch(`/api/posts/${postId}/like`, {
+                method: "POST",
+                headers: { "X-Session-Id": window.AuthState?.sessionId || "" }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const icon = likeBtn.querySelector('i');
+                if (data.liked) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas', 'text-danger');
+                } else {
+                    icon.classList.remove('fas', 'text-danger');
+                    icon.classList.add('far');
+                }
+            }
+        } catch (err) { console.error(err); }
+    }
+
+    // COMMENT TOGGLE
+    const commentBtn = e.target.closest('.btn-comment-toggle');
+    if (commentBtn) {
+        const postId = commentBtn.dataset.id;
+        const section = document.getElementById(`comments-${postId}`);
+        if (section) {
+            section.classList.toggle('d-none');
+            // Only load if we are opening it and it's not already populated? 
+            // For now, load every time to get fresh data
+            if (!section.classList.contains('d-none')) {
+                loadComments(postId);
+            }
+        }
+    }
+});
+
+// Fetch & Render Recursive Comments
+async function loadComments(postId) {
+    const listContainer = document.getElementById(`comments-list-${postId}`);
+    listContainer.innerHTML = '<div class="text-muted small">Loading...</div>';
+
+    try {
+        const res = await fetch(`/api/posts/${postId}/comments`);
+        if (res.ok) {
+            const comments = await res.json();
+            listContainer.innerHTML = '';
+
+            if (comments.length === 0) {
+                listContainer.innerHTML = '<div class="text-muted small">No comments yet.</div>';
+                return;
+            }
+
+            comments.forEach(c => {
+                listContainer.appendChild(createCommentElement(c));
+            });
+        }
+    } catch (err) { console.error(err); }
+}
+
+function createCommentElement(c) {
+    const wrapper = document.createElement('div');
+    wrapper.className = "mb-3";
+    wrapper.id = `comment-${c.commentId}`;
+
+    let html = `
+        <div class="d-flex">
+            <img src="${c.authorPic}" class="rounded-circle me-2" width="30" height="30" style="object-fit:cover;">
+            <div class="flex-grow-1">
+                <div class="bg-dark border border-secondary p-2 rounded">
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold text-white small">${c.authorName}</span>
+                        <small class="text-muted" style="font-size:0.75rem">${c.createdAgo}</small>
+                    </div>
+                    <div class="text-light small mt-1">${c.content}</div>
+                </div>
+                <div class="mt-1 ms-1">
+                    <button class="btn btn-link btn-sm p-0 text-muted text-decoration-none" 
+                            style="font-size:0.75rem;" 
+                            onclick="toggleReplyBox(${c.commentId})">Reply</button>
+                </div>
+                <div id="reply-box-${c.commentId}" class="d-none mt-2">
+                    <div class="d-flex">
+                        <input type="text" id="reply-input-${c.commentId}" class="form-control form-control-sm bg-black text-white border-secondary me-2" placeholder="Reply...">
+                        <button class="btn btn-sm btn-primary" onclick="submitReply(${c.postId}, ${c.commentId})">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // RECURSION: Nested Replies
+    const repliesContainer = document.createElement('div');
+    repliesContainer.className = "ms-5 mt-2 border-start border-secondary ps-2"; // Indentation
+
+    if (c.replies && c.replies.length > 0) {
+        c.replies.forEach(reply => {
+            repliesContainer.appendChild(createCommentElement(reply));
+        });
+    }
+
+    wrapper.innerHTML = html;
+    wrapper.appendChild(repliesContainer);
+    return wrapper;
+}
+
+window.toggleReplyBox = function (id) {
+    const box = document.getElementById(`reply-box-${id}`);
+    box.classList.toggle('d-none');
+    if (!box.classList.contains('d-none')) {
+        const input = document.getElementById(`reply-input-${id}`);
+        if (input) input.focus();
+    }
+};
+
+window.submitReply = async function (postId, parentId) {
+    const inputId = parentId ? `reply-input-${parentId}` : `comment-input-${postId}`;
+    const input = document.getElementById(inputId);
+    const content = input.value;
+
+    if (!content) return;
+
+    try {
+        const res = await fetch('/api/posts/comment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Session-Id': window.AuthState?.sessionId || ''
+            },
+            body: JSON.stringify({ PostId: postId, ParentId: parentId, Content: content })
+        });
+
+        if (res.ok) {
+            input.value = '';
+            if (parentId) document.getElementById(`reply-box-${parentId}`).classList.add('d-none');
+            loadComments(postId); // Refresh tree
+        }
+    } catch (err) { console.error(err); }
 };

@@ -16,42 +16,36 @@ namespace MoozicOrb.API.Models
     public class PostDto
     {
         // --- Core Identity ---
-        public long Id { get; set; }              // Unique Database ID of the post
-        public int AuthorId { get; set; }         // ID of the User who created the post
-        public string AuthorName { get; set; }    // Display Name of the author (for UI)
-        public string AuthorPic { get; set; }     // URL to author's avatar (for UI)
+        public long Id { get; set; }
+        public int AuthorId { get; set; }
+        public string AuthorName { get; set; }
+        public string AuthorPic { get; set; }
 
-        // --- Context (Where does this post live?) ---
-        // ContextType examples: "user", "group", "state", "page"
+        // --- Context ---
         public string ContextType { get; set; }
-        // ContextId examples: "105" (UserId), "55" (GroupId), "GA" (StateCode)
         public string ContextId { get; set; }
 
-        // --- Content Data ---
-        // Type examples: "standard" (text status), "classified" (for sale), "article", "tutorial"
-        // This tells the UI which ViewComponent or template to use to render the post.
+        // --- Content ---
         public string Type { get; set; }
+        public string Title { get; set; }
+        public string Text { get; set; }
+        public string ImageUrl { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string CreatedAgo { get; set; }
 
-        public string Title { get; set; }         // Optional headline (used for Articles/Classifieds)
-        public string Text { get; set; }          // Main body content (HTML or Plain text)
-        public string ImageUrl { get; set; }      // Main "Cover Image" for the post (separate from Gallery)
+        // --- Polymorphic Extras ---
+        public decimal? Price { get; set; }
+        public string LocationLabel { get; set; }
+        public string DifficultyLevel { get; set; }
+        public string VideoUrl { get; set; }
+        public long? MediaId { get; set; }
+        public string Category { get; set; }
 
-        public DateTime CreatedAt { get; set; }   // UTC Timestamp
-        public string CreatedAgo { get; set; }    // Pre-calculated "Time Ago" string (e.g., "5m ago")
+        // --- NEW: Engagement Data (The missing pieces) ---
+        public bool IsLiked { get; set; }      // Did the current user like this?
+        public int LikesCount { get; set; }    // Total likes
+        public int CommentsCount { get; set; } // Total comments
 
-        // --- Polymorphic Extras (Specific to certain Post Types) ---
-        // These are nullable because a standard status update won't use them.
-
-        public decimal? Price { get; set; }       // Used only if Type == "classified" or "store_item"
-        public string LocationLabel { get; set; } // Used for Classifieds or Events (e.g., "Atlanta, GA")
-        public string DifficultyLevel { get; set; }// Used only if Type == "tutorial" (e.g., "Beginner")
-        public string VideoUrl { get; set; }      // External link (YouTube/Vimeo) if this is a video post
-        public long? MediaId { get; set; }        // ID for a SINGLE audio track attachment (Legacy/Simple Audio)
-        public string Category { get; set; }      // Tagging/Filtering (e.g., "Rock", "Equipment", "News")
-
-        // --- The Gallery ---
-        // A list of multiple media items attached to this post (Photos, Videos, Songs).
-        // This is populated by looking up the 'post_media' table.
         public List<MediaAttachmentDto> Attachments { get; set; } = new List<MediaAttachmentDto>();
     }
 
@@ -118,5 +112,32 @@ namespace MoozicOrb.API.Models
         public int TargetType { get; set; }     // Type of the media
         public string Title { get; set; }       // Display Name (e.g., "Song Title")
         public string Url { get; set; }         // Direct stream URL
+    }
+
+    public class CommentDto
+    {
+        public long CommentId { get; set; }
+        public long PostId { get; set; }
+        public long? ParentId { get; set; }
+        public int UserId { get; set; }
+        public string AuthorName { get; set; }
+        public string AuthorPic { get; set; }
+        public string Content { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string CreatedAgo { get; set; }
+        public List<CommentDto> Replies { get; set; } = new List<CommentDto>();
+    }
+
+    public class CreateCommentDto
+    {
+        public long PostId { get; set; }
+        public string Content { get; set; }
+        public long? ParentId { get; set; }
+    }
+
+    public class LikeDto
+    {
+        public long PostId { get; set; }
+        public bool Liked { get; set; }
     }
 }

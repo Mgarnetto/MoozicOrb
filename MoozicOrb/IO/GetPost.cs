@@ -3,29 +3,16 @@ using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace MoozicOrb.IO
 {
     public class GetPost
     {
-        private const string Fields = @"
-            p.post_id, p.user_id, p.context_type, p.context_id,
-            p.post_type, p.title, p.content_text, p.image_url, p.created_at,
-            p.price, p.location_label, p.difficulty_level, p.video_url, p.media_id, p.category,
-            u.display_name, u.profile_pic"; // Fixed column name
-
-        private const string Joins = @"
-            FROM posts p
-            JOIN `user` u ON p.user_id = u.user_id"; // Fixed Join column
-
-        // ==========================================
         // 1. GET SINGLE POST
-        // ==========================================
-        public PostDto Execute(long postId)
+        public PostDto Execute(long postId, int viewerId)
         {
             PostDto post = null;
-            string sql = $@"SELECT {Fields} {Joins} WHERE p.post_id = @pid";
+            string sql = GetBaseSql("WHERE p.post_id = @pid");
 
             using (var conn = new MySqlConnection(DBConn1.ConnectionString))
             {
@@ -33,34 +20,24 @@ namespace MoozicOrb.IO
                 using (var cmd = new MySqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@pid", postId);
+                    cmd.Parameters.AddWithValue("@vid", viewerId); // For IsLiked check
                     using (var rdr = cmd.ExecuteReader())
                     {
                         if (rdr.Read()) post = MapReaderToDto(rdr);
                     }
                 }
-
-                // Fetch Attachments if post exists
-                if (post != null)
-                {
-                    AttachMediaToPosts(conn, new List<PostDto> { post });
-                }
+                if (post != null) AttachMediaToPosts(conn, new List<PostDto> { post });
             }
             return post;
         }
 
-        // ==========================================
         // 2. GET FEED (List)
-        // ==========================================
-        public List<PostDto> Execute(string contextType, string contextId, int page = 1, int pageSize = 20)
+        public List<PostDto> Execute(string contextType, string contextId, int viewerId, int page = 1, int pageSize = 20)
         {
             var results = new List<PostDto>();
             int offset = (page - 1) * pageSize;
 
-            string sql = $@"
-                SELECT {Fields} {Joins} 
-                WHERE p.context_type = @ctype AND p.context_id = @cid
-                ORDER BY p.created_at DESC
-                LIMIT @limit OFFSET @offset";
+            string sql = GetBaseSql("WHERE p.context_type = @ctype AND p.context_id = @cid ORDER BY p.created_at DESC LIMIT @limit OFFSET @offset");
 
             using (var conn = new MySqlConnection(DBConn1.ConnectionString))
             {
@@ -69,6 +46,7 @@ namespace MoozicOrb.IO
                 {
                     cmd.Parameters.AddWithValue("@ctype", contextType);
                     cmd.Parameters.AddWithValue("@cid", contextId);
+                    cmd.Parameters.AddWithValue("@vid", viewerId);
                     cmd.Parameters.AddWithValue("@limit", pageSize);
                     cmd.Parameters.AddWithValue("@offset", offset);
 
@@ -77,45 +55,44 @@ namespace MoozicOrb.IO
                         while (rdr.Read()) results.Add(MapReaderToDto(rdr));
                     }
                 }
-
-                // Populate Attachments for all 20 posts at once
-                if (results.Count > 0)
-                {
-                    AttachMediaToPosts(conn, results);
-                }
+                if (results.Count > 0) AttachMediaToPosts(conn, results);
             }
             return results;
         }
 
-        // ==========================================
-        // HELPER: FETCH AND STITCH MEDIA (FIXED)
-        // ==========================================
+        // --- SQL GENERATOR (Includes Likes/Comment Counts) ---
+        private string GetBaseSql(string whereClause)
+        {
+            return $@"
+                SELECT 
+                    p.post_id, p.user_id, p.context_type, p.context_id,
+                    p.post_type, p.title, p.content_text, p.image_url, p.created_at,
+                    p.price, p.location_label, p.difficulty_level, p.video_url, p.media_id, p.category,
+                    u.display_name, u.profile_pic,
+                    
+                    -- Subqueries for Engagement
+                    (SELECT COUNT(*) FROM post_likes WHERE post_id = p.post_id) AS likes_count,
+                    (SELECT COUNT(*) FROM comments WHERE post_id = p.post_id) AS comments_count,
+                    (SELECT COUNT(*) FROM post_likes WHERE post_id = p.post_id AND user_id = @vid) AS is_liked
+
+                FROM posts p
+                JOIN `user` u ON p.user_id = u.user_id
+                {whereClause}";
+        }
+
         private void AttachMediaToPosts(MySqlConnection conn, List<PostDto> posts)
         {
             if (posts == null || posts.Count == 0) return;
-
-            // 1. Get all Post IDs
             var ids = string.Join(",", posts.Select(p => p.Id));
 
-            // 2. Query post_media AND Join specific tables to get the path
             string sql = $@"
-                SELECT 
-                    pm.post_id, 
-                    pm.media_id, 
-                    pm.media_type, 
-                    pm.sort_order,
-                    -- Pick the correct path based on which table matched
+                SELECT pm.post_id, pm.media_id, pm.media_type, pm.sort_order,
                     COALESCE(img.file_path, vid.file_path, aud.file_path) AS final_url
                 FROM post_media pm
-                -- Join Image Table (Type 3)
                 LEFT JOIN media_images img ON pm.media_id = img.image_id AND pm.media_type = 3
-                -- Join Video Table (Type 2)
                 LEFT JOIN media_video vid ON pm.media_id = vid.video_id AND pm.media_type = 2
-                -- Join Audio Table (Type 1)
                 LEFT JOIN media_audio aud ON pm.media_id = aud.audio_id AND pm.media_type = 1
-                
-                WHERE pm.post_id IN ({ids})
-                ORDER BY pm.sort_order ASC";
+                WHERE pm.post_id IN ({ids}) ORDER BY pm.sort_order ASC";
 
             using (var cmd = new MySqlCommand(sql, conn))
             {
@@ -125,23 +102,16 @@ namespace MoozicOrb.IO
                     {
                         long pId = rdr.GetInt64("post_id");
                         var post = posts.FirstOrDefault(p => p.Id == pId);
-
                         if (post != null)
                         {
-                            // Retrieve the path from DB
                             string dbPath = rdr["final_url"] == DBNull.Value ? "" : rdr["final_url"].ToString();
-
-                            // Ensure it starts with "/" for web if not empty
-                            if (!string.IsNullOrEmpty(dbPath) && !dbPath.StartsWith("/"))
-                            {
-                                dbPath = "/" + dbPath;
-                            }
+                            if (!string.IsNullOrEmpty(dbPath) && !dbPath.StartsWith("/")) dbPath = "/" + dbPath;
 
                             post.Attachments.Add(new MediaAttachmentDto
                             {
                                 MediaId = rdr.GetInt64("media_id"),
                                 MediaType = rdr.GetInt32("media_type"),
-                                Url = dbPath // <--- THE FIX: Real URL from DB
+                                Url = dbPath
                             });
                         }
                     }
@@ -149,9 +119,6 @@ namespace MoozicOrb.IO
             }
         }
 
-        // ==========================================
-        // HELPER: MAPPER
-        // ==========================================
         private PostDto MapReaderToDto(MySqlDataReader rdr)
         {
             return new PostDto
@@ -159,8 +126,7 @@ namespace MoozicOrb.IO
                 Id = rdr.GetInt64("post_id"),
                 AuthorId = rdr.GetInt32("user_id"),
                 AuthorName = rdr["display_name"].ToString(),
-                // Fixed key to "profile_pic"
-                AuthorPic = rdr["profile_pic"] == DBNull.Value ? "/img/default.png" : rdr["profile_pic"].ToString(),
+                AuthorPic = rdr["profile_pic"] == DBNull.Value ? "/img/profile_default.jpg" : rdr["profile_pic"].ToString(),
                 ContextType = rdr["context_type"].ToString(),
                 ContextId = rdr["context_id"].ToString(),
                 Type = rdr["post_type"].ToString(),
@@ -172,8 +138,12 @@ namespace MoozicOrb.IO
                 LocationLabel = rdr["location_label"] == DBNull.Value ? null : rdr["location_label"].ToString(),
                 DifficultyLevel = rdr["difficulty_level"] == DBNull.Value ? null : rdr["difficulty_level"].ToString(),
                 VideoUrl = rdr["video_url"] == DBNull.Value ? null : rdr["video_url"].ToString(),
-                MediaId = rdr["media_id"] == DBNull.Value ? null : (long?)rdr.GetInt64("media_id"),
-                Category = rdr["category"] == DBNull.Value ? null : rdr["category"].ToString(),
+
+                // Mapped Engagement Fields
+                LikesCount = Convert.ToInt32(rdr["likes_count"]),
+                CommentsCount = Convert.ToInt32(rdr["comments_count"]),
+                IsLiked = Convert.ToInt32(rdr["is_liked"]) > 0,
+
                 CreatedAgo = TimeAgo(rdr.GetDateTime("created_at"))
             };
         }

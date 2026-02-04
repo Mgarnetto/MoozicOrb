@@ -101,8 +101,34 @@
     </div>
 
     <div class="post-footer">
-        <button class="btn-post-action"><i class="far fa-heart"></i> Like</button>
-        <button class="btn-post-action"><i class="far fa-comment"></i> Comment</button>
+        <button class="btn-post-action btn-like" data-id="@Model.Id">
+            @if (Model.IsLiked)
+            {
+                <i class="fas fa-heart text-danger"></i>
+            }
+            else
+            {
+                <i class="far fa-heart"></i>
+            }
+            Like @(Model.LikesCount > 0 ? $"({Model.LikesCount})" : "")
+        </button>
+
+        <button class="btn-post-action btn-comment-toggle" data-id="@Model.Id">
+            <i class="far fa-comment"></i> Comment @(Model.CommentsCount > 0 ? $"({Model.CommentsCount})" : "")
+        </button>
+
         <button class="btn-post-action"><i class="far fa-share-square"></i> Share</button>
     </div>
+
+    <div id="comments-@Model.Id" class="d-none border-top border-secondary p-3">
+        <div id="comments-list-@Model.Id" class="mb-3">
+        </div>
+        <div class="d-flex">
+            <input type="text" id="comment-input-@Model.Id"
+                   class="form-control form-control-sm bg-dark text-white border-secondary me-2"
+                   placeholder="Write a comment...">
+            <button class="btn btn-sm btn-primary" onclick="submitReply(@Model.Id, null)">Post</button>
+        </div>
+    </div>
+
 </div>
