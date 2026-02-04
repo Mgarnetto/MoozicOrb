@@ -30,6 +30,9 @@
                 dropdown.style.display = "none";
                 dropdown.classList.remove("active");
             }
+
+            // ENABLE PROFILE LINK
+            this.toggleProfileLink(true);
         },
 
         setLoggedOut() {
@@ -48,10 +51,45 @@
 
             const chatList = document.getElementById("chatList");
             if (chatList) chatList.innerHTML = '';
+
+            // DISABLE PROFILE LINK
+            this.toggleProfileLink(false);
+        },
+
+        // Helper to disable/enable the profile link in sidebar
+        toggleProfileLink(enable) {
+            const profileLink = document.querySelector(".sidebar-profile > a");
+            if (profileLink) {
+                if (enable) {
+                    profileLink.style.pointerEvents = "auto";
+                    profileLink.style.opacity = "1";
+                    profileLink.style.cursor = "pointer";
+                } else {
+                    profileLink.style.pointerEvents = "none";
+                    profileLink.style.opacity = "0.5"; // Visual cue it's disabled
+                    profileLink.style.cursor = "default";
+                }
+            }
         },
 
         // ============================================
-        // 2. BOOTSTRAP (THE FIX)
+        // 2. SERVER VALIDATION HELPER
+        // ============================================
+        async checkSessionValid(sessionId) {
+            try {
+                // We ping the bootstrap endpoint. 
+                // If the Session Middleware rejects the ID, this returns 401.
+                const res = await fetch("/api/login/bootstrap", {
+                    headers: { "X-Session-Id": sessionId }
+                });
+                return res.ok;
+            } catch (e) {
+                return false;
+            }
+        },
+
+        // ============================================
+        // 3. BOOTSTRAP (DATA LOADING)
         // ============================================
         async bootstrap() {
             if (!this.sessionId) throw new Error("Missing session");
@@ -69,13 +107,12 @@
             const groupsToJoin = [];
 
             try {
-                // --- STEP A: Fetch Groups (from Login Controller) ---
+                // --- STEP A: Fetch Groups ---
                 const resBoot = await fetch("/api/login/bootstrap", {
                     headers: { "X-Session-Id": this.sessionId }
                 });
                 if (resBoot.ok) {
                     const dataBoot = await resBoot.json();
-
                     if (Array.isArray(dataBoot.groups)) {
                         for (const groupId of dataBoot.groups) {
                             this.ensureThread({
@@ -89,16 +126,13 @@
                     }
                 }
 
-                // --- STEP B: Fetch DMs (from DirectMessages Controller) ---
-                // This guarantees we get the full message objects with names
+                // --- STEP B: Fetch DMs ---
                 const resDms = await fetch("/api/direct/messages", {
                     headers: { "X-Session-Id": this.sessionId }
                 });
 
                 if (resDms.ok) {
                     const dataDms = await resDms.json();
-
-                    // Handle Casing (messages vs Messages)
                     const conversations = dataDms.messages || dataDms.Messages || {};
 
                     for (const otherUserId in conversations) {
@@ -106,23 +140,17 @@
                         let displayName = `User ${otherUserId}`;
                         let displayPic = "/images/default-user.png";
 
-                        // EXTRACT NAME LOGIC
                         if (msgs && msgs.length > 0) {
-                            // Grab the most recent message
                             const sample = msgs[msgs.length - 1];
-
-                            // Robust Casing Check
                             const sName = sample.senderName || sample.SenderName;
                             const rName = sample.receiverName || sample.ReceiverName;
                             const sPic = sample.senderProfilePicUrl || sample.SenderProfilePicUrl;
                             const rPic = sample.receiverProfilePicUrl || sample.ReceiverProfilePicUrl;
 
                             if (sample.senderId == this.userId) {
-                                // I sent it -> Show Receiver Name
                                 if (rName) displayName = rName;
                                 if (rPic) displayPic = rPic;
                             } else {
-                                // They sent it -> Show Sender Name
                                 if (sName) displayName = sName;
                                 if (sPic) displayPic = sPic;
                             }
@@ -149,20 +177,18 @@
         },
 
         // ============================================
-        // 3. UI GENERATOR
+        // 4. UI GENERATOR
         // ============================================
         ensureThread({ id, name, type, img }) {
             const domId = `thread-${type}-${id}`;
             const existing = document.getElementById(domId);
 
-            // If exists, update name/image
             if (existing) {
                 const titleEl = existing.querySelector("h4");
                 if (titleEl) titleEl.innerText = name;
                 return;
             }
 
-            // Fallback for null images
             if (!img || img === "null") img = type === "group" ? "/images/default-group.png" : "/images/default-user.png";
 
             this.renderThreadItem(domId, { id, name, type, img });
@@ -188,7 +214,6 @@
             li.onmouseover = () => li.style.background = "rgba(255,255,255,0.05)";
             li.onmouseout = () => li.style.background = "transparent";
 
-            // If image is a URL, use img tag, otherwise use icon fallback
             let avatarHtml;
             if (img.includes("/") && !img.includes("default")) {
                 avatarHtml = `<img src="${img}" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 15px; object-fit: cover;">`;
@@ -228,18 +253,41 @@
     };
 
     // ============================================
-    // 4. INIT & RESTORE SESSION
+    // 5. INIT & RESTORE SESSION
     // ============================================
     window.AuthState = AuthState;
 
     document.addEventListener("DOMContentLoaded", async () => {
+
+        // --- 1. FORCE HOME REDIRECT (Simple Auth Gate) ---
+        // If the user refreshes on any page that is NOT home, kick them back to home.
+        const path = window.location.pathname.toLowerCase();
+        if (path !== "/" && path !== "/home/index" && path !== "/home") {
+            window.location.replace("/");
+            return; // Stop execution
+        }
+
         const savedSession = localStorage.getItem("moozic_session");
+
+        // DEFAULT: Disable profile link immediately on load
+        AuthState.toggleProfileLink(false);
 
         if (savedSession) {
             try {
                 const data = JSON.parse(savedSession);
-                AuthState.setLoggedIn(data.userId, data.sessionId);
-                await AuthState.bootstrap();
+
+                // --- 2. VALIDATE WITH SERVER ---
+                // Trust but verify.
+                const isValid = await AuthState.checkSessionValid(data.sessionId);
+
+                if (isValid) {
+                    AuthState.setLoggedIn(data.userId, data.sessionId);
+                    await AuthState.bootstrap();
+                } else {
+                    console.warn("Session expired on server. Logging out.");
+                    localStorage.removeItem("moozic_session");
+                    AuthState.setLoggedOut();
+                }
             } catch (e) {
                 console.error("Failed to restore session", e);
                 localStorage.removeItem("moozic_session");
@@ -258,4 +306,31 @@
             });
         }
     });
+
+    // ============================================
+    // 6. MOBILE LIFECYCLE (WAKE-UP HANDLER)
+    // ============================================
+    document.addEventListener("visibilitychange", async () => {
+        // When user comes back to the tab/app
+        if (document.visibilityState === "visible") {
+            console.log("[AuthState] App Waking Up...");
+
+            if (AuthState.loggedIn && AuthState.sessionId) {
+                // 1. Re-verify session (it might have expired while backgrounded)
+                const isValid = await AuthState.checkSessionValid(AuthState.sessionId);
+
+                if (isValid) {
+                    console.log("[AuthState] Session still valid. Re-syncing data...");
+                    // 2. Re-fetch updates that happened while sleeping
+                    await AuthState.bootstrap();
+                } else {
+                    console.log("[AuthState] Session expired during sleep.");
+                    localStorage.removeItem("moozic_session");
+                    AuthState.setLoggedOut();
+                    window.location.replace("/");
+                }
+            }
+        }
+    });
+
 })();

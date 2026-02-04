@@ -1649,3 +1649,158 @@ input[type="text"].form-control {
         background: rgba(255,255,255,0.05);
         border-radius: 8px;
     }
+
+/* =========================================
+   POST CARD STYLING (Professional Dark Theme)
+   ========================================= */
+
+.post-card {
+    background-color: var(--bg-card); /* Matches your #111111 */
+    border: 1px solid #333;
+    border-radius: 16px;
+    margin-bottom: 40px; /* <--- FIXED: Big space between posts */
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5); /* subtle depth */
+}
+
+/* --- HEADER --- */
+.post-header {
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.post-avatar-link {
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.post-avatar-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.1);
+    margin-right: 15px;
+    transition: transform 0.2s;
+}
+
+    .post-avatar-img:hover {
+        transform: scale(1.05);
+        border-color: var(--accent-secondary);
+    }
+
+.post-info-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.3;
+}
+
+.post-author-name {
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    letter-spacing: 0.3px;
+}
+
+    .post-author-name:hover {
+        color: var(--accent-secondary);
+    }
+
+.post-meta-line {
+    color: #888;
+    font-size: 0.8rem;
+    font-weight: 400;
+}
+
+/* --- BODY --- */
+.post-body {
+    padding: 15px 20px;
+    color: #ddd;
+}
+
+.post-title {
+    color: white;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.post-text {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+/* Media Containers (Centered & No Stretch) */
+.post-media-container {
+    background-color: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    border: 1px solid #222;
+}
+
+.full-media {
+    width: 100%;
+    height: auto;
+    max-height: 550px; /* Limits tall images */
+    object-fit: contain; /* Ensures the whole image is visible */
+    display: block;
+}
+
+/* Classifieds Badge */
+.classified-badge {
+    background: rgba(46, 204, 113, 0.1);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    border-radius: 10px;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+}
+
+.price-tag {
+    color: #2ecc71;
+    font-weight: 800;
+    font-size: 1.2rem;
+}
+
+/* --- FOOTER --- */
+.post-footer {
+    padding: 10px 20px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    justify-content: space-between; /* Space buttons evenly */
+}
+
+.btn-post-action {
+    background: transparent;
+    border: none;
+    color: #888;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 8px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+    .btn-post-action:hover {
+        background: rgba(255,255,255,0.05);
+        color: var(--accent-secondary);
+    }
+
+    .btn-post-action i {
+        font-size: 1.1rem;
+    }

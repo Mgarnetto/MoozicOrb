@@ -1,85 +1,96 @@
 ﻿@using MoozicOrb.API.Models
 @model PostDto
 
-<div class="card mb-3 shadow-sm border-0 post-card" id="post-@Model.Id">
-    <div class="card-header bg-white border-0 d-flex align-items-center pt-3 pb-0">
-        <a href="/creator/@Model.AuthorId" class="text-decoration-none">
-            <img src="@(string.IsNullOrEmpty(Model.AuthorPic) ? "/img/profile_default.jpg" : Model.AuthorPic)"
-                 class="rounded-circle me-2 object-fit-cover" width="40" height="40" alt="@Model.AuthorName">
-        </a>
-        <div class="lh-sm">
-            <a href="/creator/@Model.AuthorId" class="fw-bold text-dark text-decoration-none">@Model.AuthorName</a>
+<div class="post-card" id="post-@Model.Id">
 
-            @if (Model.ContextType == "state")
-            {
-                <span class="text-muted small"> <i class="fas fa-caret-right"></i> @Model.ContextId</span>
-            }
+    <div class="post-header">
+        <div class="d-flex align-items-center">
+            <a href="/creator/@Model.AuthorId" class="post-avatar-link">
+                <img src="@(string.IsNullOrEmpty(Model.AuthorPic) ? "/img/profile_default.jpg" : Model.AuthorPic)"
+                     class="post-avatar-img"
+                     alt="@Model.AuthorName">
+            </a>
 
-            <div class="text-muted small">
-                @Model.CreatedAgo
-                @if (!string.IsNullOrEmpty(Model.LocationLabel))
-                {
-                    <span>&bull; <i class="fas fa-map-marker-alt"></i> @Model.LocationLabel</span>
-                }
+            <div class="post-info-col">
+                <div class="d-flex align-items-center gap-2">
+                    <a href="/creator/@Model.AuthorId" class="post-author-name">@Model.AuthorName</a>
+
+                    @if (Model.ContextType == "state")
+                    {
+                        <span class="text-muted small"><i class="fas fa-caret-right"></i> @Model.ContextId</span>
+                    }
+                </div>
+
+                <div class="post-meta-line">
+                    <span>@Model.CreatedAgo</span>
+                    @if (!string.IsNullOrEmpty(Model.LocationLabel))
+                    {
+                        <span>&bull; @Model.LocationLabel</span>
+                    }
+                </div>
             </div>
         </div>
+
         <div class="ms-auto">
-            <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-h"></i></button>
-            <ul class="dropdown-menu dropdown-menu-end">
+            <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+                <i class="fas fa-ellipsis-h"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
                 <li><a class="dropdown-item" href="#">Report</a></li>
+                <li><a class="dropdown-item" href="#">Copy Link</a></li>
             </ul>
         </div>
     </div>
 
-    <div class="card-body">
-
+    <div class="post-body">
         @if (!string.IsNullOrEmpty(Model.Title))
         {
-            <h5 class="card-title fw-bold">@Model.Title</h5>
+            <h5 class="post-title">@Model.Title</h5>
         }
+
         @if (!string.IsNullOrEmpty(Model.Text))
         {
-            <div class="card-text mb-2 text-break">@Html.Raw(Model.Text)</div>
+            <div class="post-text text-break">@Html.Raw(Model.Text)</div>
         }
 
         @if (!string.IsNullOrEmpty(Model.ImageUrl) && (Model.Attachments == null || Model.Attachments.Count == 0))
         {
-            <img src="@Model.ImageUrl" class="img-fluid rounded mt-2 w-100" alt="Post Image">
+            <div class="post-media-container mt-3">
+                <img src="@Model.ImageUrl" class="img-fluid" alt="Post Image">
+            </div>
         }
 
         @if (Model.Type == "classified" && Model.Price.HasValue)
         {
-            <div class="alert alert-light border d-flex justify-content-between align-items-center mt-2">
-                <span class="fw-bold text-success fs-5">@Model.Price.Value.ToString("C")</span>
-                <button class="btn btn-sm btn-success">Contact Seller</button>
+            <div class="classified-badge">
+                <span class="price-tag">@Model.Price.Value.ToString("C")</span>
+                <button class="btn btn-sm btn-success rounded-pill px-3">Contact Seller</button>
             </div>
         }
 
         @if (Model.Attachments != null && Model.Attachments.Count > 0)
         {
-            <div class="row g-1 mt-2 rounded overflow-hidden">
+            <div class="row g-2 mt-3">
                 @foreach (var media in Model.Attachments)
                 {
-                    // Smart Grid: Full width if 1 item, Half width if multiple
                     var colClass = Model.Attachments.Count == 1 ? "col-12" : "col-6";
 
                     <div class="@colClass">
                         @if (media.MediaType == 3) // Image
                         {
-                            // NEW: Container for centering without stretch
-                            <div style="background: #000; border-radius: 4px; overflow: hidden; display: flex; justify-content: center; align-items: center; width: 100%;">
-                                <img src="@media.Url"
-                                     class="img-fluid"
-                                     style="max-height: 500px; width: auto; max-width: 100%; object-fit: contain;">
+                            <div class="post-media-container">
+                                <img src="@media.Url" class="img-fluid full-media" loading="lazy">
                             </div>
                         }
                         else if (media.MediaType == 2) // Video
                         {
-                            <video src="@media.Url" controls class="img-fluid w-100 bg-black"></video>
+                            <div class="post-media-container">
+                                <video src="@media.Url" controls class="img-fluid full-media"></video>
+                            </div>
                         }
                         else if (media.MediaType == 1) // Audio
                         {
-                            <div class="p-2 border rounded bg-light mt-1">
+                            <div class="p-3 border border-secondary rounded bg-dark mt-1">
                                 <audio src="@media.Url" controls class="w-100"></audio>
                             </div>
                         }
@@ -89,9 +100,9 @@
         }
     </div>
 
-    <div class="card-footer bg-white border-top-0 d-flex justify-content-between pt-0 pb-3">
-        <button class="btn btn-sm btn-link text-decoration-none text-muted"><i class="far fa-heart"></i> Like</button>
-        <button class="btn btn-sm btn-link text-decoration-none text-muted"><i class="far fa-comment"></i> Comment</button>
-        <button class="btn btn-sm btn-link text-decoration-none text-muted"><i class="far fa-share-square"></i> Share</button>
+    <div class="post-footer">
+        <button class="btn-post-action"><i class="far fa-heart"></i> Like</button>
+        <button class="btn-post-action"><i class="far fa-comment"></i> Comment</button>
+        <button class="btn-post-action"><i class="far fa-share-square"></i> Share</button>
     </div>
 </div>

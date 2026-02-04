@@ -3,15 +3,24 @@
    ========================================= */
 
 // 1. PUBLIC CONNECTION (Connects to PostHub)
-// This runs immediately so guests can see the feed.
 const feedConnection = new signalR.HubConnectionBuilder()
     .withUrl("/PostHub")
-    .withAutomaticReconnect()
+    .withAutomaticReconnect() // Helps, but explicit check on wakeup is better
     .build();
 
 feedConnection.start().catch(err => console.error("[Feed] Connection failed", err));
 
-// 2. FEED SERVICE (Renamed from MessageService to avoid conflicts)
+// 2. MOBILE LIFECYCLE: Reconnect on Wakeup
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+        if (feedConnection.state === "Disconnected") {
+            console.log("[Feed] Waking up SignalR...");
+            feedConnection.start().catch(err => console.error("[Feed] Reconnect failed", err));
+        }
+    }
+});
+
+// 3. FEED SERVICE
 window.FeedService = {
     currentGroup: null,
 
@@ -27,24 +36,21 @@ window.FeedService = {
     }
 };
 
-// 3. LISTEN FOR POSTS
+// 4. LISTEN FOR POSTS
 feedConnection.on("ReceivePost", function (message) {
-    // We look for a wrapper class to know if we are on a feed page
     const feedWrapper = document.querySelector('.feed-wrapper');
 
     if (feedWrapper) {
-        // Read the Context ID from the hidden input on the page
         const contextInput = document.getElementById('page-signalr-context');
         const pageContext = contextInput ? contextInput.value : null;
 
-        // Render if Global or Specific Match
         if (message.targetGroup === pageContext || message.targetGroup === "feed_global") {
             renderNewPost(message.data);
         }
     }
 });
 
-// 4. FORM INTERCEPTOR
+// 5. FORM INTERCEPTOR (With Persistence)
 document.addEventListener('submit', async function (e) {
     if (e.target && e.target.id === 'createPostForm') {
         e.preventDefault();
@@ -112,6 +118,10 @@ document.addEventListener('submit', async function (e) {
 
             if (postRes.ok) {
                 form.reset();
+
+                // CLEAR DRAFT ON SUCCESS
+                localStorage.removeItem("moozic_post_draft");
+
                 const preview = document.getElementById('mediaPreview');
                 if (preview) {
                     preview.classList.add('d-none');
@@ -119,7 +129,6 @@ document.addEventListener('submit', async function (e) {
                 }
             } else {
                 const errText = await postRes.text();
-                // Parse generic 400 errors for better alerts
                 try {
                     const errJson = JSON.parse(errText);
                     const msg = errJson.title || "Validation Error";
@@ -131,6 +140,7 @@ document.addEventListener('submit', async function (e) {
 
         } catch (error) {
             console.error("Network Error:", error);
+            alert("Network Error. Your post has been saved to drafts.");
         } finally {
             submitBtn.disabled = false;
             submitBtn.innerText = originalText;
@@ -138,37 +148,108 @@ document.addEventListener('submit', async function (e) {
     }
 });
 
+// 6. DRAFT PERSISTENCE LOGIC
+// Initializes when the DOM is ready
+document.addEventListener("DOMContentLoaded", () => {
+    const textArea = document.querySelector('#createPostForm textarea[name="Content"]');
+    if (textArea) {
+        // Restore Draft
+        const savedDraft = localStorage.getItem("moozic_post_draft");
+        if (savedDraft) {
+            textArea.value = savedDraft;
+        }
+
+        // Save Draft on Input
+        textArea.addEventListener("input", () => {
+            localStorage.setItem("moozic_post_draft", textArea.value);
+        });
+    }
+});
+
+// 7. RENDER LOGIC (VISUALLY UPDATED)
 function renderNewPost(post) {
     const container = document.getElementById('feed-stream-container');
-    if (!container) return; // This ID must exist in your HTML!
+    if (!container) return;
+
+    // Determine Author Pic
+    const authorPic = post.authorPic && post.authorPic !== "null" ? post.authorPic : "/img/profile_default.jpg";
 
     const div = document.createElement('div');
-    // Using simple HTML string - ensure this matches your _PostCard logic if possible
     div.innerHTML = `
-        <div class="card mb-3 shadow-sm border-0 post-card" style="animation: fadeIn 0.5s ease;">
-            <div class="card-header bg-white border-0 d-flex align-items-center pt-3">
-                <img src="${post.authorPic || '/img/default.png'}" class="rounded-circle me-2 object-fit-cover" width="40" height="40">
-                <div>
-                    <span class="fw-bold d-block">${post.authorName || 'User'}</span>
-                    <small class="text-muted">Just now</small>
+        <div class="post-card" id="post-${post.id}" style="animation: fadeIn 0.5s ease;">
+            
+            <div class="post-header">
+                <div class="d-flex align-items-center">
+                    <a href="/creator/${post.authorId}" class="post-avatar-link">
+                        <img src="${authorPic}" class="post-avatar-img" alt="${post.authorName}">
+                    </a>
+                    <div class="post-info-col">
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="/creator/${post.authorId}" class="post-author-name">${post.authorName || 'User'}</a>
+                        </div>
+                        <div class="post-meta-line">
+                            <span>Just now</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="ms-auto">
+                    <button class="btn btn-link text-muted p-0"><i class="fas fa-ellipsis-h"></i></button>
                 </div>
             </div>
-            <div class="card-body">
-                <p class="card-text">${post.text || ''}</p>
+
+            <div class="post-body">
+                ${post.title ? `<h5 class="post-title">${post.title}</h5>` : ''}
+                
+                ${post.text ? `<div class="post-text text-break">${post.text}</div>` : ''}
+                
                 ${renderAttachments(post.attachments)}
+            </div>
+
+            <div class="post-footer">
+                <button class="btn-post-action"><i class="far fa-heart"></i> Like</button>
+                <button class="btn-post-action"><i class="far fa-comment"></i> Comment</button>
+                <button class="btn-post-action"><i class="far fa-share-square"></i> Share</button>
             </div>
         </div>`;
 
     container.insertBefore(div.firstElementChild, container.firstChild);
 }
 
+// Updated Attachment Renderer
 function renderAttachments(attachments) {
     if (!attachments || attachments.length === 0) return '';
-    const media = attachments[0];
-    if (media.mediaType === 3) return `<img src="${media.url}" class="img-fluid rounded w-100 mb-2">`;
-    if (media.mediaType === 2) return `<video src="${media.url}" controls class="img-fluid rounded w-100 mb-2"></video>`;
-    if (media.mediaType === 1) return `<audio src="${media.url}" controls class="w-100 mb-2"></audio>`;
-    return '';
+
+    let html = `<div class="row g-2 mt-3">`;
+
+    attachments.forEach(media => {
+        const colClass = attachments.length === 1 ? "col-12" : "col-6";
+
+        html += `<div class="${colClass}">`;
+
+        if (media.mediaType === 3) { // Image
+            html += `
+                <div class="post-media-container">
+                    <img src="${media.url}" class="img-fluid full-media" loading="lazy">
+                </div>`;
+        }
+        else if (media.mediaType === 2) { // Video
+            html += `
+                <div class="post-media-container">
+                    <video src="${media.url}" controls class="img-fluid full-media"></video>
+                </div>`;
+        }
+        else if (media.mediaType === 1) { // Audio
+            html += `
+                <div class="p-3 border border-secondary rounded bg-dark mt-1">
+                    <audio src="${media.url}" controls class="w-100"></audio>
+                </div>`;
+        }
+
+        html += `</div>`;
+    });
+
+    html += `</div>`;
+    return html;
 }
 
 window.previewMedia = function (input) {
