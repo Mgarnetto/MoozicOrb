@@ -36,10 +36,14 @@ function renderNewPost(post) {
     const container = document.getElementById('feed-stream-container');
     if (!container) return;
 
+    // Remove loading placeholder if it exists
+    const placeholder = container.querySelector('.loading-placeholder');
+    if (placeholder) placeholder.remove();
+
     const authorPic = post.authorPic && post.authorPic !== "null" ? post.authorPic : "/img/profile_default.jpg";
 
     const div = document.createElement('div');
-    // Using structure from _PostCard.cshtml (Updated Inputs)
+
     div.innerHTML = `
         <div class="post-card" id="post-${post.id}" style="animation: fadeIn 0.5s ease;">
             <div class="post-header">
@@ -77,14 +81,15 @@ function renderNewPost(post) {
 
             <div id="comments-${post.id}" class="d-none border-top border-secondary p-3">
                 <div id="comments-list-${post.id}" class="mb-3"></div>
-                <div class="d-flex flex-column align-items-end gap-2">
-                    <div class="d-flex w-100 align-items-center">
-                        <img src="/img/profile_default.jpg" class="rounded-circle me-3" width="32" height="32" style="opacity:0.8;">
+                
+                <div class="d-flex align-items-center gap-2">
+                    <img src="/img/profile_default.jpg" class="input-avatar" alt="Me">
+                    <div class="comment-input-area">
                         <input type="text" id="comment-input-${post.id}" 
-                               class="form-control bg-dark text-white border-secondary rounded-pill" 
-                               placeholder="Write a comment...">
+                               placeholder="Write a comment..." 
+                               autocomplete="off">
+                        <button class="btn-comment-post" onclick="submitReply(${post.id}, null)">Post</button>
                     </div>
-                    <button class="btn btn-sm btn-primary rounded-pill px-4" onclick="submitReply(${post.id}, null)">Post</button>
                 </div>
             </div>
         </div>`;
@@ -148,14 +153,15 @@ document.addEventListener('click', async (e) => {
         } catch (err) { console.error(err); }
     }
 
-    // C. COMMENT TOGGLE
+    // C. COMMENT TOGGLE (FIXED LOGIC)
     const commentBtn = e.target.closest('.btn-comment-toggle');
     if (commentBtn) {
         const postId = commentBtn.dataset.id;
         const section = document.getElementById(`comments-${postId}`);
         if (section) {
             section.classList.toggle('d-none');
-            // Only load if it's opening
+
+            // Logic: If we just removed 'd-none', it means it is now visible. Load comments.
             if (!section.classList.contains('d-none')) {
                 loadComments(postId);
             }
@@ -164,7 +170,7 @@ document.addEventListener('click', async (e) => {
 });
 
 // ============================================
-// 6. COMMENT SYSTEM
+// 6. COMMENT SYSTEM (FIXED FLOW)
 // ============================================
 
 async function loadComments(postId) {
@@ -198,7 +204,7 @@ function createCommentElement(c) {
             <div class="flex-grow-1">
                 <div class="comment-content-box">
                     <span class="comment-author">${c.authorName || 'User'}</span>
-                    <div class="comment-text">${c.content}</div>
+                    <span class="comment-text">${c.content}</span>
                 </div>
 
                 <div class="comment-meta-line">
@@ -207,13 +213,11 @@ function createCommentElement(c) {
                 </div>
 
                 <div id="reply-box-${c.commentId}" class="reply-input-wrapper d-none">
-                    <div class="d-flex flex-column align-items-end gap-2">
+                     <div class="comment-input-area">
                         <input type="text" id="reply-input-${c.commentId}" 
-                               class="form-control form-control-sm bg-black text-white border-secondary" 
-                               placeholder="Reply to ${c.authorName}...">
-                        <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="submitReply(${c.postId}, ${c.commentId})">
-                            Reply
-                        </button>
+                               placeholder="Reply to ${c.authorName}..." 
+                               autocomplete="off">
+                        <button class="btn-comment-post" onclick="submitReply(${c.postId}, ${c.commentId})">Reply</button>
                     </div>
                 </div>
             </div>
@@ -236,10 +240,12 @@ function createCommentElement(c) {
 
 window.toggleReplyBox = function (id) {
     const box = document.getElementById(`reply-box-${id}`);
-    box.classList.toggle('d-none');
-    if (!box.classList.contains('d-none')) {
-        const input = document.getElementById(`reply-input-${id}`);
-        if (input) input.focus();
+    if (box) {
+        box.classList.toggle('d-none');
+        if (!box.classList.contains('d-none')) {
+            const input = document.getElementById(`reply-input-${id}`);
+            if (input) input.focus();
+        }
     }
 };
 
@@ -259,7 +265,10 @@ window.submitReply = async function (postId, parentId) {
 
         if (res.ok) {
             input.value = '';
-            if (parentId) document.getElementById(`reply-box-${parentId}`).classList.add('d-none');
+            if (parentId) {
+                const box = document.getElementById(`reply-box-${parentId}`);
+                if (box) box.classList.add('d-none');
+            }
             loadComments(postId);
         }
     } catch (err) { console.error(err); }
@@ -309,3 +318,98 @@ document.addEventListener('submit', async function (e) {
         finally { submitBtn.disabled = false; submitBtn.innerText = originalText; }
     }
 });
+
+// ============================================
+// 7. INITIAL FEED LOADER (NEW)
+// ============================================
+
+window.loadFeedHistory = async function (contextType, contextId) {
+    const container = document.getElementById('feed-stream-container');
+    if (!container) return;
+
+    try {
+        const res = await fetch(`/api/posts?contextType=${contextType}&contextId=${contextId}&page=1`, {
+            headers: { "X-Session-Id": window.AuthState?.sessionId || "" }
+        });
+
+        if (res.ok) {
+            const posts = await res.json();
+
+            // Clear loading spinner
+            container.innerHTML = '';
+
+            if (posts.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted p-5"><h3>No signals found here yet.</h3><p>Be the first to broadcast.</p></div>';
+                return;
+            }
+
+            // Append historical posts
+            posts.forEach(post => {
+                appendHistoricalPost(post, container);
+            });
+        } else {
+            container.innerHTML = '<div class="text-danger text-center p-3">Failed to load feed.</div>';
+        }
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = '<div class="text-danger text-center p-3">Connection error.</div>';
+    }
+};
+
+function appendHistoricalPost(post, container) {
+    const authorPic = post.authorPic && post.authorPic !== "null" ? post.authorPic : "/img/profile_default.jpg";
+    const div = document.createElement('div');
+
+    // Identical HTML to renderNewPost but without animation for initial load
+    div.innerHTML = `
+        <div class="post-card" id="post-${post.id}">
+            <div class="post-header">
+                <div class="d-flex align-items-center">
+                    <a href="/creator/${post.authorId}" class="post-avatar-link">
+                        <img src="${authorPic}" class="post-avatar-img" alt="${post.authorName}" onerror="this.src='/img/profile_default.jpg'">
+                    </a>
+                    <div class="post-info-col">
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="/creator/${post.authorId}" class="post-author-name">${post.authorName || 'User'}</a>
+                        </div>
+                        <div class="post-meta-line"><span>${post.createdAgo || 'Just now'}</span></div>
+                    </div>
+                </div>
+                <div class="ms-auto position-relative">
+                    <button class="btn btn-link text-muted p-0 btn-post-options" type="button"><i class="fas fa-ellipsis-h"></i></button>
+                    <ul class="post-options-menu">
+                        <li><a href="#"><i class="fas fa-flag me-2"></i> Report Post</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="post-body">
+                ${post.title ? `<h5 class="post-title">${post.title}</h5>` : ''}
+                ${post.text ? `<div class="post-text text-break">${post.text}</div>` : ''}
+                ${renderAttachments(post.attachments)}
+            </div>
+
+            <div class="post-footer">
+                <button class="btn-post-action btn-like" data-id="${post.id}">
+                    <i class="${post.isLiked ? 'fas text-danger' : 'far'} fa-heart"></i> Like
+                </button>
+                <button class="btn-post-action btn-comment-toggle" data-id="${post.id}">
+                    <i class="far fa-comment"></i> Comment
+                </button>
+                <button class="btn-post-action"><i class="far fa-share-square"></i> Share</button>
+            </div>
+
+            <div id="comments-${post.id}" class="d-none border-top border-secondary p-3">
+                <div id="comments-list-${post.id}" class="mb-3"></div>
+                <div class="d-flex align-items-center gap-2">
+                    <img src="/img/profile_default.jpg" class="input-avatar" alt="Me">
+                    <div class="comment-input-area">
+                        <input type="text" id="comment-input-${post.id}" placeholder="Write a comment..." autocomplete="off">
+                        <button class="btn-comment-post" onclick="submitReply(${post.id}, null)">Post</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+    container.appendChild(div.firstElementChild);
+}

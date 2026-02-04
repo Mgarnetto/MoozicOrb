@@ -20,7 +20,7 @@ namespace MoozicOrb.IO
                 using (var cmd = new MySqlCommand(sql, conn))
                 {
                     cmd.Parameters.AddWithValue("@pid", postId);
-                    cmd.Parameters.AddWithValue("@vid", viewerId); // For IsLiked check
+                    cmd.Parameters.AddWithValue("@vid", viewerId);
                     using (var rdr = cmd.ExecuteReader())
                     {
                         if (rdr.Read()) post = MapReaderToDto(rdr);
@@ -31,7 +31,7 @@ namespace MoozicOrb.IO
             return post;
         }
 
-        // 2. GET FEED (List)
+        // 2. GET CONTEXT FEED (User Profile, Location Page, etc.)
         public List<PostDto> Execute(string contextType, string contextId, int viewerId, int page = 1, int pageSize = 20)
         {
             var results = new List<PostDto>();
@@ -60,7 +60,75 @@ namespace MoozicOrb.IO
             return results;
         }
 
-        // --- SQL GENERATOR (Includes Likes/Comment Counts) ---
+        // 3. NEW: GET DISCOVERY FEED (Random Selection)
+        public List<PostDto> GetDiscoveryFeed(int viewerId, int count = 20)
+        {
+            var results = new List<PostDto>();
+            long maxId = 0;
+
+            using (var conn = new MySqlConnection(DBConn1.ConnectionString))
+            {
+                conn.Open();
+
+                // Step A: Get Last Post ID
+                using (var cmd = new MySqlCommand("SELECT MAX(post_id) FROM posts", conn))
+                {
+                    var res = cmd.ExecuteScalar();
+                    if (res != DBNull.Value && res != null) maxId = Convert.ToInt64(res);
+                }
+
+                if (maxId > 0)
+                {
+                    // Step B: Generate Random IDs
+                    var random = new Random();
+                    var targetIds = new HashSet<long>();
+
+                    // Attempt to pick random IDs (over-sample slightly to account for gaps)
+                    for (int i = 0; i < count * 2; i++)
+                    {
+                        targetIds.Add((long)random.Next(1, (int)maxId + 1));
+                    }
+
+                    if (targetIds.Count > 0)
+                    {
+                        string idList = string.Join(",", targetIds);
+                        string randomSql = GetBaseSql($"WHERE p.post_id IN ({idList}) LIMIT {count}");
+
+                        using (var cmd = new MySqlCommand(randomSql, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@vid", viewerId);
+                            using (var rdr = cmd.ExecuteReader())
+                            {
+                                while (rdr.Read()) results.Add(MapReaderToDto(rdr));
+                            }
+                        }
+                    }
+                }
+
+                // Step C: Fail-Safe (If Random returned too few results, e.g. < 5, just get the latest)
+                if (results.Count < 5)
+                {
+                    results.Clear(); // Reset to avoid duplicates if we are mixing strategies
+                    string fallbackSql = GetBaseSql("ORDER BY p.created_at DESC LIMIT @limit");
+                    using (var cmd = new MySqlCommand(fallbackSql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@vid", viewerId);
+                        cmd.Parameters.AddWithValue("@limit", count);
+                        using (var rdr = cmd.ExecuteReader())
+                        {
+                            while (rdr.Read()) results.Add(MapReaderToDto(rdr));
+                        }
+                    }
+                }
+
+                if (results.Count > 0) AttachMediaToPosts(conn, results);
+            }
+
+            // Optional: Shuffle the final result in memory so the order isn't purely ID-based
+            return results.OrderBy(x => Guid.NewGuid()).ToList();
+        }
+
+        // --- SQL GENERATOR ---
         private string GetBaseSql(string whereClause)
         {
             return $@"
@@ -70,7 +138,6 @@ namespace MoozicOrb.IO
                     p.price, p.location_label, p.difficulty_level, p.video_url, p.media_id, p.category,
                     u.display_name, u.profile_pic,
                     
-                    -- Subqueries for Engagement
                     (SELECT COUNT(*) FROM post_likes WHERE post_id = p.post_id) AS likes_count,
                     (SELECT COUNT(*) FROM comments WHERE post_id = p.post_id) AS comments_count,
                     (SELECT COUNT(*) FROM post_likes WHERE post_id = p.post_id AND user_id = @vid) AS is_liked
@@ -138,12 +205,9 @@ namespace MoozicOrb.IO
                 LocationLabel = rdr["location_label"] == DBNull.Value ? null : rdr["location_label"].ToString(),
                 DifficultyLevel = rdr["difficulty_level"] == DBNull.Value ? null : rdr["difficulty_level"].ToString(),
                 VideoUrl = rdr["video_url"] == DBNull.Value ? null : rdr["video_url"].ToString(),
-
-                // Mapped Engagement Fields
                 LikesCount = Convert.ToInt32(rdr["likes_count"]),
                 CommentsCount = Convert.ToInt32(rdr["comments_count"]),
                 IsLiked = Convert.ToInt32(rdr["is_liked"]) > 0,
-
                 CreatedAgo = TimeAgo(rdr.GetDateTime("created_at"))
             };
         }

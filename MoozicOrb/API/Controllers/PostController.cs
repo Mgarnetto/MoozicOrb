@@ -32,20 +32,15 @@ namespace MoozicOrb.API.Controllers
 
         // --- HELPERS ----------------------------------------------------
 
-        // Strict: Throws 401 if not logged in (For Writes like Posting/Liking)
         private int GetUserId()
         {
             var sid = _http.HttpContext?.Request.Headers["X-Session-Id"].ToString();
             if (string.IsNullOrEmpty(sid)) throw new UnauthorizedAccessException();
-
-            // Assuming SessionStore is your static helper class
             var session = SessionStore.GetSession(sid);
             if (session == null) throw new UnauthorizedAccessException();
-
             return session.UserId;
         }
 
-        // Safe: Returns 0 if Guest (For Reads like Feed/Single Post)
         private int GetViewerId()
         {
             try { return GetUserId(); }
@@ -72,7 +67,7 @@ namespace MoozicOrb.API.Controllers
         {
             try
             {
-                int userId = GetUserId(); // Must be logged in
+                int userId = GetUserId();
 
                 // 1. Fetch Real User Info for the live update
                 var user = new UserQuery().GetUserById(userId);
@@ -110,22 +105,18 @@ namespace MoozicOrb.API.Controllers
                     CreatedAt = DateTime.UtcNow,
                     CreatedAgo = "Just now",
                     Attachments = req.MediaAttachments ?? new List<MediaAttachmentDto>(),
-
-                    // Polymorphic Fields
                     Price = req.Price,
                     LocationLabel = req.LocationLabel,
                     DifficultyLevel = req.DifficultyLevel,
                     VideoUrl = req.VideoUrl,
                     MediaId = req.MediaId,
                     Category = req.Category,
-
-                    // New Engagement Fields (Defaults for new post)
                     IsLiked = false,
                     LikesCount = 0,
                     CommentsCount = 0
                 };
 
-                // 5. Broadcast via SignalR
+                // 5. Broadcast via SignalR (To the Page/User context only)
                 string targetGroup = GetSignalRGroupName(req.ContextType, req.ContextId);
                 await _hub.Clients.Group(targetGroup).SendAsync("ReceivePost", new
                 {
@@ -147,11 +138,18 @@ namespace MoozicOrb.API.Controllers
         {
             try
             {
-                // [FIX] Use GetViewerId so guests can see the feed
                 int viewerId = GetViewerId();
-
                 var io = new GetPost();
-                // [FIX] Pass viewerId to calculate 'IsLiked'
+
+                // ALGORITHM: RANDOM DISCOVERY
+                // If the client asks for "global", we ignore context ID and fetch random posts.
+                if (contextType == "global")
+                {
+                    var randomPosts = io.GetDiscoveryFeed(viewerId);
+                    return Ok(randomPosts);
+                }
+
+                // STANDARD FETCH (User Page, Location Page, etc.)
                 var posts = io.Execute(contextType, contextId, viewerId, page);
                 return Ok(posts);
             }
@@ -173,14 +171,14 @@ namespace MoozicOrb.API.Controllers
             catch (Exception ex) { return BadRequest(ex.Message); }
         }
 
-        // --- COMMENTS (NEW) ---------------------------------------------
+        // --- COMMENTS ---------------------------------------------------
 
         [HttpPost("comment")]
         public IActionResult AddComment([FromBody] CreateCommentDto req)
         {
             try
             {
-                int userId = GetUserId(); // Must be logged in
+                int userId = GetUserId();
                 var io = new InsertComment();
                 long id = io.Execute(userId, req);
                 return Ok(new { id });
@@ -195,20 +193,20 @@ namespace MoozicOrb.API.Controllers
             try
             {
                 var io = new GetComments();
-                var comments = io.Execute(id); // Returns the Tree structure
+                var comments = io.Execute(id);
                 return Ok(comments);
             }
             catch (Exception ex) { return BadRequest(ex.Message); }
         }
 
-        // --- LIKES (NEW) ------------------------------------------------
+        // --- LIKES ------------------------------------------------------
 
         [HttpPost("{id}/like")]
         public IActionResult LikePost(long id)
         {
             try
             {
-                int userId = GetUserId(); // Must be logged in
+                int userId = GetUserId();
                 var io = new ToggleLike();
                 bool liked = io.Execute(userId, id);
                 return Ok(new { liked });

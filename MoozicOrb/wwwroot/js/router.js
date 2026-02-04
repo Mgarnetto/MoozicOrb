@@ -46,13 +46,17 @@
                 this.rootElement.style.pointerEvents = "auto";
                 window.scrollTo(0, 0);
 
-                // === THE FIX: Use FeedService for Public Page Context ===
-                const contextEl = document.getElementById("page-signalr-context");
+                // 1. Close Sidebar on Navigation
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar && sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                    document.body.classList.remove('sidebar-open');
+                }
 
-                // Only FeedService is relevant here (Public Groups)
+                // 2. Handle SignalR Context (FeedService)
+                const contextEl = document.getElementById("page-signalr-context");
                 if (contextEl && window.FeedService) {
                     const newGroup = contextEl.value;
-
                     if (this.currentGroup !== newGroup) {
                         if (this.currentGroup) window.FeedService.leaveGroup(this.currentGroup);
                         window.FeedService.joinGroup(newGroup);
@@ -60,6 +64,7 @@
                     }
                 }
 
+                // 3. Re-initialize page-specific scripts
                 this.reinitScripts();
 
             } else {
@@ -73,11 +78,27 @@
     }
 
     reinitScripts() {
+        // A. Globe
         if (document.getElementById("chartdiv") && window.initGlobe) {
             window.initGlobe();
         }
+
+        // B. Calendar
         if (document.querySelector(".calendar-box") && window.initCalendar) {
             window.initCalendar();
+        }
+
+        // C. NEW: Social Feed Loader
+        // This detects if we are on the Feed page and triggers the fetch manually
+        const feedContainer = document.getElementById("feed-stream-container");
+        const contextEl = document.getElementById("page-signalr-context");
+
+        if (feedContainer && window.loadFeedHistory) {
+            // If it's the global feed, trigger the global loader
+            if (contextEl && contextEl.value === 'feed_global') {
+                window.loadFeedHistory('global', '0');
+            }
+            // If it were a user profile (future proofing), we would read different values here
         }
     }
 }
