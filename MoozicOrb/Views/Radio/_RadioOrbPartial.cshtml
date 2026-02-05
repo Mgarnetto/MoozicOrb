@@ -2,30 +2,52 @@
 
 <input type="hidden" id="page-signalr-context" value="page_radio" />
 
-<div class="orb-visualizer-container">
-    <div class="giant-eclipse-orb pulsing"></div>
-    <h2 class="now-playing-title">Live on MoozicOrb FM</h2>
+<div class="orb-visualizer-container text-center mb-5">
+    <div class="giant-eclipse-orb pulsing mx-auto mb-4"></div>
+    <h2 class="now-playing-title text-white fw-bold display-5" style="letter-spacing: -1px;">
+        LIVE ON <span style="color: var(--accent-secondary);">ORB FM</span>
+    </h2>
+    <p class="text-muted">Select a frequency to tune in</p>
 </div>
 
 <div class="section">
     <div class="radio-tuner-grid">
-        <div class="station-card active">
-            <i class="fas fa-broadcast-tower"></i>
-            <span>Global Hits</span>
+
+        <div class="station-card active" onclick="window.AudioPlayer.startLive()">
+            <div class="station-status">● LIVE</div>
+            <i class="fas fa-broadcast-tower station-icon"></i>
+            <div class="station-info">
+                <h3>Global Hits</h3>
+                <p>Top 40 & Viral Tracks</p>
+            </div>
+            <div class="visualizer-bars">
+                <span></span><span></span><span></span><span></span>
+            </div>
         </div>
-        <div class="station-card">
-            <i class="fas fa-guitar"></i>
-            <span>Rock Central</span>
+
+        <div class="station-card disabled">
+            <div class="station-status offline">OFFLINE</div>
+            <i class="fas fa-guitar station-icon"></i>
+            <div class="station-info">
+                <h3>Rock Central</h3>
+                <p>Classic & Alt Rock</p>
+            </div>
         </div>
-        <div class="station-card">
-            <i class="fas fa-drum"></i>
-            <span>Bass Basement</span>
+
+        <div class="station-card disabled">
+            <div class="station-status offline">OFFLINE</div>
+            <i class="fas fa-drum station-icon"></i>
+            <div class="station-info">
+                <h3>Bass Basement</h3>
+                <p>DnB, Jungle & Dub</p>
+            </div>
         </div>
+
     </div>
 </div>
 
-<div class="section">
-    <h3>Live Requests</h3>
-    <div id="feed_page_radio" class="chat-style-feed">
+<div class="section mt-5">
+    <h3 class="section-heading">Live Requests</h3>
+    <div id="feed_page_radio" class="chat-style-feed p-3 rounded" style="background: var(--bg-card); min-height: 200px; border: 1px solid #333;">
     </div>
 </div>

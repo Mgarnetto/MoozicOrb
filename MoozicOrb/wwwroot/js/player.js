@@ -35,7 +35,6 @@ const AudioPlayer = {
     },
 
     init() {
-        // 1. DOM Elements
         this.ui.playBtn = document.getElementById("playBtn");
         this.ui.playIcon = this.ui.playBtn?.querySelector('i');
         this.ui.timeDisplay = document.querySelector(".scrubber-container .time:first-child");
@@ -43,12 +42,12 @@ const AudioPlayer = {
         this.ui.progressBar = document.querySelector(".track-line");
         this.ui.progressFill = document.querySelector(".track-fill");
 
-        if (!this.ui.playBtn) return; // Guard clause if player bar missing
+        if (!this.ui.playBtn) return;
 
-        // 2. Audio Context (Lazy Load)
+        // Lazy load AudioContext
         this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        // 3. SignalR Setup
+        // SignalR Setup
         this.connection = new signalR.HubConnectionBuilder()
             .withUrl("/hubs/teststream")
             .withAutomaticReconnect()
@@ -56,14 +55,12 @@ const AudioPlayer = {
 
         this.connection.on("ReceiveAudio", (base64Data) => this.handleLiveAudio(base64Data));
 
-        // 4. Track Listeners
+        // Track Listeners
         this.trackAudio.addEventListener('timeupdate', () => this.updateScrubber());
         this.trackAudio.addEventListener('ended', () => this.stopTrack());
 
-        // 5. Main Button Click
+        // Controls
         this.ui.playBtn.onclick = () => this.togglePlay();
-
-        // 6. Scrubber Click
         if (this.ui.progressBar) {
             this.ui.progressBar.addEventListener('click', (e) => this.seek(e));
         }
@@ -77,44 +74,42 @@ const AudioPlayer = {
 
     async togglePlay() {
         if (this.isPlaying) {
-            // PAUSE / STOP
+            // PAUSE
             if (this.mode === 'LIVE') await this.stopLive();
             else if (this.mode === 'TRACK') this.pauseTrack();
         } else {
-            // PLAY / RESUME
+            // RESUME
             if (this.mode === 'TRACK') this.resumeTrack();
-            else await this.startLive(); // Default to Live if IDLE
+            else await this.startLive(); // Default to Live
         }
     },
 
-    // Public API called by Post Cards
     async playTrack(url, meta) {
-        // 1. Stop whatever is currently playing
+        // 1. Stop Live Stream if active
         if (this.mode === 'LIVE') await this.stopLive();
 
-        // 2. Set Mode
+        // 2. Play Track
         this.mode = 'TRACK';
         this.currentTrackMeta = meta;
-
-        // 3. Load & Play
         this.trackAudio.src = url;
         this.trackAudio.play();
         this.isPlaying = true;
 
-        // 4. Update UI
         this.updateUIState(true);
         if (this.ui.durationDisplay) this.ui.durationDisplay.innerText = meta.duration || "--:--";
-
-        // Optional: Update a title in the player bar if you have an element for it
-        // document.getElementById("player-track-title").innerText = meta.title;
     },
 
     // =========================================
-    // LIVE STREAM LOGIC (Existing SignalR)
+    // LIVE STREAM LOGIC
     // =========================================
 
     async startLive() {
         try {
+            // 1. Stop Track if active
+            if (this.mode === 'TRACK') {
+                this.stopTrack();
+            }
+
             this.mode = 'LIVE';
             await this.audioCtx.resume();
 
@@ -126,9 +121,10 @@ const AudioPlayer = {
             this.isBuffering = true;
             this.updateUIState(true);
 
-            // Reset scrubber for live
+            // UI Reset
             if (this.ui.progressFill) this.ui.progressFill.style.width = '100%';
             if (this.ui.timeDisplay) this.ui.timeDisplay.innerText = "LIVE";
+            if (this.ui.durationDisplay) this.ui.durationDisplay.innerText = "ON AIR";
 
         } catch (err) {
             console.error("Live Start Error:", err);
@@ -137,7 +133,7 @@ const AudioPlayer = {
 
     async stopLive() {
         this.isPlaying = false;
-        this.activeSources.forEach(source => { try { source.stop(); } catch (e) { } });
+        this.activeSources.forEach(s => { try { s.stop(); } catch (e) { } });
         this.activeSources = [];
         this.nextStartTime = 0;
 
@@ -199,7 +195,7 @@ const AudioPlayer = {
     },
 
     // =========================================
-    // TRACK LOGIC (HTML5 Audio)
+    // TRACK LOGIC
     // =========================================
 
     pauseTrack() {
@@ -219,29 +215,21 @@ const AudioPlayer = {
         this.trackAudio.currentTime = 0;
         this.isPlaying = false;
         this.updateUIState(false);
-        // Don't reset mode to IDLE, allows Replay
     },
 
     updateScrubber() {
         if (this.mode !== 'TRACK') return;
-
         const pct = (this.trackAudio.currentTime / this.trackAudio.duration) * 100;
         if (this.ui.progressFill) this.ui.progressFill.style.width = `${pct}%`;
-
-        if (this.ui.timeDisplay) {
-            this.ui.timeDisplay.innerText = this.formatTime(this.trackAudio.currentTime);
-        }
+        if (this.ui.timeDisplay) this.ui.timeDisplay.innerText = this.formatTime(this.trackAudio.currentTime);
     },
 
     seek(e) {
         if (this.mode !== 'TRACK' || !this.trackAudio.duration) return;
-
         const rect = this.ui.progressBar.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
         const width = rect.width;
-        const seekTime = (clickX / width) * this.trackAudio.duration;
-
-        this.trackAudio.currentTime = seekTime;
+        this.trackAudio.currentTime = (clickX / width) * this.trackAudio.duration;
     },
 
     formatTime(seconds) {
@@ -250,15 +238,11 @@ const AudioPlayer = {
         return `${min}:${sec < 10 ? '0' : ''}${sec}`;
     },
 
-    // =========================================
-    // UI UPDATES
-    // =========================================
-
     updateUIState(playing) {
         if (playing) {
             this.ui.playIcon.classList.remove('fa-play');
-            this.ui.playIcon.classList.add('fa-stop'); // Or fa-pause for tracks
-            this.ui.playBtn.style.boxShadow = "0 0 30px #00ff88"; // Glow
+            this.ui.playIcon.classList.add('fa-stop');
+            this.ui.playBtn.style.boxShadow = "0 0 30px #00ff88";
         } else {
             this.ui.playIcon.classList.remove('fa-stop');
             this.ui.playIcon.classList.remove('fa-pause');
@@ -268,9 +252,7 @@ const AudioPlayer = {
     }
 };
 
-// Initialize on Load
 document.addEventListener('DOMContentLoaded', () => {
     AudioPlayer.init();
-    // Expose globally
     window.AudioPlayer = AudioPlayer;
 });

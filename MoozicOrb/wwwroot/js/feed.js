@@ -36,9 +36,9 @@ function renderNewPost(post) {
     const container = document.getElementById('feed-stream-container');
     if (!container) return;
 
-    // Remove loading placeholder if it exists
-    const placeholder = container.querySelector('.loading-placeholder');
-    if (placeholder) placeholder.remove();
+    // Remove empty message if exists
+    const emptyMsg = document.getElementById('empty-feed-msg');
+    if (emptyMsg) emptyMsg.remove();
 
     const authorPic = post.authorPic && post.authorPic !== "null" ? post.authorPic : "/img/profile_default.jpg";
 
@@ -102,35 +102,223 @@ function renderAttachments(attachments) {
     let html = `<div class="row g-2 mt-3">`;
     attachments.forEach(media => {
         const colClass = attachments.length === 1 ? "col-12" : "col-6";
-        html += `<div class="${colClass}"><div class="post-media-container">`;
-        if (media.mediaType === 3) html += `<img src="${media.url}" class="img-fluid full-media" loading="lazy">`;
-        else if (media.mediaType === 2) html += `<video src="${media.url}" controls class="img-fluid full-media"></video>`;
-        else if (media.mediaType === 1) html += `<audio src="${media.url}" controls class="w-100 p-2"></audio>`;
-        html += `</div></div>`;
+        html += `<div class="${colClass}">`;
+
+        if (media.mediaType === 3) {
+            // IMAGE
+            html += `<div class="post-media-container"><img src="${media.url}" class="img-fluid full-media" loading="lazy"></div>`;
+        }
+        else if (media.mediaType === 2) {
+            // VIDEO
+            html += `<div class="post-media-container"><video src="${media.url}" controls class="img-fluid full-media"></video></div>`;
+        }
+        else if (media.mediaType === 1) {
+            // AUDIO - TRACK CARD
+            // We use the AudioPlayer logic here
+            const trackTitle = "Track"; // If meta isn't fully hydrated in signalR, fallback
+            const trackUrl = media.url;
+
+            html += `
+            <div class="track-card">
+                <button class="btn-track-play" 
+                        onclick="if(window.AudioPlayer) window.AudioPlayer.playTrack('${trackUrl}', { title: '${trackTitle}' })">
+                    <i class="fas fa-play"></i>
+                </button>
+                <div class="track-info">
+                    <div class="track-title">${trackTitle}</div>
+                    <div class="track-artist">Audio</div>
+                </div>
+                <div class="track-wave"><span></span><span></span><span></span><span></span><span></span></div>
+            </div>`;
+        }
+
+        html += `</div>`;
     });
     return html + `</div>`;
 }
 
 // ============================================
-// 5. EVENT LISTENERS
+// 5. CREATE POST LOGIC (UPDATED)
+// ============================================
+
+// State tracking
+let activeFileInput = null;
+let activeMediaType = null; // 'image', 'video', 'audio'
+
+window.handleFileSelect = function (input, type) {
+    // 1. Clear other inputs to ensure only one file is selected
+    document.querySelectorAll('input[type="file"]').forEach(el => {
+        if (el !== input) el.value = '';
+    });
+
+    const preview = document.getElementById('mediaPreview');
+    const titleGroup = document.getElementById('audioTitleGroup');
+    const titleInput = document.getElementById('postTitle');
+
+    // 2. Handle Logic
+    if (input.files && input.files[0]) {
+        activeFileInput = input;
+        activeMediaType = type;
+        const file = input.files[0];
+
+        // UI Setup
+        preview.classList.remove('d-none');
+        let icon = 'fa-paperclip';
+        let color = 'text-white';
+
+        if (type === 'audio') {
+            icon = 'fa-music';
+            color = 'text-warning';
+            titleGroup.style.display = 'block'; // Show title input
+            titleInput.focus();
+        } else {
+            if (type === 'video') { icon = 'fa-video'; color = 'text-primary'; }
+            if (type === 'image') { icon = 'fa-image'; color = 'text-success'; }
+            titleGroup.style.display = 'none';
+        }
+
+        // Render Preview
+        preview.innerHTML = `
+            <div class="d-flex align-items-center bg-dark p-2 rounded border border-secondary">
+                <i class="fas ${icon} ${color} me-3 fs-4"></i>
+                <div class="flex-grow-1 text-truncate">
+                    <span class="text-white small">${file.name}</span>
+                </div>
+                <button type="button" onclick="clearAttachment()" class="btn btn-sm text-muted hover-danger">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>`;
+    } else {
+        clearAttachment();
+    }
+};
+
+window.clearAttachment = function () {
+    if (activeFileInput) activeFileInput.value = '';
+    activeFileInput = null;
+    activeMediaType = null;
+
+    document.getElementById('mediaPreview').classList.add('d-none');
+    document.getElementById('mediaPreview').innerHTML = '';
+    document.getElementById('audioTitleGroup').style.display = 'none';
+    document.getElementById('postTitle').value = '';
+};
+
+// SUBMIT HANDLER
+document.addEventListener('submit', async function (e) {
+    if (e.target && e.target.id === 'createPostForm') {
+        e.preventDefault();
+
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const textArea = document.getElementById('postContent');
+        const titleInput = document.getElementById('postTitle');
+        const cType = form.querySelector('input[name="ContextType"]')?.value;
+        const cId = form.querySelector('input[name="ContextId"]')?.value;
+
+        // --- VALIDATION ---
+        if (!cType || !cId) { alert("Error: Page Context is missing."); return; }
+
+        const hasText = textArea.value.trim().length > 0;
+        const hasFile = activeFileInput && activeFileInput.files.length > 0;
+
+        if (!hasText && !hasFile) {
+            alert("Please enter text or select a file.");
+            return;
+        }
+
+        if (activeMediaType === 'audio' && !titleInput.value.trim()) {
+            alert("Please enter a Title for your track.");
+            titleInput.focus();
+            return;
+        }
+
+        // --- EXECUTION ---
+        const originalText = submitBtn.innerText;
+        submitBtn.disabled = true;
+        submitBtn.innerText = "Posting...";
+
+        try {
+            let attachments = [];
+
+            // 1. Upload File (if exists)
+            if (hasFile) {
+                const uploadData = new FormData();
+                uploadData.append("file", activeFileInput.files[0]);
+
+                // The server UploadController figures out if it's Audio/Video/Image based on extension
+                const uploadRes = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: { 'X-Session-Id': window.AuthState?.sessionId || '' },
+                    body: uploadData
+                });
+
+                if (uploadRes.ok) {
+                    const mediaResult = await uploadRes.json();
+                    attachments.push({
+                        MediaId: mediaResult.id,
+                        MediaType: mediaResult.type,
+                        Url: mediaResult.url
+                    });
+                } else {
+                    throw new Error("File upload failed.");
+                }
+            }
+
+            // 2. Post Data
+            const payload = {
+                ContextType: cType,
+                ContextId: cId,
+                Type: "standard",
+                Title: titleInput.value.trim(), // Include Title
+                Text: textArea.value,
+                MediaAttachments: attachments
+            };
+
+            const postRes = await fetch('/api/posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Session-Id': window.AuthState?.sessionId || ''
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (postRes.ok) {
+                // Success: Clean up (SignalR adds the post to UI automatically)
+                textArea.value = '';
+                clearAttachment();
+            } else {
+                const errText = await postRes.text();
+                alert("Failed to post: " + errText);
+            }
+
+        } catch (error) {
+            console.error(error);
+            alert("Error: " + error.message);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerText = originalText;
+        }
+    }
+});
+
+// ============================================
+// 6. EVENT LISTENERS (Menu, Like, Comment)
 // ============================================
 
 document.addEventListener('click', async (e) => {
-
-    // A. HAMBURGER MENU (Manual Toggle)
+    // A. HAMBURGER MENU
     const optBtn = e.target.closest('.btn-post-options');
     if (optBtn) {
         e.stopPropagation();
-        const menu = optBtn.nextElementSibling; // The <ul>
-        // Close others
+        const menu = optBtn.nextElementSibling;
         document.querySelectorAll('.post-options-menu').forEach(el => {
             if (el !== menu) el.classList.remove('show');
         });
-        // Toggle current
         if (menu) menu.classList.toggle('show');
         return;
     }
-    // Close menus if clicking anywhere else
     if (!e.target.closest('.post-options-menu')) {
         document.querySelectorAll('.post-options-menu').forEach(el => el.classList.remove('show'));
     }
@@ -153,15 +341,13 @@ document.addEventListener('click', async (e) => {
         } catch (err) { console.error(err); }
     }
 
-    // C. COMMENT TOGGLE (FIXED LOGIC)
+    // C. COMMENT TOGGLE
     const commentBtn = e.target.closest('.btn-comment-toggle');
     if (commentBtn) {
         const postId = commentBtn.dataset.id;
         const section = document.getElementById(`comments-${postId}`);
         if (section) {
             section.classList.toggle('d-none');
-
-            // Logic: If we just removed 'd-none', it means it is now visible. Load comments.
             if (!section.classList.contains('d-none')) {
                 loadComments(postId);
             }
@@ -170,7 +356,7 @@ document.addEventListener('click', async (e) => {
 });
 
 // ============================================
-// 6. COMMENT SYSTEM (FIXED FLOW)
+// 7. COMMENT SYSTEM
 // ============================================
 
 async function loadComments(postId) {
@@ -194,45 +380,36 @@ function createCommentElement(c) {
     const wrapper = document.createElement('div');
     wrapper.className = "comment-item";
     wrapper.id = `comment-${c.commentId}`;
-
     const picUrl = c.authorPic && c.authorPic !== "null" ? c.authorPic : "/img/profile_default.jpg";
 
     let html = `
         <div class="d-flex align-items-start">
             <img src="${picUrl}" class="comment-avatar" onerror="this.src='/img/profile_default.jpg'">
-            
             <div class="flex-grow-1">
                 <div class="comment-content-box">
                     <span class="comment-author">${c.authorName || 'User'}</span>
                     <span class="comment-text">${c.content}</span>
                 </div>
-
                 <div class="comment-meta-line">
                     <span class="comment-time">${c.createdAgo}</span>
                     <button class="btn-reply-toggle" onclick="toggleReplyBox(${c.commentId})">Reply</button>
                 </div>
-
                 <div id="reply-box-${c.commentId}" class="reply-input-wrapper d-none">
                      <div class="comment-input-area">
-                        <input type="text" id="reply-input-${c.commentId}" 
-                               placeholder="Reply to ${c.authorName}..." 
-                               autocomplete="off">
+                        <input type="text" id="reply-input-${c.commentId}" placeholder="Reply to ${c.authorName}..." autocomplete="off">
                         <button class="btn-comment-post" onclick="submitReply(${c.postId}, ${c.commentId})">Reply</button>
                     </div>
                 </div>
             </div>
-        </div>
-    `;
+        </div>`;
 
     const repliesContainer = document.createElement('div');
     repliesContainer.className = "replies-container";
-
     if (c.replies && c.replies.length > 0) {
         c.replies.forEach(reply => {
             repliesContainer.appendChild(createCommentElement(reply));
         });
     }
-
     wrapper.innerHTML = html;
     wrapper.appendChild(repliesContainer);
     return wrapper;
@@ -253,7 +430,6 @@ window.submitReply = async function (postId, parentId) {
     const inputId = parentId ? `reply-input-${parentId}` : `comment-input-${postId}`;
     const input = document.getElementById(inputId);
     const content = input.value;
-
     if (!content) return;
 
     try {
@@ -262,7 +438,6 @@ window.submitReply = async function (postId, parentId) {
             headers: { 'Content-Type': 'application/json', 'X-Session-Id': window.AuthState?.sessionId || '' },
             body: JSON.stringify({ PostId: postId, ParentId: parentId, Content: content })
         });
-
         if (res.ok) {
             input.value = '';
             if (parentId) {
@@ -274,53 +449,8 @@ window.submitReply = async function (postId, parentId) {
     } catch (err) { console.error(err); }
 };
 
-document.addEventListener('submit', async function (e) {
-    if (e.target && e.target.id === 'createPostForm') {
-        e.preventDefault();
-        const form = e.target;
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const textArea = form.querySelector('textarea[name="Content"]');
-        const fileInput = form.querySelector('input[name="mediaFile"]');
-        const cType = form.querySelector('input[name="ContextType"]')?.value;
-        const cId = form.querySelector('input[name="ContextId"]')?.value;
-
-        if (!cType || !cId) { alert("Error: Page Context is missing."); return; }
-        if (!textArea.value.trim() && (!fileInput.files || fileInput.files.length === 0)) { alert("Please enter text or select a file."); return; }
-
-        const originalText = submitBtn.innerText;
-        submitBtn.disabled = true;
-        submitBtn.innerText = "Posting...";
-
-        try {
-            let attachments = [];
-            if (fileInput.files.length > 0) {
-                const uploadData = new FormData();
-                uploadData.append("file", fileInput.files[0]);
-                const uploadRes = await fetch('/api/upload', { method: 'POST', headers: { 'X-Session-Id': window.AuthState?.sessionId || '' }, body: uploadData });
-                if (uploadRes.ok) {
-                    const mediaResult = await uploadRes.json();
-                    attachments.push({ MediaId: mediaResult.id, MediaType: mediaResult.type, Url: mediaResult.url });
-                }
-            }
-
-            const payload = { ContextType: cType, ContextId: cId, Type: "standard", Text: textArea.value, MediaAttachments: attachments };
-            const postRes = await fetch('/api/posts', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Id': window.AuthState?.sessionId || '' }, body: JSON.stringify(payload) });
-
-            if (postRes.ok) {
-                form.reset();
-                const preview = document.getElementById('mediaPreview');
-                if (preview) { preview.classList.add('d-none'); preview.innerHTML = ''; }
-            } else {
-                const errText = await postRes.text();
-                alert("Failed to post: " + errText);
-            }
-        } catch (error) { console.error(error); }
-        finally { submitBtn.disabled = false; submitBtn.innerText = originalText; }
-    }
-});
-
 // ============================================
-// 7. INITIAL FEED LOADER (NEW)
+// 8. INITIAL FEED LOADER
 // ============================================
 
 window.loadFeedHistory = async function (contextType, contextId) {
@@ -334,16 +464,11 @@ window.loadFeedHistory = async function (contextType, contextId) {
 
         if (res.ok) {
             const posts = await res.json();
-
-            // Clear loading spinner
             container.innerHTML = '';
-
             if (posts.length === 0) {
                 container.innerHTML = '<div class="text-center text-muted p-5"><h3>No signals found here yet.</h3><p>Be the first to broadcast.</p></div>';
                 return;
             }
-
-            // Append historical posts
             posts.forEach(post => {
                 appendHistoricalPost(post, container);
             });
@@ -360,7 +485,7 @@ function appendHistoricalPost(post, container) {
     const authorPic = post.authorPic && post.authorPic !== "null" ? post.authorPic : "/img/profile_default.jpg";
     const div = document.createElement('div');
 
-    // Identical HTML to renderNewPost but without animation for initial load
+    // Using manual HTML construction here to match the dynamic render function
     div.innerHTML = `
         <div class="post-card" id="post-${post.id}">
             <div class="post-header">

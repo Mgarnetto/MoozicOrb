@@ -2124,3 +2124,182 @@ textarea.form-control {
         transform: scaleY(0.4);
     }
 }
+
+/* =========================================
+   13. RADIO ORB TUNER UI
+   ========================================= */
+
+.radio-tuner-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+.station-card {
+    background: var(--bg-card);
+    border: 1px solid #333;
+    border-radius: 15px;
+    padding: 30px 20px;
+    text-align: center;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
+}
+
+    /* Hover Effect */
+    .station-card:hover {
+        transform: translateY(-8px);
+        border-color: var(--accent-secondary);
+        box-shadow: 0 10px 30px rgba(0, 174, 239, 0.15);
+    }
+
+    /* Active State (Currently Playing) */
+    .station-card.active {
+        border-color: var(--accent-secondary);
+        background: linear-gradient(180deg, rgba(0, 174, 239, 0.05) 0%, var(--bg-card) 100%);
+        box-shadow: 0 0 20px rgba(0, 174, 239, 0.3);
+    }
+
+    /* Disabled State */
+    .station-card.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        filter: grayscale(100%);
+    }
+
+        .station-card.disabled:hover {
+            transform: none;
+            border-color: #333;
+            box-shadow: none;
+        }
+
+/* Icons & Typography */
+.station-icon {
+    font-size: 3.5rem;
+    margin-bottom: 20px;
+    color: #555;
+    transition: 0.3s;
+}
+
+.station-card:hover .station-icon,
+.station-card.active .station-icon {
+    color: white;
+    text-shadow: 0 0 15px var(--accent-secondary);
+    transform: scale(1.1);
+}
+
+.station-info h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: white;
+}
+
+.station-info p {
+    margin: 5px 0 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+/* Status Badges */
+.station-status {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: var(--accent-secondary);
+    border: 1px solid var(--accent-secondary);
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(0, 174, 239, 0.1);
+}
+
+    .station-status.offline {
+        color: #666;
+        border-color: #444;
+        background: transparent;
+    }
+
+/* Mini Visualizer Animation for Active Card */
+.visualizer-bars {
+    display: none; /* Hidden by default */
+    gap: 4px;
+    align-items: flex-end;
+    height: 15px;
+    margin-top: 15px;
+}
+
+.station-card.active .visualizer-bars {
+    display: flex;
+}
+
+.visualizer-bars span {
+    width: 4px;
+    background: var(--accent-secondary);
+    border-radius: 2px;
+    animation: bounce 1s infinite ease-in-out;
+}
+
+    .visualizer-bars span:nth-child(1) {
+        animation-delay: 0.0s;
+        height: 60%;
+    }
+
+    .visualizer-bars span:nth-child(2) {
+        animation-delay: 0.2s;
+        height: 100%;
+    }
+
+    .visualizer-bars span:nth-child(3) {
+        animation-delay: 0.4s;
+        height: 50%;
+    }
+
+    .visualizer-bars span:nth-child(4) {
+        animation-delay: 0.1s;
+        height: 80%;
+    }
+
+@keyframes bounce {
+    0%, 100% {
+        height: 30%;
+        opacity: 0.5;
+    }
+
+    50% {
+        height: 100%;
+        opacity: 1;
+    }
+}
+
+/* =========================================
+   14. MOBILE FIXES: CREATE POST
+   ========================================= */
+@media (max-width: 768px) {
+    /* Stack elements vertically */
+    .create-post-actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 15px;
+    }
+
+        /* Spread the icons out across the top */
+        .create-post-actions .d-flex {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+    /* Make the Post button full width and taller */
+    .btn-post-submit {
+        width: 100% !important;
+        padding: 12px 0;
+    }
+}

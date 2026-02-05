@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MoozicOrb.API.Services;
-using MoozicOrb.IO; // Contains InsertAudio, InsertVideo, InsertImage
-using MoozicOrb.Services; // For SessionStore
+using MoozicOrb.IO;
+using MoozicOrb.Services;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -26,22 +26,17 @@ namespace MoozicOrb.API.Controllers
 
         private int GetUserId()
         {
-            // 1. Try Header (SPA/API way)
             var sid = _http.HttpContext?.Request.Headers["X-Session-Id"].ToString();
             if (!string.IsNullOrEmpty(sid))
             {
                 var session = SessionStore.GetSession(sid);
                 if (session != null) return session.UserId;
             }
-
-            // 2. Try Cookie (Fallback)
             int? cookieId = _http.HttpContext?.Session.GetInt32("UserId");
             if (cookieId.HasValue && cookieId.Value > 0) return cookieId.Value;
-
             return 0;
         }
 
-        // SMART DISPATCHER
         [HttpPost("")]
         public async Task<IActionResult> UploadUniversal([FromForm] IFormFile file)
         {
@@ -58,7 +53,6 @@ namespace MoozicOrb.API.Controllers
             if (ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".webm")
                 return await UploadVideo(file, uid);
 
-            // Default to Image
             return await UploadImage(file, uid);
         }
 
@@ -66,63 +60,105 @@ namespace MoozicOrb.API.Controllers
         {
             try
             {
-                // 1. Save (Now returns "media/Image/guid.jpg")
                 string relativePath = await _fileService.SaveFileAsync(file, "Image");
-
-                // 2. Process Metadata
                 string physPath = _fileService.GetPhysicalPath(relativePath);
                 int width = 0, height = 0;
+
                 try
                 {
                     var meta = await _processor.ProcessImageAsync(physPath, relativePath);
                     width = meta.Width;
                     height = meta.Height;
                 }
-                catch { /* Metadata failure shouldn't block upload */ }
+                catch { /* Ignore metadata errors */ }
 
-                // 3. Insert Record
-                // Prepend "/" so it acts as an absolute web URL: "/media/Image/guid.jpg"
-                string webUrl = "/" + relativePath;
-
+                string webUrl = "/" + relativePath.Replace("\\", "/");
                 long newId = new InsertImage().Execute(uid, file.FileName, webUrl, width, height);
 
                 return Ok(new { id = newId, type = 3, url = webUrl });
             }
-            catch (Exception ex) { return BadRequest(ex.Message); }
+            catch (Exception ex) { return BadRequest($"Image Upload Error: {ex.Message}"); }
         }
 
         private async Task<IActionResult> UploadAudio(IFormFile file, int uid)
         {
             try
             {
+                // 1. Save File (Critical)
                 string dbPath = await _fileService.SaveFileAsync(file, "Audio");
                 string physPath = _fileService.GetPhysicalPath(dbPath);
-                var meta = await _processor.ProcessAudioAsync(physPath, dbPath);
 
-                // Using InsertAudio class
-                long newId = new InsertAudio().Execute(uid, file.FileName, dbPath, meta.SnippetPath, meta.DurationSeconds);
+                // 2. Prepare Defaults (In case processing fails)
+                string snippetPath = "";
+                int duration = 0;
 
+                // 3. Try Processing (Optional)
+                try
+                {
+                    var meta = await _processor.ProcessAudioAsync(physPath, dbPath);
+                    snippetPath = meta.SnippetPath;
+                    duration = (int)meta.DurationSeconds;
+                }
+                catch (Exception procEx)
+                {
+                    Console.WriteLine($"Audio processing warning: {procEx.Message}");
+                    // Continue without metadata
+                }
+
+                // 4. Generate Web URL
                 string webUrl = "/" + dbPath.Replace("MoozicOrb/", "").Replace("\\", "/");
+
+                // 5. Insert Record (Use standard InsertAudio)
+                long newId = new InsertAudio().Execute(uid, file.FileName, webUrl, snippetPath, duration);
+
                 return Ok(new { id = newId, type = 1, url = webUrl });
             }
-            catch (Exception ex) { return BadRequest(ex.Message); }
+            catch (Exception ex)
+            {
+                return BadRequest($"Audio Upload Error: {ex.Message}");
+            }
         }
 
         private async Task<IActionResult> UploadVideo(IFormFile file, int uid)
         {
             try
             {
+                // 1. Save File
                 string dbPath = await _fileService.SaveFileAsync(file, "Video");
                 string physPath = _fileService.GetPhysicalPath(dbPath);
-                var meta = await _processor.ProcessVideoAsync(physPath, dbPath);
 
-                // Using InsertVideo class
-                long newId = new InsertVideo().Execute(uid, file.FileName, dbPath, meta.SnippetPath, meta.DurationSeconds, meta.Width, meta.Height);
+                // 2. Defaults
+                string snippetPath = "";
+                int duration = 0;
+                int width = 0;
+                int height = 0;
 
+                // 3. Try Processing
+                try
+                {
+                    var meta = await _processor.ProcessVideoAsync(physPath, dbPath);
+                    snippetPath = meta.SnippetPath;
+                    duration = (int)meta.DurationSeconds;
+                    width = meta.Width;
+                    height = meta.Height;
+                }
+                catch (Exception procEx)
+                {
+                    Console.WriteLine($"Video processing warning: {procEx.Message}");
+                }
+
+                // 4. Web URL
                 string webUrl = "/" + dbPath.Replace("MoozicOrb/", "").Replace("\\", "/");
+
+                // 5. Insert
+                long newId = new InsertVideo().Execute(uid, file.FileName, webUrl, snippetPath, duration, width, height);
+
                 return Ok(new { id = newId, type = 2, url = webUrl });
             }
-            catch (Exception ex) { return BadRequest(ex.Message); }
+            catch (Exception ex)
+            {
+                return BadRequest($"Video Upload Error: {ex.Message}");
+            }
         }
     }
 }
