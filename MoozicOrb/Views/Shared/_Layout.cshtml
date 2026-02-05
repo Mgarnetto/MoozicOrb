@@ -106,9 +106,11 @@
             </div>
         </div>
 
-        <div class="sidebar-search">
-            <i class="fa fa-search"></i>
+        <div class="sidebar-search-group">
             <input type="text" id="globalSearchInput" placeholder="Search..." onkeydown="handleGlobalSearch(event)">
+            <button type="button" onclick="triggerGlobalSearch()" class="btn-search-go">
+                GO
+            </button>
         </div>
 
         <ul class="sidebar-nav">

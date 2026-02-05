@@ -15,24 +15,20 @@ window.initGlobe = function () {
     if (typeof am5 === 'undefined') return;
 
     // 2. CRITICAL: Dispose of the previous instance if it exists.
-    // This fixes the issue where the globe doesn't render when returning to Home.
     if (globeRoot) {
         globeRoot.dispose();
         globeRoot = null;
     }
 
-    // 3. Prevent double-initialization if div is somehow already populated
+    // 3. Prevent double-initialization
     if (chartDiv.innerHTML !== "") return;
 
     am5.ready(function () {
-        // 4. Create Root and save to global variable
         var root = am5.Root.new("chartdiv");
         globeRoot = root;
 
-        // 5. Set Themes
         root.setThemes([am5themes_Animated.new(root)]);
 
-        // 6. Create Chart
         var chart = root.container.children.push(am5map.MapChart.new(root, {
             panX: "rotateX",
             panY: "rotateY",
@@ -40,12 +36,10 @@ window.initGlobe = function () {
             paddingBottom: 20, paddingTop: 20, paddingLeft: 20, paddingRight: 20
         }));
 
-        // 7. Create Polygon Series
         var polygonSeries = chart.series.push(am5map.MapPolygonSeries.new(root, {
             geoJSON: am5geodata_worldLow
         }));
 
-        // 8. Apply User Colors (Dark Grey + Cyan Stroke)
         polygonSeries.mapPolygons.template.setAll({
             fill: am5.color(0x333333),
             stroke: am5.color(0x00AEEF),
@@ -53,13 +47,11 @@ window.initGlobe = function () {
             interactive: true
         });
 
-        // Optional: Add hover state for interactivity
         polygonSeries.mapPolygons.template.states.create("hover", {
             fill: am5.color(0x00AEEF),
             stroke: am5.color(0xffffff)
         });
 
-        // 9. Add Background (Starfield/Space effect)
         var backgroundSeries = chart.series.push(am5map.MapPolygonSeries.new(root, {}));
         backgroundSeries.mapPolygons.template.setAll({
             fill: am5.color(0x000000),
@@ -70,7 +62,6 @@ window.initGlobe = function () {
             geometry: am5map.getGeoRectangle(90, 180, -90, -180)
         });
 
-        // 10. Auto-Rotation Animation
         chart.animate({
             key: "rotationX",
             from: 0,
@@ -79,7 +70,6 @@ window.initGlobe = function () {
             loops: Infinity
         });
 
-        // Appear animation
         chart.appear(1000, 100);
     });
 };
@@ -94,7 +84,6 @@ window.initCalendar = function () {
 
     let calendarDate = new Date();
 
-    // Dummy Data
     const eventsDB = [
         { date: '2026-01-15', time: '8:00 PM', title: 'Studio Session', loc: 'Atlanta, GA' },
         { date: '2026-01-22', time: '10:00 PM', title: 'Live Stream', loc: 'Twitch.tv' }
@@ -111,14 +100,12 @@ window.initCalendar = function () {
         const firstDayIndex = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-        // Empty slots
         for (let i = 0; i < firstDayIndex; i++) {
             const d = document.createElement('div');
             d.className = 'day-cell dim';
             daysBox.appendChild(d);
         }
 
-        // Days
         for (let i = 1; i <= daysInMonth; i++) {
             const d = document.createElement('div');
             d.className = 'day-cell';
@@ -143,10 +130,10 @@ window.initCalendar = function () {
     function updateEvents(y, m, d) {
         const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const list = document.querySelector('.events-list-container');
-        const dateObj = new Date(y, m, d);
 
         const selWeekday = document.querySelector('.sel-weekday');
         const selFullDate = document.querySelector('.sel-full-date');
+        const dateObj = new Date(y, m, d);
 
         if (selWeekday) selWeekday.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
         if (selFullDate) selFullDate.textContent = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -283,24 +270,39 @@ document.addEventListener('DOMContentLoaded', () => {
     window.initCalendar();
 });
 
+// =========================================
+// GLOBAL SEARCH FUNCTIONS
+// =========================================
+
+// Triggered by "GO" button or Enter Key
+window.triggerGlobalSearch = function () {
+    const input = document.getElementById('globalSearchInput');
+    const term = input.value.trim();
+
+    if (term) {
+        // 1. Navigate
+        if (window.AppRouter) {
+            window.AppRouter.navigate(`/discover/search?q=${encodeURIComponent(term)}`);
+        } else {
+            window.location.href = `/discover/search?q=${encodeURIComponent(term)}`;
+        }
+
+        // 2. FORCE CLOSE SIDEBAR (Mobile Fix)
+        const sidebar = document.getElementById('sidebar');
+        const toggle = document.getElementById('sidebarToggle');
+
+        if (sidebar) sidebar.classList.remove('active');
+        if (toggle) toggle.classList.remove('active'); // Reset hamburger icon
+        document.body.classList.remove('sidebar-open');
+
+        // Blur input to hide mobile keyboard
+        input.blur();
+    }
+};
+
+// Bind to Input Keydown
 window.handleGlobalSearch = function (e) {
     if (e.key === 'Enter') {
-        const term = e.target.value.trim();
-        if (term) {
-            // Use Router to navigate without refresh
-            if (window.AppRouter) {
-                window.AppRouter.navigate(`/discover/search?q=${encodeURIComponent(term)}`);
-            } else {
-                // Fallback
-                window.location.href = `/discover/search?q=${encodeURIComponent(term)}`;
-            }
-
-            // Optional: Close sidebar on mobile after search
-            if (window.innerWidth < 992) {
-                document.body.classList.remove('sidebar-open');
-                const toggle = document.getElementById('sidebarToggle');
-                if (toggle) toggle.classList.remove('active');
-            }
-        }
+        window.triggerGlobalSearch();
     }
 };
