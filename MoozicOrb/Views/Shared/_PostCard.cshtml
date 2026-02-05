@@ -29,7 +29,7 @@
             <ul class="post-options-menu">
                 <li><a href="#"><i class="fas fa-flag me-2"></i> Report Post</a></li>
                 <li><a href="#"><i class="fas fa-link me-2"></i> Copy Link</a></li>
-                @if (Model.AuthorId == 0)
+                @if (Model.AuthorId == 0) // Or check IsCurrentUser logic
                 {
                     <li><a href="#" class="text-danger"><i class="fas fa-trash me-2"></i> Delete</a></li>
                 }
@@ -54,20 +54,36 @@
                 {
                     var colClass = Model.Attachments.Count == 1 ? "col-12" : "col-6";
                     <div class="@colClass">
-                        <div class="post-media-container">
-                            @if (media.MediaType == 3)
-                            {
+                        @if (media.MediaType == 3) // IMAGE
+                        {
+                            <div class="post-media-container">
                                 <img src="@media.Url" class="img-fluid full-media" loading="lazy">
-                            }
-                            else if (media.MediaType == 2)
-                            {
+                            </div>
+                        }
+                        else if (media.MediaType == 2) // VIDEO
+                        {
+                            <div class="post-media-container">
                                 <video src="@media.Url" controls class="img-fluid full-media"></video>
-                            }
-                            else if (media.MediaType == 1)
-                            {
-                                <audio src="@media.Url" controls class="w-100 p-2"></audio>
-                            }
-                        </div>
+                            </div>
+                        }
+                        else if (media.MediaType == 1) // AUDIO (Track Card)
+                        {
+                            var trackTitle = !string.IsNullOrEmpty(Model.Title) ? Model.Title : "Untitled Track";
+
+                            <div class="track-card">
+                                <button class="btn-track-play"
+                                        onclick="window.AudioPlayer.playTrack('@media.Url', { title: '@trackTitle', artist: '@Model.AuthorName' })">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <div class="track-info">
+                                    <div class="track-title">@trackTitle</div>
+                                    <div class="track-artist">@Model.AuthorName</div>
+                                </div>
+                                <div class="track-wave">
+                                    <span></span><span></span><span></span><span></span><span></span>
+                                </div>
+                            </div>
+                        }
                     </div>
                 }
             </div>

@@ -2011,3 +2011,116 @@ textarea.form-control {
     border-radius: 12px;
     padding: 30px;
 }
+
+/* =========================================
+   12. TRACK CARD UI
+   ========================================= */
+.track-card {
+    display: flex;
+    align-items: center;
+    background: #0f0f0f;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 12px;
+    gap: 15px;
+    transition: 0.2s;
+    width: 100%; /* Ensure it fills container */
+}
+
+    .track-card:hover {
+        border-color: var(--accent-secondary);
+        background: #141414;
+    }
+
+.btn-track-play {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: var(--accent-secondary);
+    border: none;
+    color: #000;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding-left: 4px; /* Optical centering for play icon */
+    transition: 0.2s;
+    flex-shrink: 0;
+}
+
+    .btn-track-play:hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 15px rgba(0, 174, 239, 0.4);
+    }
+
+.track-info {
+    flex-grow: 1;
+    min-width: 0; /* allows text truncation */
+    line-height: 1.3;
+}
+
+.track-title {
+    color: white;
+    font-weight: bold;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.track-artist {
+    color: #888;
+    font-size: 0.8rem;
+}
+
+.track-wave {
+    display: flex;
+    gap: 3px;
+    align-items: flex-end;
+    height: 20px;
+    opacity: 0.5;
+}
+
+    .track-wave span {
+        width: 3px;
+        background: var(--accent-primary);
+        border-radius: 2px;
+        animation: wave 1.2s infinite ease-in-out;
+    }
+
+        /* Randomize animation heights/delays for visual effect */
+        .track-wave span:nth-child(1) {
+            height: 40%;
+            animation-delay: 0.1s;
+        }
+
+        .track-wave span:nth-child(2) {
+            height: 80%;
+            animation-delay: 0.3s;
+        }
+
+        .track-wave span:nth-child(3) {
+            height: 50%;
+            animation-delay: 0.0s;
+        }
+
+        .track-wave span:nth-child(4) {
+            height: 90%;
+            animation-delay: 0.2s;
+        }
+
+        .track-wave span:nth-child(5) {
+            height: 60%;
+            animation-delay: 0.4s;
+        }
+
+@keyframes wave {
+    0%, 100% {
+        transform: scaleY(1);
+    }
+
+    50% {
+        transform: scaleY(0.4);
+    }
+}
