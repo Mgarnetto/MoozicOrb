@@ -8,7 +8,7 @@ namespace MoozicOrb.IO
 {
     public class GetPost
     {
-        // 1. GET SINGLE POST
+        // 1. GET SINGLE POST (No Change)
         public PostDto Execute(long postId, int viewerId)
         {
             PostDto post = null;
@@ -31,22 +31,19 @@ namespace MoozicOrb.IO
             return post;
         }
 
-        // 2. GET FEED (With Profile Logic Fix)
+        // 2. GET FEED (No Change to logic, just ensures generic fetching works)
         public List<PostDto> Execute(string contextType, string contextId, int viewerId, int page = 1, int pageSize = 20)
         {
             var results = new List<PostDto>();
             int offset = (page - 1) * pageSize;
             string sql;
 
-            // FIX: If viewing a User Profile, get ALL posts by this user (user_id), 
-            // ignoring "where" they posted.
             if (contextType == "user" || contextType == "page_profile")
             {
                 sql = GetBaseSql("WHERE p.user_id = @cid ORDER BY p.created_at DESC LIMIT @limit OFFSET @offset");
             }
             else
             {
-                // Social Feed / Global / Location: Strict context match
                 sql = GetBaseSql("WHERE p.context_type = @ctype AND p.context_id = @cid ORDER BY p.created_at DESC LIMIT @limit OFFSET @offset");
             }
 
@@ -71,24 +68,25 @@ namespace MoozicOrb.IO
             return results;
         }
 
-        // 3. GENERIC DISCOVERY (Restored for Social Feed usage)
+        // 3. GENERIC DISCOVERY (Social Feed - Random Mix)
         public List<PostDto> GetDiscoveryFeed(int viewerId, int count = 20)
         {
-            // Returns random mix of ALL post types (Text, Image, Video, Audio)
+            // Returns random mix of ALL post types
             return GetRandomPosts(viewerId, count, null);
         }
 
-        // 4. AUDIO DISCOVERY (New: For Discovery Page only)
+        // 4. AUDIO DISCOVERY (Discover Page - Audio Only)
         public List<PostDto> GetAudioDiscoveryFeed(int viewerId, int count = 20)
         {
             // Filter: Must have Audio media (type 1)
             return GetRandomPosts(viewerId, count, "AND EXISTS (SELECT 1 FROM post_media pm WHERE pm.post_id = p.post_id AND pm.media_type = 1)");
         }
 
-        // Shared Random Logic
+        // Shared Random Logic Helper
         private List<PostDto> GetRandomPosts(int viewerId, int count, string additionalFilter)
         {
             var results = new List<PostDto>();
+            // Note: ORDER BY RAND() is heavy on huge DBs, but fine for now.
             string sql = GetBaseSql($"WHERE 1=1 {additionalFilter} ORDER BY RAND() LIMIT @limit");
 
             using (var conn = new MySqlConnection(DBConn1.ConnectionString))
@@ -108,17 +106,16 @@ namespace MoozicOrb.IO
             return results;
         }
 
-        // 5. GENERIC SEARCH (For Social Feed)
+        // 5. GENERIC SEARCH (Social Feed)
         public List<PostDto> SearchPosts(string term, int viewerId)
         {
             string whereClause = "WHERE (p.content_text LIKE @term OR p.title LIKE @term) ORDER BY p.created_at DESC LIMIT 20";
             return ExecuteSearch(term, viewerId, whereClause);
         }
 
-        // 6. AUDIO SEARCH (New: For Discovery Page)
+        // 6. AUDIO SEARCH (Discover Page)
         public List<PostDto> SearchAudio(string term, int viewerId)
         {
-            // Search text/title BUT restrict to posts containing Audio
             string whereClause = @"
                 WHERE (p.content_text LIKE @term OR p.title LIKE @term) 
                 AND EXISTS (SELECT 1 FROM post_media pm WHERE pm.post_id = p.post_id AND pm.media_type = 1)
@@ -149,7 +146,7 @@ namespace MoozicOrb.IO
             return results;
         }
 
-        // --- SQL GENERATOR ---
+        // --- SQL GENERATOR & MAPPING (Keep existing) ---
         private string GetBaseSql(string whereClause)
         {
             return $@"
