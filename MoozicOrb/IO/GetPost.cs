@@ -219,5 +219,31 @@ namespace MoozicOrb.IO
             if (span.TotalHours < 24) return $"{span.Hours}h ago";
             return $"{span.Days}d ago";
         }
+
+        public List<PostDto> SearchPosts(string term, int viewerId)
+        {
+            // Simple text search on content or title
+            string whereClause = "WHERE (p.content_text LIKE @term OR p.title LIKE @term) ORDER BY p.created_at DESC LIMIT 20";
+
+            var results = new List<PostDto>();
+            string sql = GetBaseSql(whereClause);
+
+            using (var conn = new MySqlConnection(DBConn1.ConnectionString))
+            {
+                conn.Open();
+                using (var cmd = new MySqlCommand(sql, conn))
+                {
+                    cmd.Parameters.AddWithValue("@term", "%" + term + "%");
+                    cmd.Parameters.AddWithValue("@vid", viewerId); // for IsLiked status
+
+                    using (var rdr = cmd.ExecuteReader())
+                    {
+                        while (rdr.Read()) results.Add(MapReaderToDto(rdr));
+                    }
+                }
+                if (results.Count > 0) AttachMediaToPosts(conn, results);
+            }
+            return results;
+        }
     }
 }

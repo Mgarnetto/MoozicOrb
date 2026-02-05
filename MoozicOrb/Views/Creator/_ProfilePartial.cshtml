@@ -1,16 +1,24 @@
 ﻿@model MoozicOrb.Models.CreatorViewModel
 
+@{
+    var contextType = "user";
+    var contextId = Model.UserId.ToString();
+}
+
 <input type="hidden" id="page-signalr-context" value="@Model.SignalRGroup" />
 
 <div class="hero profile-hero position-relative mb-4">
-    <div class="hero-bg" style="background-image: url('@Model.CoverImage'); height: 280px; background-size: cover; background-position: center;">
+    <div class="hero-bg" style="background-image: url('@(string.IsNullOrEmpty(Model.CoverImage) ? "/img/default_cover.jpg" : Model.CoverImage)'); height: 280px; background-size: cover; background-position: center;">
         <div style="width: 100%; height: 100%; background: linear-gradient(to bottom, transparent, rgba(18,18,18,0.4));"></div>
     </div>
 
     <div class="profile-hero-content container">
         <div class="d-flex flex-wrap align-items-end hero-flex-wrapper">
 
-            <img src="@Model.ProfilePic" class="profile-avatar">
+            <img src="@(string.IsNullOrEmpty(Model.ProfilePic) ? "/img/profile_default.jpg" : Model.ProfilePic)"
+                 class="profile-avatar"
+                 alt="@Model.DisplayName"
+                 onerror="this.src='/img/profile_default.jpg'">
 
             <div class="hero-text-block flex-grow-1">
                 <h1 class="text-white fw-bold mb-1" style="font-size: 2.5rem; text-shadow: 0 4px 8px rgba(0,0,0,0.8);">@Model.DisplayName</h1>
@@ -19,7 +27,7 @@
                 <div class="action-buttons-container">
                     @if (Model.IsCurrentUser)
                     {
-                        <a href="/settings" class="btn-sidebar-fill">
+                        <a href="/settings/page" class="btn btn-sidebar-fill text-decoration-none d-inline-flex align-items-center">
                             <i class="fas fa-cog me-2"></i>Edit Profile
                         </a>
                     }
@@ -39,36 +47,51 @@
 <div class="page-grid-layout">
 
     <div class="main-column">
-        @foreach (var layoutItem in Model.LayoutOrder)
+        @if (Model.LayoutOrder == null || Model.LayoutOrder.Count == 0)
         {
-            <div class="mb-5" id="section-@layoutItem">
-                @if (layoutItem == "posts")
-                {
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <h4 class="section-heading mb-0">Updates</h4>
-                    </div>
-
-                    @await Component.InvokeAsync("PostFeed", new {
-                    contextType = "user",
+            <div class="mb-5">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h4 class="section-heading mb-0">Updates</h4>
+                </div>
+                @await Component.InvokeAsync("PostFeed", new {
+                contextType = "user",
+                        contextId = Model.UserId.ToString(),
+                        allowPosting = Model.IsCurrentUser,
+                        inputType = "standard"
+                        })
+        </div>
+                }
+                else
+        {
+            @foreach (var layoutItem in Model.LayoutOrder)
+            {
+                <div class="mb-5" id="section-@layoutItem">
+                    @if (layoutItem == "posts")
+                    {
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h4 class="section-heading mb-0">Updates</h4>
+                        </div>
+                        @await Component.InvokeAsync("PostFeed", new {
+                        contextType = "user",
                         contextId = Model.UserId.ToString(),
                         allowPosting = Model.IsCurrentUser,
                         inputType = "standard"
                         })
                         }
                         else if (layoutItem == "music")
-            {
-                <h4 class="section-heading">Discography</h4>
-                <div class="profile-card text-center text-muted py-5">
-                    <i class="fas fa-compact-disc mb-3 fa-3x" style="opacity: 0.5;"></i>
-                    <p>No tracks uploaded yet.</p>
-                </div>
-            }
-            else if (layoutItem == "store")
-            {
-                <h4 class="section-heading">Merch Store</h4>
-                <div class="profile-card">
-                    @await Component.InvokeAsync("PostFeed", new {
-                    contextType = "user_store",
+                {
+                    <h4 class="section-heading">Discography</h4>
+                    <div class="profile-card text-center text-muted py-5">
+                        <i class="fas fa-compact-disc mb-3 fa-3x" style="opacity: 0.5;"></i>
+                        <p>No tracks uploaded yet.</p>
+                    </div>
+                }
+                else if (layoutItem == "store")
+                {
+                    <h4 class="section-heading">Merch Store</h4>
+                    <div class="profile-card">
+                        @await Component.InvokeAsync("PostFeed", new {
+                        contextType = "user_store",
                                 contextId = Model.UserId.ToString(),
                                 allowPosting = Model.IsCurrentUser,
                                 inputType = "classified"
@@ -77,14 +100,14 @@
                         }
         </div>
                 }
+                }
     </div>
 
     <aside class="side-column">
-
         <div class="widget-card">
             <h5 class="widget-title">About</h5>
             <p class="widget-text text-muted">
-                User Bio goes here. This is a placeholder for extended information about the creator.
+                @(string.IsNullOrEmpty(Model.Bio) ? "No bio information provided." : Model.Bio)
             </p>
             <div class="separator my-3" style="background: #333;"></div>
             <div class="text-muted small">
@@ -96,20 +119,19 @@
             <h5 class="widget-title mb-3">Network</h5>
             <div class="d-flex justify-content-between text-center mb-3">
                 <div>
-                    <strong class="d-block text-white fs-5">1.2k</strong>
+                    <strong class="d-block text-white fs-5">0</strong>
                     <span class="text-muted small">Followers</span>
                 </div>
                 <div>
-                    <strong class="d-block text-white fs-5">450</strong>
+                    <strong class="d-block text-white fs-5">0</strong>
                     <span class="text-muted small">Following</span>
                 </div>
                 <div>
-                    <strong class="d-block text-white fs-5">85</strong>
+                    <strong class="d-block text-white fs-5">0</strong>
                     <span class="text-muted small">Tracks</span>
                 </div>
             </div>
         </div>
-
     </aside>
 
 </div>

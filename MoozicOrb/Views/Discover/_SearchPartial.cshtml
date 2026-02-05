@@ -1,0 +1,56 @@
+﻿@model MoozicOrb.Models.SearchViewModel
+
+<div class="section pt-4">
+    <h3 class="section-heading mb-4">Results for "@Model.Query"</h3>
+
+    @if ((Model.Users == null || Model.Users.Count == 0) && (Model.Posts == null || Model.Posts.Count == 0))
+    {
+        <div class="text-center text-muted py-5">
+            <i class="fas fa-search fa-3x mb-3" style="opacity: 0.3;"></i>
+            <p>No results found matching your query.</p>
+        </div>
+    }
+    else
+    {
+        @if (Model.Users != null && Model.Users.Count > 0)
+        {
+            <h5 class="text-white border-bottom border-secondary pb-2 mb-3">People</h5>
+            <div class="row g-3 mb-5">
+                @foreach (var user in Model.Users)
+                {
+                    <div class="col-md-6 col-lg-4">
+                        <div class="d-flex align-items-center bg-card p-3 rounded border border-dark h-100">
+                            <a href="/creator/@user.UserId" class="text-decoration-none">
+                                <img src="@(string.IsNullOrEmpty(user.ProfilePic) ? "/img/profile_default.jpg" : user.ProfilePic)"
+                                     class="rounded-circle border border-secondary me-3"
+                                     width="60" height="60"
+                                     style="object-fit: cover;"
+                                     onerror="this.src='/img/profile_default.jpg'">
+                            </a>
+                            <div>
+                                <a href="/creator/@user.UserId" class="text-white fw-bold text-decoration-none">
+                                    @user.DisplayName
+                                </a>
+                                <div class="text-muted small">@("@" + user.UserName)</div>
+                            </div>
+                            <div class="ms-auto">
+                                <button class="btn btn-sm btn-outline-primary rounded-pill">View</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (Model.Posts != null && Model.Posts.Count > 0)
+        {
+            <h5 class="text-white border-bottom border-secondary pb-2 mb-3">Posts</h5>
+            <div class="feed-container" style="max-width: 800px;">
+                @foreach (var post in Model.Posts)
+                {
+                    @await Html.PartialAsync("_PostCard", post)
+                }
+            </div>
+        }
+    }
+</div>

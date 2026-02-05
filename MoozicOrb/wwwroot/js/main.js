@@ -282,3 +282,25 @@ document.addEventListener('DOMContentLoaded', () => {
     window.initGlobe();
     window.initCalendar();
 });
+
+window.handleGlobalSearch = function (e) {
+    if (e.key === 'Enter') {
+        const term = e.target.value.trim();
+        if (term) {
+            // Use Router to navigate without refresh
+            if (window.AppRouter) {
+                window.AppRouter.navigate(`/discover/search?q=${encodeURIComponent(term)}`);
+            } else {
+                // Fallback
+                window.location.href = `/discover/search?q=${encodeURIComponent(term)}`;
+            }
+
+            // Optional: Close sidebar on mobile after search
+            if (window.innerWidth < 992) {
+                document.body.classList.remove('sidebar-open');
+                const toggle = document.getElementById('sidebarToggle');
+                if (toggle) toggle.classList.remove('active');
+            }
+        }
+    }
+};

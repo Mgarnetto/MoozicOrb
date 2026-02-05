@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using MoozicOrb.API.Models;
+using System.Collections.Generic;
 
 namespace MoozicOrb.Models
 {
@@ -114,5 +115,14 @@ namespace MoozicOrb.Models
         public string Title { get; set; }
         public string Artist { get; set; }
         public string CoverArt { get; set; }
+    }
+
+    // Add to Models/ViewModels.cs
+
+    public class SearchViewModel : BaseSignalRViewModel
+    {
+        public string Query { get; set; }
+        public List<User> Users { get; set; } = new();
+        public List<PostDto> Posts { get; set; } = new();
     }
 }
