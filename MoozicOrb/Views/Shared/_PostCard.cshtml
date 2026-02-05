@@ -60,10 +60,24 @@
                                 <img src="@media.Url" class="img-fluid full-media" loading="lazy">
                             </div>
                         }
-                        else if (media.MediaType == 2) // VIDEO
+                        else if (media.MediaType == 2) // VIDEO (CUSTOM PLAYER)
                         {
-                            <div class="post-media-container">
-                                <video src="@media.Url" controls class="img-fluid full-media"></video>
+                            <div class="custom-video-wrapper">
+                                <video src="@media.Url" class="custom-video" preload="metadata"></video>
+
+                                <div class="video-overlay-play">
+                                    <i class="fas fa-play"></i>
+                                </div>
+
+                                <div class="video-controls">
+                                    <button class="v-btn v-play-toggle"><i class="fas fa-play"></i></button>
+
+                                    <div class="v-progress-container">
+                                        <div class="v-progress-fill"></div>
+                                    </div>
+
+                                    <button class="v-btn v-fullscreen-toggle"><i class="fas fa-expand"></i></button>
+                                </div>
                             </div>
                         }
                         else if (media.MediaType == 1) // AUDIO (Track Card)

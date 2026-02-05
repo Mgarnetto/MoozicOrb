@@ -1677,14 +1677,16 @@ textarea.form-control {
     align-items: center;
     justify-content: center;
     width: 100%;
+    max-height: 400px; /* Enforce limit here too */
+    background-color: #000; /* nice background for letterboxing */
     border: 1px solid #1f1f1f;
 }
 
 .full-media {
     width: 100%;
-    height: auto;
-    max-height: 550px;
-    object-fit: contain;
+    height: 100%; /* Changed from auto to fill container if needed */
+    max-height: 400px; /* Reduced from 550px */
+    object-fit: cover; /* Images look better cropped than stretched */
     display: block;
 }
 
@@ -2302,4 +2304,151 @@ textarea.form-control {
         width: 100% !important;
         padding: 12px 0;
     }
+}
+
+/* =========================================
+   15. CUSTOM VIDEO PLAYER
+   ========================================= */
+.custom-video-wrapper {
+    position: relative;
+    width: 100%;
+    max-height: 400px; /* THE FIX: Limits height */
+    background: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex; /* Centers the video */
+    align-items: center;
+    justify-content: center;
+    group: video-group; /* For hover detection */
+}
+
+/* The actual video element */
+.custom-video {
+    width: 100%;
+    height: 100%; /* Fill the wrapper */
+    max-height: 400px; /* Double safety */
+    object-fit: contain; /* Don't crop video! */
+    display: block;
+    cursor: pointer;
+}
+
+/* Big Center Play Button */
+.video-overlay-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70px;
+    height: 70px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid var(--accent-secondary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-secondary);
+    font-size: 2rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 10;
+    backdrop-filter: blur(4px);
+    padding-left: 5px; /* Visual center adjustment */
+}
+
+    .video-overlay-play:hover {
+        background: var(--accent-secondary);
+        color: #000;
+        box-shadow: 0 0 30px rgba(0, 174, 239, 0.5);
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+
+/* Hide big button when playing */
+.custom-video-wrapper.playing .video-overlay-play {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(0.8);
+}
+
+/* Bottom Control Bar */
+.video-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    padding: 20px 15px 10px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    opacity: 0; /* Hidden by default */
+    transform: translateY(10px);
+    transition: 0.3s;
+    z-index: 20;
+}
+
+/* Show controls on hover or pause */
+.custom-video-wrapper:hover .video-controls,
+.custom-video-wrapper:not(.playing) .video-controls {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.v-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.1rem;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: 0.2s;
+    padding: 0;
+}
+
+    .v-btn:hover {
+        color: var(--accent-secondary);
+        opacity: 1;
+        text-shadow: 0 0 10px var(--accent-secondary);
+    }
+
+/* Scrubber / Progress Bar */
+.v-progress-container {
+    flex-grow: 1;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
+    cursor: pointer;
+    position: relative;
+    transition: 0.2s;
+}
+
+    .v-progress-container:hover {
+        height: 8px; /* Expand on hover */
+    }
+
+.v-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent-secondary);
+    border-radius: 5px;
+    position: relative;
+    box-shadow: 0 0 10px var(--accent-secondary);
+}
+
+    /* Little handle on the bar */
+    .v-progress-fill::after {
+        content: '';
+        position: absolute;
+        right: -4px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 10px;
+        height: 10px;
+        background: white;
+        border-radius: 50%;
+        opacity: 0;
+        transition: 0.2s;
+    }
+
+.v-progress-container:hover .v-progress-fill::after {
+    opacity: 1;
 }

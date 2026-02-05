@@ -100,22 +100,42 @@ function renderNewPost(post) {
 function renderAttachments(attachments) {
     if (!attachments || attachments.length === 0) return '';
     let html = `<div class="row g-2 mt-3">`;
+
     attachments.forEach(media => {
         const colClass = attachments.length === 1 ? "col-12" : "col-6";
         html += `<div class="${colClass}">`;
 
         if (media.mediaType === 3) {
             // IMAGE
-            html += `<div class="post-media-container"><img src="${media.url}" class="img-fluid full-media" loading="lazy"></div>`;
+            html += `
+            <div class="post-media-container">
+                <img src="${media.url}" class="img-fluid full-media" loading="lazy">
+            </div>`;
         }
         else if (media.mediaType === 2) {
-            // VIDEO
-            html += `<div class="post-media-container"><video src="${media.url}" controls class="img-fluid full-media"></video></div>`;
+            // VIDEO (CUSTOM PLAYER UI)
+            html += `
+            <div class="custom-video-wrapper">
+                <video src="${media.url}" class="custom-video" preload="metadata"></video>
+                
+                <div class="video-overlay-play">
+                    <i class="fas fa-play"></i>
+                </div>
+
+                <div class="video-controls">
+                    <button class="v-btn v-play-toggle"><i class="fas fa-play"></i></button>
+                    
+                    <div class="v-progress-container">
+                        <div class="v-progress-fill"></div>
+                    </div>
+                    
+                    <button class="v-btn v-fullscreen-toggle"><i class="fas fa-expand"></i></button>
+                </div>
+            </div>`;
         }
         else if (media.mediaType === 1) {
             // AUDIO - TRACK CARD
-            // We use the AudioPlayer logic here
-            const trackTitle = "Track"; // If meta isn't fully hydrated in signalR, fallback
+            const trackTitle = "Track";
             const trackUrl = media.url;
 
             html += `
@@ -138,7 +158,7 @@ function renderAttachments(attachments) {
 }
 
 // ============================================
-// 5. CREATE POST LOGIC (UPDATED)
+// 5. CREATE POST LOGIC
 // ============================================
 
 // State tracking
@@ -152,7 +172,8 @@ window.handleFileSelect = function (input, type) {
     });
 
     const preview = document.getElementById('mediaPreview');
-    const titleGroup = document.getElementById('audioTitleGroup');
+    // CHANGED: ID updated to 'postTitleGroup'
+    const titleGroup = document.getElementById('postTitleGroup');
     const titleInput = document.getElementById('postTitle');
 
     // 2. Handle Logic
@@ -169,10 +190,18 @@ window.handleFileSelect = function (input, type) {
         if (type === 'audio') {
             icon = 'fa-music';
             color = 'text-warning';
-            titleGroup.style.display = 'block'; // Show title input
+            titleGroup.style.display = 'block';
+            titleInput.placeholder = "Track Title (Required)";
             titleInput.focus();
-        } else {
-            if (type === 'video') { icon = 'fa-video'; color = 'text-primary'; }
+        }
+        else if (type === 'video') {
+            icon = 'fa-video';
+            color = 'text-primary';
+            // NEW: Show title input for Video too
+            titleGroup.style.display = 'block';
+            titleInput.placeholder = "Video Title (Optional)";
+        }
+        else {
             if (type === 'image') { icon = 'fa-image'; color = 'text-success'; }
             titleGroup.style.display = 'none';
         }
@@ -200,7 +229,9 @@ window.clearAttachment = function () {
 
     document.getElementById('mediaPreview').classList.add('d-none');
     document.getElementById('mediaPreview').innerHTML = '';
-    document.getElementById('audioTitleGroup').style.display = 'none';
+
+    // CHANGED: ID updated to 'postTitleGroup'
+    document.getElementById('postTitleGroup').style.display = 'none';
     document.getElementById('postTitle').value = '';
 };
 
@@ -227,6 +258,7 @@ document.addEventListener('submit', async function (e) {
             return;
         }
 
+        // Only enforce title for Audio
         if (activeMediaType === 'audio' && !titleInput.value.trim()) {
             alert("Please enter a Title for your track.");
             titleInput.focus();
@@ -246,7 +278,6 @@ document.addEventListener('submit', async function (e) {
                 const uploadData = new FormData();
                 uploadData.append("file", activeFileInput.files[0]);
 
-                // The server UploadController figures out if it's Audio/Video/Image based on extension
                 const uploadRes = await fetch('/api/upload', {
                     method: 'POST',
                     headers: { 'X-Session-Id': window.AuthState?.sessionId || '' },
@@ -261,7 +292,8 @@ document.addEventListener('submit', async function (e) {
                         Url: mediaResult.url
                     });
                 } else {
-                    throw new Error("File upload failed.");
+                    const errText = await uploadRes.text();
+                    throw new Error("Upload failed: " + errText);
                 }
             }
 
@@ -270,7 +302,7 @@ document.addEventListener('submit', async function (e) {
                 ContextType: cType,
                 ContextId: cId,
                 Type: "standard",
-                Title: titleInput.value.trim(), // Include Title
+                Title: titleInput.value.trim(),
                 Text: textArea.value,
                 MediaAttachments: attachments
             };
@@ -285,7 +317,6 @@ document.addEventListener('submit', async function (e) {
             });
 
             if (postRes.ok) {
-                // Success: Clean up (SignalR adds the post to UI automatically)
                 textArea.value = '';
                 clearAttachment();
             } else {
@@ -485,7 +516,6 @@ function appendHistoricalPost(post, container) {
     const authorPic = post.authorPic && post.authorPic !== "null" ? post.authorPic : "/img/profile_default.jpg";
     const div = document.createElement('div');
 
-    // Using manual HTML construction here to match the dynamic render function
     div.innerHTML = `
         <div class="post-card" id="post-${post.id}">
             <div class="post-header">
@@ -504,6 +534,7 @@ function appendHistoricalPost(post, container) {
                     <button class="btn btn-link text-muted p-0 btn-post-options" type="button"><i class="fas fa-ellipsis-h"></i></button>
                     <ul class="post-options-menu">
                         <li><a href="#"><i class="fas fa-flag me-2"></i> Report Post</a></li>
+                        <li><a href="#"><i class="fas fa-link me-2"></i> Copy Link</a></li>
                     </ul>
                 </div>
             </div>

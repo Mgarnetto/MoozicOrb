@@ -32,8 +32,10 @@ namespace MoozicOrb.API.Controllers
                 var session = SessionStore.GetSession(sid);
                 if (session != null) return session.UserId;
             }
+            // Fallback for cookies if used
             int? cookieId = _http.HttpContext?.Session.GetInt32("UserId");
             if (cookieId.HasValue && cookieId.Value > 0) return cookieId.Value;
+
             return 0;
         }
 
@@ -64,15 +66,21 @@ namespace MoozicOrb.API.Controllers
                 string physPath = _fileService.GetPhysicalPath(relativePath);
                 int width = 0, height = 0;
 
+                // TOLERANT PROCESSING
                 try
                 {
                     var meta = await _processor.ProcessImageAsync(physPath, relativePath);
                     width = meta.Width;
                     height = meta.Height;
                 }
-                catch { /* Ignore metadata errors */ }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Upload] Image metadata failed: {ex.Message}. Continuing...");
+                }
 
                 string webUrl = "/" + relativePath.Replace("\\", "/");
+
+                // Use your new InsertImage class
                 long newId = new InsertImage().Execute(uid, file.FileName, webUrl, width, height);
 
                 return Ok(new { id = newId, type = 3, url = webUrl });
@@ -84,39 +92,35 @@ namespace MoozicOrb.API.Controllers
         {
             try
             {
-                // 1. Save File (Critical)
+                // 1. Save File (Critical Step)
                 string dbPath = await _fileService.SaveFileAsync(file, "Audio");
                 string physPath = _fileService.GetPhysicalPath(dbPath);
 
-                // 2. Prepare Defaults (In case processing fails)
+                // 2. Prepare Defaults
                 string snippetPath = "";
                 int duration = 0;
 
-                // 3. Try Processing (Optional)
+                // 3. Try Metadata (Optional Step)
                 try
                 {
                     var meta = await _processor.ProcessAudioAsync(physPath, dbPath);
                     snippetPath = meta.SnippetPath;
                     duration = (int)meta.DurationSeconds;
                 }
-                catch (Exception procEx)
+                catch (Exception ex)
                 {
-                    Console.WriteLine($"Audio processing warning: {procEx.Message}");
-                    // Continue without metadata
+                    Console.WriteLine($"[Upload] Audio processing failed: {ex.Message}. Continuing...");
                 }
 
-                // 4. Generate Web URL
+                // 4. Format Path
                 string webUrl = "/" + dbPath.Replace("MoozicOrb/", "").Replace("\\", "/");
 
-                // 5. Insert Record (Use standard InsertAudio)
+                // 5. Insert Record (Safe execution with new class)
                 long newId = new InsertAudio().Execute(uid, file.FileName, webUrl, snippetPath, duration);
 
                 return Ok(new { id = newId, type = 1, url = webUrl });
             }
-            catch (Exception ex)
-            {
-                return BadRequest($"Audio Upload Error: {ex.Message}");
-            }
+            catch (Exception ex) { return BadRequest($"Audio Upload Error: {ex.Message}"); }
         }
 
         private async Task<IActionResult> UploadVideo(IFormFile file, int uid)
@@ -127,38 +131,35 @@ namespace MoozicOrb.API.Controllers
                 string dbPath = await _fileService.SaveFileAsync(file, "Video");
                 string physPath = _fileService.GetPhysicalPath(dbPath);
 
-                // 2. Defaults
-                string snippetPath = "";
+                // 2. Prepare Defaults
+                string thumbPath = "";
                 int duration = 0;
                 int width = 0;
                 int height = 0;
 
-                // 3. Try Processing
+                // 3. Try Metadata
                 try
                 {
                     var meta = await _processor.ProcessVideoAsync(physPath, dbPath);
-                    snippetPath = meta.SnippetPath;
+                    thumbPath = meta.SnippetPath;
                     duration = (int)meta.DurationSeconds;
                     width = meta.Width;
                     height = meta.Height;
                 }
-                catch (Exception procEx)
+                catch (Exception ex)
                 {
-                    Console.WriteLine($"Video processing warning: {procEx.Message}");
+                    Console.WriteLine($"[Upload] Video processing failed: {ex.Message}. Continuing...");
                 }
 
-                // 4. Web URL
+                // 4. Format Path
                 string webUrl = "/" + dbPath.Replace("MoozicOrb/", "").Replace("\\", "/");
 
-                // 5. Insert
-                long newId = new InsertVideo().Execute(uid, file.FileName, webUrl, snippetPath, duration, width, height);
+                // 5. Insert Record
+                long newId = new InsertVideo().Execute(uid, file.FileName, webUrl, thumbPath, duration, width, height);
 
                 return Ok(new { id = newId, type = 2, url = webUrl });
             }
-            catch (Exception ex)
-            {
-                return BadRequest($"Video Upload Error: {ex.Message}");
-            }
+            catch (Exception ex) { return BadRequest($"Video Upload Error: {ex.Message}"); }
         }
     }
 }
