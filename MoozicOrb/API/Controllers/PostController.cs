@@ -141,15 +141,21 @@ namespace MoozicOrb.API.Controllers
                 int viewerId = GetViewerId();
                 var io = new GetPost();
 
-                // ALGORITHM: RANDOM DISCOVERY
-                // If the client asks for "global", we ignore context ID and fetch random posts.
-                if (contextType == "global")
+                // 1. SOCIAL FEED: Random mix of everything
+                if (contextType == "global" || contextType == "feed_global")
                 {
                     var randomPosts = io.GetDiscoveryFeed(viewerId);
                     return Ok(randomPosts);
                 }
 
-                // STANDARD FETCH (User Page, Location Page, etc.)
+                // 2. DISCOVERY PAGE: Random Audio Tracks ONLY
+                if (contextType == "discover")
+                {
+                    var audioPosts = io.GetAudioDiscoveryFeed(viewerId);
+                    return Ok(audioPosts);
+                }
+
+                // 3. STANDARD FETCH (User Page, Location Page, etc.)
                 var posts = io.Execute(contextType, contextId, viewerId, page);
                 return Ok(posts);
             }

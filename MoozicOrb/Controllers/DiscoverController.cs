@@ -3,7 +3,7 @@ using MoozicOrb.API.Models;
 using MoozicOrb.Extensions;
 using MoozicOrb.IO;
 using MoozicOrb.Models;
-using MoozicOrb.Services; // For SessionStore
+using MoozicOrb.Services;
 using System.Collections.Generic;
 
 namespace MoozicOrb.Controllers
@@ -29,12 +29,11 @@ namespace MoozicOrb.Controllers
         [HttpGet("search")]
         public IActionResult Search(string q)
         {
-            // 1. Get Viewer ID (optional, for 'isLiked' logic)
+            // 1. Get Viewer ID 
             string sid = Request.Headers["X-Session-Id"].ToString();
             var session = SessionStore.GetSession(sid);
             int viewerId = session?.UserId ?? 0;
 
-            // 2. Perform Search
             var model = new SearchViewModel
             {
                 Query = q,
@@ -44,11 +43,13 @@ namespace MoozicOrb.Controllers
 
             if (!string.IsNullOrWhiteSpace(q))
             {
+                // Keep searching users as normal
                 model.Users = _userQuery.SearchUsers(q);
-                model.Posts = _postQuery.SearchPosts(q, viewerId);
+
+                // FIX: Use SearchAudio to strictly return music tracks
+                model.Posts = _postQuery.SearchAudio(q, viewerId);
             }
 
-            // 3. Return View
             if (Request.IsSpaRequest())
             {
                 return PartialView("_SearchPartial", model);
