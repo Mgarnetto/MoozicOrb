@@ -74,6 +74,9 @@ namespace MoozicOrb.Models
         public string Bio { get; set; }
         public string CoverImage { get; set; }
         public string BookingEmail { get; set; }
+
+        // Add if you want to support layout saving in the same model
+        public List<string> LayoutOrder { get; set; }
     }
 
     // ==========================================
@@ -81,7 +84,7 @@ namespace MoozicOrb.Models
     // ==========================================
     // These represent the small chunks of data inside lists
 
-    
+
 
     public class ArtistDto
     {

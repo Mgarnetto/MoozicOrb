@@ -368,6 +368,11 @@ input[type="radio"] {
     pointer-events: none;
 }
 
+/* NEW: Hide Profile in Sidebar when Logged Out */
+.auth-off .sidebar-profile {
+    display: none !important;
+}
+
 .sidebar-profile {
     display: flex;
     flex-direction: column;
@@ -1921,4 +1926,70 @@ textarea.form-control {
 /* UTILITY */
 .d-none {
     display: none !important;
+}
+
+/* =========================================
+   11. SETTINGS LAYOUT
+   ========================================= */
+.settings-grid-layout {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 30px;
+    max-width: 1100px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+@media (max-width: 768px) {
+    .settings-grid-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Sidebar Styles */
+.settings-sidebar {
+    background: var(--bg-card);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 20px;
+    height: fit-content;
+}
+
+.settings-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.settings-link {
+    display: block;
+    padding: 10px 15px;
+    color: #aaa;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+}
+
+    .settings-link:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+    }
+
+    .settings-link.active {
+        background: var(--accent-secondary);
+        color: #000;
+        font-weight: bold;
+    }
+
+/* Content Styles */
+.settings-content {
+    min-width: 0; /* Prevents overflow issues */
+}
+
+.settings-panel {
+    background: var(--bg-card);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 30px;
 }

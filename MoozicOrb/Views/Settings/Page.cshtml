@@ -1,0 +1,7 @@
+﻿@model MoozicOrb.Models.PageSettingsViewModel
+@{
+    ViewData["Title"] = "Page Settings";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@await Html.PartialAsync("_PageSettingsPartial", Model)

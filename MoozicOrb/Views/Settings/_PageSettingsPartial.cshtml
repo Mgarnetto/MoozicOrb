@@ -1,24 +1,50 @@
-﻿<div class="settings-panel">
-    <h2>Creator Page Settings</h2>
+﻿@model MoozicOrb.Models.PageSettingsViewModel
 
-    <div class="banner-upload">
-        <label>Cover Image</label>
-        <div class="preview" style="background-image: url('@Model.CoverImage')"></div>
-        <button class="btn-upload">Upload New</button>
-    </div>
+<div class="settings-grid-layout">
+    <aside class="settings-sidebar">
+        <h4 class="mb-4 text-white">Settings</h4>
+        <nav class="settings-nav">
+            <a href="/settings/account" class="settings-link">
+                <i class="fas fa-user me-2"></i> Account
+            </a>
+            <a href="/settings/page" class="settings-link active">
+                <i class="fas fa-magic me-2"></i> Page & Creator
+            </a>
+        </nav>
+    </aside>
 
-    <form class="settings-form">
-        <div class="form-group">
-            <label>Bio</label>
-            <textarea rows="4">@Model.Bio</textarea>
-        </div>
-        <div class="form-group">
-            <label>Booking Contact</label>
-            <input type="text" value="@Model.BookingEmail">
-        </div>
+    <main class="settings-content">
+        <div class="settings-panel">
+            <h2 class="mb-4 border-bottom border-secondary pb-3">Creator Page</h2>
 
-        <div class="form-actions">
-            <button class="btn-sidebar-fill">Update Page</button>
+            <div class="mb-4">
+                <label class="form-label text-muted small text-uppercase fw-bold">Cover Image</label>
+                <div id="coverPreview" class="cover-preview mb-3"
+                     data-current="@Model.CoverImage"
+                     style="background-image: url('@Model.CoverImage'); height: 150px; background-size: cover; background-position: center; border-radius: 10px; border: 1px solid #333;">
+                </div>
+
+                <input type="file" id="coverUploadInput" style="display:none;" accept="image/*">
+                <button class="btn-sidebar-outline btn-sm" onclick="document.getElementById('coverUploadInput').click()">
+                    <i class="fas fa-upload me-2"></i> Upload New Cover
+                </button>
+            </div>
+
+            <form id="pageSettingsForm">
+                <div class="form-group mb-3">
+                    <label class="form-label text-muted small text-uppercase fw-bold">Bio / Intro</label>
+                    <textarea id="inputBio" class="form-control" rows="4" style="background: #000; color: white; border: 1px solid #333;">@Model.Bio</textarea>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label text-muted small text-uppercase fw-bold">Booking Contact</label>
+                    <input type="text" id="inputEmail" class="form-control" value="@Model.BookingEmail" style="background: #000; color: white; border: 1px solid #333;">
+                </div>
+
+                <div class="form-actions text-end">
+                    <button type="submit" class="btn-sidebar-fill px-4">Save Changes</button>
+                </div>
+            </form>
         </div>
-    </form>
+    </main>
 </div>

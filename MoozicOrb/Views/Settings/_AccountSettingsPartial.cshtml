@@ -1,22 +1,49 @@
-﻿<div class="settings-panel">
-    <h2>Account Settings</h2>
+﻿@model MoozicOrb.Models.AccountSettingsViewModel
 
-    <form class="settings-form">
-        <div class="form-group">
-            <label>Display Name</label>
-            <input type="text" value="@Model.DisplayName">
-        </div>
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" value="@Model.Email" disabled>
-        </div>
-        <div class="form-group">
-            <label>Password</label>
-            <button class="btn-sidebar-outline">Change Password</button>
-        </div>
+<div class="settings-grid-layout">
+    <aside class="settings-sidebar">
+        <h4 class="mb-4 text-white">Settings</h4>
+        <nav class="settings-nav">
+            <a href="/settings/account" class="settings-link active">
+                <i class="fas fa-user me-2"></i> Account
+            </a>
+            <a href="/settings/page" class="settings-link">
+                <i class="fas fa-magic me-2"></i> Page & Creator
+            </a>
+        </nav>
+    </aside>
 
-        <div class="form-actions">
-            <button class="btn-sidebar-fill">Save Changes</button>
+    <main class="settings-content">
+        <div class="settings-panel">
+            <h2 class="mb-4 border-bottom border-secondary pb-3">Account</h2>
+
+            <div class="mb-4 d-flex align-items-center gap-4">
+                <div id="avatarPreview" style="width: 100px; height: 100px; border-radius: 50%; background-image: url('/img/profile_default.jpg'); background-size: cover; background-position: center; border: 2px solid var(--accent-secondary);"></div>
+
+                <div>
+                    <input type="file" id="avatarUploadInput" style="display:none;" accept="image/*">
+                    <button class="btn-sidebar-outline btn-sm mb-2" onclick="document.getElementById('avatarUploadInput').click()">
+                        <i class="fas fa-camera me-2"></i> Change Profile Picture
+                    </button>
+                    <div class="text-muted small">Recommended: Square JPG/PNG, 500x500px</div>
+                </div>
+            </div>
+
+            <form id="accountSettingsForm">
+                <div class="form-group mb-3">
+                    <label class="form-label text-muted small text-uppercase fw-bold">Display Name</label>
+                    <input type="text" id="inputDisplayName" class="form-control" value="@Model.DisplayName" style="background: #000; color: white; border: 1px solid #333;">
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label text-muted small text-uppercase fw-bold">Email</label>
+                    <input type="text" id="inputEmailDisplay" class="form-control" value="@Model.Email" disabled style="background: #111; color: #666; border: 1px solid #333;">
+                </div>
+
+                <div class="form-actions text-end">
+                    <button type="submit" class="btn-sidebar-fill px-4">Save Changes</button>
+                </div>
+            </form>
         </div>
-    </form>
+    </main>
 </div>

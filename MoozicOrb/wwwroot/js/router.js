@@ -34,7 +34,7 @@
             const res = await fetch(url, {
                 headers: {
                     "X-Spa-Request": "true",
-                    "X-Session-Id": window.AuthState?.sessionId
+                    "X-Session-Id": window.AuthState?.sessionId || ""
                 }
             });
 
@@ -88,17 +88,26 @@
             window.initCalendar();
         }
 
-        // C. NEW: Social Feed Loader
-        // This detects if we are on the Feed page and triggers the fetch manually
+        // C. NEW: Settings Pages
+        if (window.location.pathname.includes("/settings") && window.initSettings) {
+            window.initSettings();
+        }
+
+        // D. Social Feed Loader
+        // This detects if we are on ANY feed page (Global or Profile) and triggers the fetch
         const feedContainer = document.getElementById("feed-stream-container");
         const contextEl = document.getElementById("page-signalr-context");
 
-        if (feedContainer && window.loadFeedHistory) {
-            // If it's the global feed, trigger the global loader
-            if (contextEl && contextEl.value === 'feed_global') {
+        if (feedContainer && window.loadFeedHistory && contextEl) {
+            const groupValue = contextEl.value; // e.g., "feed_global" or "user_105"
+
+            if (groupValue === 'feed_global') {
                 window.loadFeedHistory('global', '0');
             }
-            // If it were a user profile (future proofing), we would read different values here
+            else if (groupValue.startsWith('user_')) {
+                const userId = groupValue.split('_')[1];
+                window.loadFeedHistory('user', userId);
+            }
         }
     }
 }

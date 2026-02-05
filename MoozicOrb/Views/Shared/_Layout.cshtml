@@ -87,18 +87,20 @@
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-profile">
             <a href="/creator/profile" class="text-decoration-none">
-                <div class="profile-img" style="background-image: url('/img/profile_default.jpg');"></div>
+                <div id="sidebar-img" class="profile-img" style="background-image: url('/img/profile_default.jpg');"></div>
             </a>
 
-            <div class="text-white fw-bold" style="font-size: 1.1rem; margin-bottom: 5px;">First Name</div>
+            <div id="sidebar-name" class="text-white fw-bold" style="font-size: 1.1rem; margin-bottom: 5px;">
+                User
+            </div>
 
             <div class="profile-stats">
-                <span><strong>1.2k</strong> Followers</span>
-                <span><strong>450</strong> Following</span>
+                <span id="sidebar-followers"><strong>0</strong> Followers</span>
+                <span id="sidebar-following"><strong>0</strong> Following</span>
             </div>
 
             <div class="mt-2">
-                <a href="/settings" class="text-muted small text-decoration-none hover-white">
+                <a href="/settings/page" class="text-muted small text-decoration-none hover-white">
                     <i class="fas fa-cog"></i> Settings
                 </a>
             </div>
@@ -226,6 +228,10 @@
     <script src="~/js/main.js" asp-append-version="true"></script>
     <script src="~/js/player.js" asp-append-version="true"></script>
     <script src="~/js/feed.js" asp-append-version="true"></script>
+
+    <script src="~/js/sidebar.js" asp-append-version="true"></script>
+    <script src="~/js/settings.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
