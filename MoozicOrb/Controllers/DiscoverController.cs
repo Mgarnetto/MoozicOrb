@@ -57,7 +57,7 @@ namespace MoozicOrb.Controllers
             {
                 model.Users = _userQuery.SearchUsers(q);
                 // STRICT AUDIO SEARCH
-                model.Posts = _postQuery.SearchAudio(q, viewerId);
+                model.Posts = _postQuery.SearchPosts(q, viewerId);
             }
 
             if (Request.IsSpaRequest()) return PartialView("_SearchPartial", model);
