@@ -56,7 +56,7 @@ namespace MoozicOrb.API.Controllers
                 "user" => $"user_{id}",
                 "creator" => $"user_{id}",
                 "feed" => "feed_global",
-                "discover" => "page_discover", // Added for Discover Page updates
+                "discover" => "page_discover", // DISCOVERY PAGE CHANNEL
                 _ => "feed_global"
             };
         }
@@ -117,7 +117,7 @@ namespace MoozicOrb.API.Controllers
                     CommentsCount = 0
                 };
 
-                // 5. Broadcast via SignalR (To the Page/User context only)
+                // 5. Broadcast via SignalR
                 string targetGroup = GetSignalRGroupName(req.ContextType, req.ContextId);
                 await _hub.Clients.Group(targetGroup).SendAsync("ReceivePost", new
                 {
@@ -152,6 +152,7 @@ namespace MoozicOrb.API.Controllers
                 // 2. DISCOVERY PAGE: Random Audio Tracks ONLY
                 if (contextType == "discover")
                 {
+                    // This fetches using the logic: WHERE media_type = 1
                     var audioPosts = io.GetAudioDiscoveryFeed(viewerId);
                     return Ok(audioPosts);
                 }

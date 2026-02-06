@@ -88,13 +88,12 @@
             window.initCalendar();
         }
 
-        // C. NEW: Settings Pages
+        // C. Settings Pages
         if (window.location.pathname.includes("/settings") && window.initSettings) {
             window.initSettings();
         }
 
-        // D. Social Feed Loader
-        // This detects if we are on ANY feed page (Global or Profile) and triggers the fetch
+        // D. Social Feed Loader (Standard Cards)
         const feedContainer = document.getElementById("feed-stream-container");
         const contextEl = document.getElementById("page-signalr-context");
 
@@ -108,6 +107,13 @@
                 const userId = groupValue.split('_')[1];
                 window.loadFeedHistory('user', userId);
             }
+        }
+
+        // E. Audio Discovery Loader (Playlist) - NEW
+        // Detects if the audio playlist container is present
+        const audioContainer = document.getElementById("audio-feed-list");
+        if (audioContainer && window.loadAudioPlaylist) {
+            window.loadAudioPlaylist();
         }
     }
 }

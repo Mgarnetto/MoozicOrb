@@ -39,6 +39,15 @@ namespace MoozicOrb.Controllers
             return View(model);
         }
 
+        [HttpGet("audio")]
+        public IActionResult AudioFeed()
+        {
+            // This returns the empty wrapper which will load the JS to fetch JSON data
+            // Consistent with the 'Playlist' visual style requested
+            if (Request.IsSpaRequest()) return PartialView("_AudioPartial");
+            return View("Audio");
+        }
+
         [HttpGet("search")]
         public IActionResult Search(string q)
         {

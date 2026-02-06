@@ -481,7 +481,7 @@ window.submitReply = async function (postId, parentId) {
 };
 
 // ============================================
-// 8. INITIAL FEED LOADER
+// 8. INITIAL FEED LOADER (Standard Cards)
 // ============================================
 
 window.loadFeedHistory = async function (contextType, contextId) {
@@ -569,3 +569,88 @@ function appendHistoricalPost(post, container) {
 
     container.appendChild(div.firstElementChild);
 }
+
+// ============================================
+// 9. AUDIO DISCOVERY LOADER (Playlist View) - FIXED CSS & IMAGE
+// ============================================
+
+window.loadAudioPlaylist = async () => {
+    const container = document.getElementById('audio-feed-list');
+    if (!container) return;
+
+    container.innerHTML = `<div class="text-center py-5 text-muted"><i class="fas fa-circle-notch fa-spin fa-2x"></i></div>`;
+
+    try {
+        const res = await fetch('/api/posts?contextType=discover&contextId=0', {
+            headers: {
+                "X-Session-Id": window.AuthState?.sessionId || ""
+            }
+        });
+
+        if (!res.ok) throw new Error("Failed to load audio");
+        const posts = await res.json();
+
+        if (!posts || posts.length === 0) {
+            container.innerHTML = `<div class="text-center py-5 text-muted">No audio tracks found.</div>`;
+            return;
+        }
+
+        let html = '';
+        posts.forEach((post, index) => {
+            const audio = post.attachments && post.attachments.find(a => a.mediaType === 1);
+            if (!audio) return;
+
+            const trackSrc = audio.url;
+
+            // CORRECT IMAGE LOGIC: Prioritize Profile Pic, check for null string
+            const imageSrc = post.authorPic && post.authorPic !== "null" ? post.authorPic : '/img/profile_default.jpg';
+
+            const title = post.title || 'Untitled Track';
+            const titleEscaped = title.replace(/'/g, "\\'");
+            const artist = post.authorName || 'Unknown Artist';
+            const artistId = post.authorId;
+            const timeAgo = post.createdAgo || '';
+
+            html += `
+            <div class="audio-row row align-items-center px-3 py-3 rounded border-bottom border-dark transition-all">
+                
+                <div class="col-1 text-muted small">${index + 1}</div>
+
+                <div class="col-1">
+                     <button class="btn-track-play shadow-sm" 
+                             onclick="if(window.AudioPlayer) window.AudioPlayer.playTrack('${trackSrc}', { title: '${titleEscaped}' })">
+                        <i class="fas fa-play"></i>
+                    </button>
+                </div>
+
+                <div class="col-5 d-flex align-items-center">
+                    <a href="/creator/profile?id=${artistId}" class="me-3">
+                        <img src="${imageSrc}" class="rounded-circle shadow-sm border border-secondary" width="50" height="50" style="object-fit: cover; cursor: pointer;">
+                    </a>
+                    
+                    <div class="overflow-hidden">
+                        <div class="text-white fw-bold text-truncate track-title-text">${title}</div>
+                        <div class="d-md-none text-muted small text-truncate">${artist}</div>
+                    </div>
+                </div>
+
+                <div class="col-3 d-none d-md-block">
+                    <a href="/creator/profile?id=${artistId}" class="text-decoration-none text-info hover-underline">
+                        ${artist}
+                    </a>
+                </div>
+
+                <div class="col-2 text-end text-muted small">
+                    ${timeAgo}
+                </div>
+            </div>
+            `;
+        });
+
+        container.innerHTML = html;
+
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = `<div class="text-center py-5 text-danger">Error loading playlist.</div>`;
+    }
+};

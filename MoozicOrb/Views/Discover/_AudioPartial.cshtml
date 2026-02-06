@@ -1,67 +1,33 @@
-﻿@model MoozicOrb.Models.SearchViewModel
+﻿<div class="container-fluid pt-4 fade-in" style="max-width: 1000px; margin: 0 auto;">
 
-<div class="container-fluid pt-4 fade-in">
-    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary">
+    <div class="d-flex align-items-center mb-4 pb-3 border-bottom border-secondary" style="border-color: rgba(255,255,255,0.1) !important;">
+        <div class="me-4 rounded-circle d-flex align-items-center justify-content-center shadow-lg"
+             style="width: 70px; height: 70px; background: linear-gradient(135deg, var(--accent-secondary), #00d2ff); color: #000;">
+            <i class="fas fa-headphones-alt fa-3x"></i>
+        </div>
         <div>
-            <h2 class="text-info fw-light">
-                <i class="fas fa-compact-disc me-2"></i>Audio Discovery
-            </h2>
-            <p class="text-muted small mb-0">Searching tracks: <span class="text-white">"@Model.Query"</span></p>
+            <h2 class="text-white fw-bold mb-1" style="font-family: 'Outfit', sans-serif; letter-spacing: 0.5px;">Audio Discovery</h2>
+            <p class="text-info mb-0" style="font-size: 0.95rem;">Fresh sounds from around the Orb.</p>
+        </div>
+        <div class="ms-auto">
+            <button class="btn btn-outline-info btn-sm rounded-pill px-4 fw-bold" onclick="loadAudioPlaylist()">
+                <i class="fas fa-sync-alt me-2"></i> REFRESH
+            </button>
         </div>
     </div>
 
-    @if (Model.Posts == null || Model.Posts.Count == 0)
-    {
-        <div class="text-center py-5">
-            <div class="mb-3 text-muted" style="opacity: 0.2;">
-                <i class="fas fa-music fa-5x"></i>
-            </div>
-            <h4 class="text-white">No tracks found</h4>
+    <div class="row px-3 py-2 text-muted text-uppercase small fw-bold border-bottom border-secondary mb-2" style="font-size: 0.75rem; letter-spacing: 1px; border-color: rgba(255,255,255,0.1) !important;">
+        <div class="col-1">#</div>
+        <div class="col-1"></div>
+        <div class="col-5">Title</div>
+        <div class="col-3">Artist</div>
+        <div class="col-2 text-end">Posted</div>
+    </div>
+
+    <div id="audio-feed-list" class="pb-5">
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-circle-notch fa-spin fa-2x"></i>
         </div>
-    }
-    else
-    {
-        <div class="row g-3">
-            @foreach (var post in Model.Posts)
-            {
-                <div class="col-12 col-md-6 col-lg-4">
-                    <div class="track-card bg-dark border-secondary h-100 hover-elevate">
-                        <button class="btn-track-play me-3">
-                            <i class="fas fa-play"></i>
-                        </button>
+    </div>
 
-                        <div class="flex-shrink-0 me-3">
-                            @if (!string.IsNullOrEmpty(post.ImageUrl))
-                            {
-                                <img src="@post.ImageUrl" width="50" height="50" class="rounded" style="object-fit: cover;">
-                            }
-                            else
-                            {
-                                <div class="rounded bg-secondary d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
-                                    <i class="fas fa-music text-dark"></i>
-                                </div>
-                            }
-                        </div>
-
-                        <div class="track-info overflow-hidden">
-                            <div class="track-title text-truncate">
-                                <a href="/post/@post.Id" class="text-white text-decoration-none">
-                                    @(string.IsNullOrEmpty(post.Title) ? "Untitled Track" : post.Title)
-                                </a>
-                            </div>
-                            <div class="track-artist text-truncate">
-                                by @post.AuthorName
-                            </div>
-                        </div>
-
-                        @if (post.Attachments != null && post.Attachments.Any(m => m.MediaType == 1))
-                        {
-                            var audio = post.Attachments.First(m => m.MediaType == 1);
-                            <audio class="d-none" data-track-src="@audio.Url"></audio>
-                        }
-                    </div>
-                </div>
-            }
-        </div>
-    }
 </div>
