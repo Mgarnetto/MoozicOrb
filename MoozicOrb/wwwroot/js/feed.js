@@ -74,8 +74,12 @@ function renderNewPost(post) {
             </div>
 
             <div class="post-footer">
-                <button class="btn-post-action btn-like" data-id="${post.id}"><i class="far fa-heart"></i> Like</button>
-                <button class="btn-post-action btn-comment-toggle" data-id="${post.id}"><i class="far fa-comment"></i> Comment</button>
+                <button class="btn-post-action btn-like" data-id="${post.id}">
+                    <i class="far fa-heart"></i> Like ${post.likesCount > 0 ? `(${post.likesCount})` : ''}
+                </button>
+                <button class="btn-post-action btn-comment-toggle" data-id="${post.id}">
+                    <i class="far fa-comment"></i> Comment ${post.commentsCount > 0 ? `(${post.commentsCount})` : ''}
+                </button>
                 <button class="btn-post-action"><i class="far fa-share-square"></i> Share</button>
             </div>
 
@@ -547,10 +551,10 @@ function appendHistoricalPost(post, container) {
 
             <div class="post-footer">
                 <button class="btn-post-action btn-like" data-id="${post.id}">
-                    <i class="${post.isLiked ? 'fas text-danger' : 'far'} fa-heart"></i> Like
+                    <i class="${post.isLiked ? 'fas text-danger' : 'far'} fa-heart"></i> Like ${post.likesCount > 0 ? `(${post.likesCount})` : ''}
                 </button>
                 <button class="btn-post-action btn-comment-toggle" data-id="${post.id}">
-                    <i class="far fa-comment"></i> Comment
+                    <i class="far fa-comment"></i> Comment ${post.commentsCount > 0 ? `(${post.commentsCount})` : ''}
                 </button>
                 <button class="btn-post-action"><i class="far fa-share-square"></i> Share</button>
             </div>
@@ -571,7 +575,7 @@ function appendHistoricalPost(post, container) {
 }
 
 // ============================================
-// 9. AUDIO DISCOVERY LOADER (Playlist View) - REFACTORED & FIXED
+// 9. AUDIO DISCOVERY LOADER (Playlist View) - UPDATED
 // ============================================
 
 window.loadAudioPlaylist = async () => {
@@ -603,49 +607,49 @@ window.loadAudioPlaylist = async () => {
         let html = '';
 
         posts.forEach((post, index) => {
-            // Filter for Audio type (MediaType 1)
             const audio = post.attachments && post.attachments.find(a => a.mediaType === 1);
             if (!audio) return;
 
             const trackSrc = audio.url;
-            // Safe Image Logic
             const imageSrc = post.authorPic && post.authorPic !== "null" ? post.authorPic : '/img/profile_default.jpg';
 
-            // Text Safety
             const title = post.title || 'Untitled Track';
-            const titleEscaped = title.replace(/'/g, "\\'"); // Escape for JS onclick
+            const titleEscaped = title.replace(/'/g, "\\'");
             const artist = post.authorName || 'Unknown Artist';
             const artistId = post.authorId;
             const timeAgo = post.createdAgo || 'Just now';
-
-            // FIXED LINK: uses /creator/${artistId} instead of /creator/profile?id=...
             const profileLink = `/creator/${artistId}`;
 
+            // NOTE: We replaced Grid classes (col-*) with Flexbox (d-flex) to fix the "jumbled" layout.
             html += `
-            <div class="audio-track-row">
-                <div class="audio-index">${index + 1}</div>
+            <div class="audio-row">
+                
+                <div class="audio-meter" style="flex-shrink:0;">
+                    <span></span><span></span><span></span><span></span>
+                </div>
 
-                <button class="audio-play-btn" 
-                        onclick="if(window.AudioPlayer) window.AudioPlayer.playTrack('${trackSrc}', { title: '${titleEscaped}' })">
+                <button class="btn-track-play" 
+                        onclick="window.playTrackInFeed('${trackSrc}', '${titleEscaped}', this)">
                     <i class="fas fa-play"></i>
                 </button>
 
-                <a href="${profileLink}" class="d-none d-sm-block">
-                    <img src="${imageSrc}" class="audio-artist-img" alt="${artist}" onerror="this.src='/img/profile_default.jpg'">
-                </a>
-
-                <div class="audio-info">
-                    <div class="audio-title" title="${title}">${title}</div>
-                    <div>
-                        <a href="${profileLink}" class="audio-artist">
+                <div class="d-flex align-items-center flex-grow-1 overflow-hidden">
+                    <a href="${profileLink}" class="d-none d-sm-block me-3 flex-shrink-0">
+                        <img src="${imageSrc}" class="rounded-circle border border-secondary" width="45" height="45" style="object-fit: cover;">
+                    </a>
+                    
+                    <div class="overflow-hidden">
+                        <div class="text-white fw-bold text-truncate" style="font-size:1.05rem;" title="${title}">${title}</div>
+                        <a href="${profileLink}" class="text-muted small text-decoration-none hover-underline text-truncate d-block">
                             ${artist}
                         </a>
                     </div>
                 </div>
 
-                <div class="audio-time d-none d-md-block">
+                <div class="text-muted small d-none d-md-block flex-shrink-0" style="width: 100px; text-align: right;">
                     <i class="far fa-clock me-1"></i> ${timeAgo}
                 </div>
+
             </div>`;
         });
 
@@ -658,5 +662,24 @@ window.loadAudioPlaylist = async () => {
                 <i class="fas fa-exclamation-circle fa-2x mb-2"></i><br>
                 Error loading playlist.
             </div>`;
+    }
+};
+
+// HELPER: Handles playing logic + Meter animation toggling
+window.playTrackInFeed = function (url, title, element) {
+    // 1. Trigger the Global Player (if exists)
+    if (window.AudioPlayer) {
+        window.AudioPlayer.playTrack(url, { title: title });
+    }
+
+    // 2. Manage Visual State (The bouncing bars)
+    // Remove .playing from all other rows
+    const allRows = document.querySelectorAll('.audio-row');
+    allRows.forEach(row => row.classList.remove('playing'));
+
+    // Add .playing to the clicked row
+    const currentRow = element.closest('.audio-row');
+    if (currentRow) {
+        currentRow.classList.add('playing');
     }
 };
