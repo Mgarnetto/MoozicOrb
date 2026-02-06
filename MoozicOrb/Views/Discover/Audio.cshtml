@@ -1,0 +1,7 @@
+﻿@model MoozicOrb.Models.SearchViewModel
+@{
+    ViewData["Title"] = "Audio Search: " + Model.Query;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@await Html.PartialAsync("_AudioPartial", Model)
