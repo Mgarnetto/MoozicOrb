@@ -74,12 +74,8 @@ function renderNewPost(post) {
             </div>
 
             <div class="post-footer">
-                <button class="btn-post-action btn-like" data-id="${post.id}">
-                    <i class="far fa-heart"></i> Like ${post.likesCount > 0 ? `(${post.likesCount})` : ''}
-                </button>
-                <button class="btn-post-action btn-comment-toggle" data-id="${post.id}">
-                    <i class="far fa-comment"></i> Comment ${post.commentsCount > 0 ? `(${post.commentsCount})` : ''}
-                </button>
+                <button class="btn-post-action btn-like" data-id="${post.id}"><i class="far fa-heart"></i> Like</button>
+                <button class="btn-post-action btn-comment-toggle" data-id="${post.id}"><i class="far fa-comment"></i> Comment</button>
                 <button class="btn-post-action"><i class="far fa-share-square"></i> Share</button>
             </div>
 
@@ -372,7 +368,6 @@ document.addEventListener('click', async (e) => {
                 } else {
                     icon.classList.remove('fas', 'text-danger'); icon.classList.add('far');
                 }
-                // Refresh comments/likes visually by reloading history or simple UI increment (simplest for now is just the icon change)
             }
         } catch (err) { console.error(err); }
     }
@@ -552,10 +547,10 @@ function appendHistoricalPost(post, container) {
 
             <div class="post-footer">
                 <button class="btn-post-action btn-like" data-id="${post.id}">
-                    <i class="${post.isLiked ? 'fas text-danger' : 'far'} fa-heart"></i> Like ${post.likesCount > 0 ? `(${post.likesCount})` : ''}
+                    <i class="${post.isLiked ? 'fas text-danger' : 'far'} fa-heart"></i> Like
                 </button>
                 <button class="btn-post-action btn-comment-toggle" data-id="${post.id}">
-                    <i class="far fa-comment"></i> Comment ${post.commentsCount > 0 ? `(${post.commentsCount})` : ''}
+                    <i class="far fa-comment"></i> Comment
                 </button>
                 <button class="btn-post-action"><i class="far fa-share-square"></i> Share</button>
             </div>
