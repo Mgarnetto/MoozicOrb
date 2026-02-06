@@ -1,33 +1,35 @@
 ﻿<div class="container-fluid pt-4 fade-in" style="max-width: 1000px; margin: 0 auto;">
 
-    <div class="d-flex align-items-center mb-4 pb-3 border-bottom border-secondary" style="border-color: rgba(255,255,255,0.1) !important;">
-        <div class="me-4 rounded-circle d-flex align-items-center justify-content-center shadow-lg"
-             style="width: 70px; height: 70px; background: linear-gradient(135deg, var(--accent-secondary), #00d2ff); color: #000;">
-            <i class="fas fa-headphones-alt fa-3x"></i>
+    <div class="audio-header-card">
+        <div class="position-relative z-1">
+            <h2 class="text-white fw-bold mb-1" style="font-family: 'Outfit', sans-serif;">
+                <i class="fas fa-headphones-alt me-2 text-info"></i> Audio Discovery
+            </h2>
+            <p class="text-muted mb-0 mt-2" style="font-size: 1rem;">
+                Fresh frequencies and underground sounds from around the Orb.
+            </p>
         </div>
-        <div>
-            <h2 class="text-white fw-bold mb-1" style="font-family: 'Outfit', sans-serif; letter-spacing: 0.5px;">Audio Discovery</h2>
-            <p class="text-info mb-0" style="font-size: 0.95rem;">Fresh sounds from around the Orb.</p>
-        </div>
-        <div class="ms-auto">
-            <button class="btn btn-outline-info btn-sm rounded-pill px-4 fw-bold" onclick="loadAudioPlaylist()">
-                <i class="fas fa-sync-alt me-2"></i> REFRESH
-            </button>
-        </div>
+        <div class="audio-header-glow"></div>
     </div>
 
-    <div class="row px-3 py-2 text-muted text-uppercase small fw-bold border-bottom border-secondary mb-2" style="font-size: 0.75rem; letter-spacing: 1px; border-color: rgba(255,255,255,0.1) !important;">
-        <div class="col-1">#</div>
-        <div class="col-1"></div>
-        <div class="col-5">Title</div>
-        <div class="col-3">Artist</div>
-        <div class="col-2 text-end">Posted</div>
+    <div class="d-flex align-items-center justify-content-between mb-4 px-2">
+        <div class="text-info small fw-bold text-uppercase" style="letter-spacing: 1px;">
+            <i class="fas fa-signal me-2"></i> Live Feed
+        </div>
+
+        <button class="btn btn-sm btn-outline-info rounded-pill px-4 fw-bold" onclick="loadAudioPlaylist()">
+            <i class="fas fa-sync-alt me-2"></i> REFRESH LIST
+        </button>
     </div>
 
     <div id="audio-feed-list" class="pb-5">
-        <div class="text-center py-5 text-muted">
-            <i class="fas fa-circle-notch fa-spin fa-2x"></i>
-        </div>
     </div>
 
 </div>
+
+<script>
+    // Ensure the playlist loads immediately when this view is rendered via Router
+    if (window.loadAudioPlaylist) {
+        window.loadAudioPlaylist();
+    }
+</script>

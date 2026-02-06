@@ -571,14 +571,19 @@ function appendHistoricalPost(post, container) {
 }
 
 // ============================================
-// 9. AUDIO DISCOVERY LOADER (Playlist View) - FIXED CSS & IMAGE
+// 9. AUDIO DISCOVERY LOADER (Playlist View) - REFACTORED & FIXED
 // ============================================
 
 window.loadAudioPlaylist = async () => {
     const container = document.getElementById('audio-feed-list');
     if (!container) return;
 
-    container.innerHTML = `<div class="text-center py-5 text-muted"><i class="fas fa-circle-notch fa-spin fa-2x"></i></div>`;
+    // Fancy Loading State
+    container.innerHTML = `
+        <div class="text-center py-5">
+            <i class="fas fa-compact-disc fa-spin fa-3x mb-3" style="color: var(--accent-secondary);"></i>
+            <p class="text-muted">Digging for tracks...</p>
+        </div>`;
 
     try {
         const res = await fetch('/api/posts?contextType=discover&contextId=0', {
@@ -591,66 +596,67 @@ window.loadAudioPlaylist = async () => {
         const posts = await res.json();
 
         if (!posts || posts.length === 0) {
-            container.innerHTML = `<div class="text-center py-5 text-muted">No audio tracks found.</div>`;
+            container.innerHTML = `<div class="text-center py-5 text-muted">No audio tracks found recently.</div>`;
             return;
         }
 
         let html = '';
+
         posts.forEach((post, index) => {
+            // Filter for Audio type (MediaType 1)
             const audio = post.attachments && post.attachments.find(a => a.mediaType === 1);
             if (!audio) return;
 
             const trackSrc = audio.url;
-
-            // CORRECT IMAGE LOGIC: Prioritize Profile Pic, check for null string
+            // Safe Image Logic
             const imageSrc = post.authorPic && post.authorPic !== "null" ? post.authorPic : '/img/profile_default.jpg';
 
+            // Text Safety
             const title = post.title || 'Untitled Track';
-            const titleEscaped = title.replace(/'/g, "\\'");
+            const titleEscaped = title.replace(/'/g, "\\'"); // Escape for JS onclick
             const artist = post.authorName || 'Unknown Artist';
             const artistId = post.authorId;
-            const timeAgo = post.createdAgo || '';
+            const timeAgo = post.createdAgo || 'Just now';
+
+            // FIXED LINK: uses /creator/${artistId} instead of /creator/profile?id=...
+            const profileLink = `/creator/${artistId}`;
 
             html += `
-            <div class="audio-row row align-items-center px-3 py-3 rounded border-bottom border-dark transition-all">
-                
-                <div class="col-1 text-muted small">${index + 1}</div>
+            <div class="audio-track-row">
+                <div class="audio-index">${index + 1}</div>
 
-                <div class="col-1">
-                     <button class="btn-track-play shadow-sm" 
-                             onclick="if(window.AudioPlayer) window.AudioPlayer.playTrack('${trackSrc}', { title: '${titleEscaped}' })">
-                        <i class="fas fa-play"></i>
-                    </button>
-                </div>
+                <button class="audio-play-btn" 
+                        onclick="if(window.AudioPlayer) window.AudioPlayer.playTrack('${trackSrc}', { title: '${titleEscaped}' })">
+                    <i class="fas fa-play"></i>
+                </button>
 
-                <div class="col-5 d-flex align-items-center">
-                    <a href="/creator/profile?id=${artistId}" class="me-3">
-                        <img src="${imageSrc}" class="rounded-circle shadow-sm border border-secondary" width="50" height="50" style="object-fit: cover; cursor: pointer;">
-                    </a>
-                    
-                    <div class="overflow-hidden">
-                        <div class="text-white fw-bold text-truncate track-title-text">${title}</div>
-                        <div class="d-md-none text-muted small text-truncate">${artist}</div>
+                <a href="${profileLink}" class="d-none d-sm-block">
+                    <img src="${imageSrc}" class="audio-artist-img" alt="${artist}" onerror="this.src='/img/profile_default.jpg'">
+                </a>
+
+                <div class="audio-info">
+                    <div class="audio-title" title="${title}">${title}</div>
+                    <div>
+                        <a href="${profileLink}" class="audio-artist">
+                            ${artist}
+                        </a>
                     </div>
                 </div>
 
-                <div class="col-3 d-none d-md-block">
-                    <a href="/creator/profile?id=${artistId}" class="text-decoration-none text-info hover-underline">
-                        ${artist}
-                    </a>
+                <div class="audio-time d-none d-md-block">
+                    <i class="far fa-clock me-1"></i> ${timeAgo}
                 </div>
-
-                <div class="col-2 text-end text-muted small">
-                    ${timeAgo}
-                </div>
-            </div>
-            `;
+            </div>`;
         });
 
         container.innerHTML = html;
 
     } catch (err) {
         console.error(err);
-        container.innerHTML = `<div class="text-center py-5 text-danger">Error loading playlist.</div>`;
+        container.innerHTML = `
+            <div class="text-center py-5 text-danger">
+                <i class="fas fa-exclamation-circle fa-2x mb-2"></i><br>
+                Error loading playlist.
+            </div>`;
     }
 };

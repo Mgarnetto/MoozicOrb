@@ -2512,3 +2512,156 @@ textarea.form-control {
     color: #fff;
     text-shadow: 0 0 10px rgba(0,0,0,0.5);
 }
+
+/* =========================================
+   17. AUDIO DISCOVERY (Refined)
+   ========================================= */
+/* The Header Card (Matches Social Feed) */
+.audio-header-card {
+    background: linear-gradient(135deg, #111 0%, #050505 100%);
+    border: 1px solid #222;
+    border-left: 5px solid var(--accent-secondary); /* Blue accent */
+    border-radius: 12px;
+    padding: 2.5rem 2rem;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.audio-header-glow {
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 250px;
+    height: 250px;
+    background: var(--accent-secondary);
+    filter: blur(100px);
+    opacity: 0.15;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* The Track Row Item */
+.audio-track-row {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.02); /* Glassy background */
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-left: 3px solid transparent;
+}
+
+    .audio-track-row:hover {
+        background: rgba(255, 255, 255, 0.07);
+        transform: translateX(5px) scale(1.005);
+        border-left-color: var(--accent-secondary);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        border-color: rgba(255,255,255,0.1);
+    }
+
+/* Index Number */
+.audio-index {
+    color: #444;
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    width: 40px;
+    text-align: center;
+    transition: 0.2s;
+}
+
+.audio-track-row:hover .audio-index {
+    color: var(--accent-secondary);
+    text-shadow: 0 0 10px var(--accent-secondary);
+}
+
+/* Play Button (Neon Style) */
+.audio-play-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #151515;
+    border: 1px solid #333;
+    color: #888;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    transition: 0.3s;
+    cursor: pointer;
+    margin-right: 20px;
+    padding-left: 4px; /* Optical center */
+}
+
+.audio-track-row:hover .audio-play-btn {
+    background: var(--accent-secondary);
+    color: #000;
+    border-color: var(--accent-secondary);
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(0, 174, 239, 0.5);
+}
+
+/* Profile Image in List */
+.audio-artist-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px; /* Soft square */
+    object-fit: cover;
+    border: 1px solid #333;
+    margin-right: 15px;
+    transition: transform 0.2s;
+}
+
+.audio-track-row:hover .audio-artist-img {
+    border-color: var(--accent-secondary);
+    transform: scale(1.05);
+}
+
+/* Text Info */
+.audio-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.audio-title {
+    color: white;
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: var(--font-body);
+}
+
+.audio-artist {
+    color: #888;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: 0.2s;
+    display: inline-block;
+}
+
+    .audio-artist:hover {
+        color: var(--accent-secondary);
+        text-shadow: 0 0 8px rgba(0, 174, 239, 0.3);
+    }
+
+/* Timestamp */
+.audio-time {
+    color: #444;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-left: 15px;
+    white-space: nowrap;
+}
+
+.audio-track-row:hover .audio-time {
+    color: #aaa;
+}
