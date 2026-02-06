@@ -8,22 +8,22 @@ namespace MoozicOrb.IO
     {
         public long Execute(User user)
         {
+            // FIXED: Removed 'is_artist'
+            // FIXED: Moved 'user_groups' to the end to match schema
             string sql = @"
-                INSERT INTO user 
+                INSERT INTO `user` 
                 (
                     first_name, middle_name, last_name,
                     username, email, display_name,
                     profile_pic, cover_image_url, bio,
-                    is_creator, is_artist, user_groups,
-                    profile_layout
+                    is_creator, profile_layout, user_groups
                 )
                 VALUES 
                 (
                     @fname, @mname, @lname,
                     @username, @email, @display,
                     @pic, @cover, @bio,
-                    @creator, @artist, @groups,
-                    @layout
+                    @creator, @layout, @groups
                 );
                 SELECT LAST_INSERT_ID();";
 
@@ -32,26 +32,30 @@ namespace MoozicOrb.IO
                 conn.Open();
                 using (var cmd = new MySqlCommand(sql, conn))
                 {
-                    // Legal Names (Critical for Records)
+                    // 1. Legal Names
                     cmd.Parameters.AddWithValue("@fname", user.FirstName ?? "");
                     cmd.Parameters.AddWithValue("@mname", user.MiddleName ?? "");
                     cmd.Parameters.AddWithValue("@lname", user.LastName ?? "");
 
-                    // Identity
+                    // 2. Identity
                     cmd.Parameters.AddWithValue("@username", user.UserName ?? "");
                     cmd.Parameters.AddWithValue("@email", user.Email ?? "");
-                    cmd.Parameters.AddWithValue("@display", user.DisplayName ?? user.UserName); // Default to username if no stage name
+                    cmd.Parameters.AddWithValue("@display", user.DisplayName ?? user.UserName);
 
-                    // Profile
-                    cmd.Parameters.AddWithValue("@pic", user.ProfilePic ?? "/img/default.png");
+                    // 3. Profile Images & Bio
+                    cmd.Parameters.AddWithValue("@pic", user.ProfilePic ?? "/img/profile_default.jpg");
                     cmd.Parameters.AddWithValue("@cover", user.CoverImageUrl ?? "/img/default_cover.jpg");
                     cmd.Parameters.AddWithValue("@bio", user.Bio ?? "");
 
-                    // Flags
+                    // 4. Flags & Settings
                     cmd.Parameters.AddWithValue("@creator", user.IsCreator ? 1 : 0);
-                    cmd.Parameters.AddWithValue("@artist", user.IsArtist ? 1 : 0);
-                    cmd.Parameters.AddWithValue("@groups", string.IsNullOrEmpty(user.UserGroups) ? "9" : user.UserGroups);
+
+                    // JSON Layout (Before Groups)
                     cmd.Parameters.AddWithValue("@layout", user.ProfileLayoutJson ?? (object)DBNull.Value);
+
+                    // 5. Groups (Last Column)
+                    // Default to "9" (Standard User) if empty
+                    cmd.Parameters.AddWithValue("@groups", string.IsNullOrEmpty(user.UserGroups) ? "9" : user.UserGroups);
 
                     return Convert.ToInt64(cmd.ExecuteScalar());
                 }

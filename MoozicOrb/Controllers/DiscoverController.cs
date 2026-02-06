@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MoozicOrb.API.Models;
+using MoozicOrb.Extensions;
 using MoozicOrb.IO;
 using MoozicOrb.Models;
 using MoozicOrb.Services;
 using System.Collections.Generic;
-using MoozicOrb.Extensions;
 
 namespace MoozicOrb.Controllers
 {
@@ -22,7 +22,6 @@ namespace MoozicOrb.Controllers
 
         public IActionResult Index()
         {
-            // 1. Create Hardcoded Genres (for now)
             var model = new GenresViewModel
             {
                 Genres = new List<GenreItem>
@@ -66,7 +65,6 @@ namespace MoozicOrb.Controllers
         }
     }
 
-    // Simple ViewModel for the Discover Page
     public class GenresViewModel
     {
         public List<GenreItem> Genres { get; set; } = new List<GenreItem>();

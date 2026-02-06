@@ -8,7 +8,7 @@ namespace MoozicOrb.IO
 {
     public class GetPost
     {
-        // 1. GET SINGLE POST (No Change)
+        // 1. GET SINGLE POST
         public PostDto Execute(long postId, int viewerId)
         {
             PostDto post = null;
@@ -31,7 +31,7 @@ namespace MoozicOrb.IO
             return post;
         }
 
-        // 2. GET FEED (No Change to logic, just ensures generic fetching works)
+        // 2. GET FEED
         public List<PostDto> Execute(string contextType, string contextId, int viewerId, int page = 1, int pageSize = 20)
         {
             var results = new List<PostDto>();
@@ -68,26 +68,72 @@ namespace MoozicOrb.IO
             return results;
         }
 
-        // 3. GENERIC DISCOVERY (Social Feed - Random Mix)
+        // 3. SOCIAL FEED (Random Mix)
         public List<PostDto> GetDiscoveryFeed(int viewerId, int count = 20)
         {
-            // Returns random mix of ALL post types
-            return GetRandomPosts(viewerId, count, null);
+            var results = new List<PostDto>();
+            long maxId = 0;
+
+            using (var conn = new MySqlConnection(DBConn1.ConnectionString))
+            {
+                conn.Open();
+                using (var cmd = new MySqlCommand("SELECT MAX(post_id) FROM posts", conn))
+                {
+                    var res = cmd.ExecuteScalar();
+                    if (res != DBNull.Value && res != null) maxId = Convert.ToInt64(res);
+                }
+
+                if (maxId > 0)
+                {
+                    var random = new Random();
+                    var targetIds = new HashSet<long>();
+                    for (int i = 0; i < count * 2; i++) targetIds.Add((long)random.Next(1, (int)maxId + 1));
+
+                    if (targetIds.Count > 0)
+                    {
+                        string idList = string.Join(",", targetIds);
+                        string randomSql = GetBaseSql($"WHERE p.post_id IN ({idList}) LIMIT {count}");
+
+                        using (var cmd = new MySqlCommand(randomSql, conn))
+                        {
+                            cmd.Parameters.AddWithValue("@vid", viewerId);
+                            using (var rdr = cmd.ExecuteReader())
+                            {
+                                while (rdr.Read()) results.Add(MapReaderToDto(rdr));
+                            }
+                        }
+                    }
+                }
+
+                if (results.Count < 5)
+                {
+                    results.Clear();
+                    string fallbackSql = GetBaseSql("ORDER BY p.created_at DESC LIMIT @limit");
+                    using (var cmd = new MySqlCommand(fallbackSql, conn))
+                    {
+                        cmd.Parameters.AddWithValue("@vid", viewerId);
+                        cmd.Parameters.AddWithValue("@limit", count);
+                        using (var rdr = cmd.ExecuteReader())
+                        {
+                            while (rdr.Read()) results.Add(MapReaderToDto(rdr));
+                        }
+                    }
+                }
+
+                if (results.Count > 0) AttachMediaToPosts(conn, results);
+            }
+            return results.OrderBy(x => Guid.NewGuid()).ToList();
         }
 
-        // 4. AUDIO DISCOVERY (Discover Page - Audio Only)
+        // 4. AUDIO DISCOVERY (Strict Audio)
         public List<PostDto> GetAudioDiscoveryFeed(int viewerId, int count = 20)
         {
-            // Filter: Must have Audio media (type 1)
-            return GetRandomPosts(viewerId, count, "AND EXISTS (SELECT 1 FROM post_media pm WHERE pm.post_id = p.post_id AND pm.media_type = 1)");
-        }
-
-        // Shared Random Logic Helper
-        private List<PostDto> GetRandomPosts(int viewerId, int count, string additionalFilter)
-        {
             var results = new List<PostDto>();
-            // Note: ORDER BY RAND() is heavy on huge DBs, but fine for now.
-            string sql = GetBaseSql($"WHERE 1=1 {additionalFilter} ORDER BY RAND() LIMIT @limit");
+
+            string sql = GetBaseSql(@"
+                WHERE EXISTS (SELECT 1 FROM post_media pm WHERE pm.post_id = p.post_id AND pm.media_type = 1) 
+                ORDER BY RAND() 
+                LIMIT @limit");
 
             using (var conn = new MySqlConnection(DBConn1.ConnectionString))
             {
@@ -106,21 +152,19 @@ namespace MoozicOrb.IO
             return results;
         }
 
-        // 5. GENERIC SEARCH (Social Feed)
+        // 5. STANDARD SEARCH
         public List<PostDto> SearchPosts(string term, int viewerId)
         {
-            string whereClause = "WHERE (p.content_text LIKE @term OR p.title LIKE @term) ORDER BY p.created_at DESC LIMIT 20";
-            return ExecuteSearch(term, viewerId, whereClause);
+            return ExecuteSearch(term, viewerId, "WHERE (p.content_text LIKE @term OR p.title LIKE @term) ORDER BY p.created_at DESC LIMIT 20");
         }
 
-        // 6. AUDIO SEARCH (Discover Page)
+        // 6. AUDIO SEARCH
         public List<PostDto> SearchAudio(string term, int viewerId)
         {
             string whereClause = @"
                 WHERE (p.content_text LIKE @term OR p.title LIKE @term) 
                 AND EXISTS (SELECT 1 FROM post_media pm WHERE pm.post_id = p.post_id AND pm.media_type = 1)
                 ORDER BY p.created_at DESC LIMIT 20";
-
             return ExecuteSearch(term, viewerId, whereClause);
         }
 
@@ -146,7 +190,6 @@ namespace MoozicOrb.IO
             return results;
         }
 
-        // --- SQL GENERATOR & MAPPING (Keep existing) ---
         private string GetBaseSql(string whereClause)
         {
             return $@"
@@ -165,6 +208,7 @@ namespace MoozicOrb.IO
                 {whereClause}";
         }
 
+        // CORRECT JOINS FOR YOUR SCHEMA
         private void AttachMediaToPosts(MySqlConnection conn, List<PostDto> posts)
         {
             if (posts == null || posts.Count == 0) return;
@@ -174,9 +218,9 @@ namespace MoozicOrb.IO
                 SELECT pm.post_id, pm.media_id, pm.media_type, pm.sort_order,
                     COALESCE(img.file_path, vid.file_path, aud.file_path) AS final_url
                 FROM post_media pm
-                LEFT JOIN media_images img ON pm.media_id = img.id AND pm.media_type = 3
-                LEFT JOIN media_video vid ON pm.media_id = vid.id AND pm.media_type = 2
-                LEFT JOIN media_audio aud ON pm.media_id = aud.id AND pm.media_type = 1
+                LEFT JOIN media_images img ON pm.media_id = img.image_id AND pm.media_type = 3
+                LEFT JOIN media_video vid ON pm.media_id = vid.video_id AND pm.media_type = 2
+                LEFT JOIN media_audio aud ON pm.media_id = aud.audio_id AND pm.media_type = 1
                 WHERE pm.post_id IN ({ids}) ORDER BY pm.sort_order ASC";
 
             using (var cmd = new MySqlCommand(sql, conn))

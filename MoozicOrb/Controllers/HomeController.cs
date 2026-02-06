@@ -11,6 +11,60 @@ namespace MoozicOrb.Controllers
         // URL: /  (Stays as your landing/home page)
         public IActionResult Index()
         {
+
+
+            //try
+            //{
+            //    var insertUser = new InsertUser();
+
+
+
+            //    var user = new MoozicOrb.Models.User()
+            //    {
+            //        FirstName = "Nikki",
+            //        MiddleName = "",
+            //        LastName = "Richardson",
+            //        UserName = "Nikki",
+            //        Email = "Nikki@placeholder.com",
+            //        DisplayName = "Nikki",
+            //        ProfilePic = "",
+            //        CoverImageUrl = "",
+            //        Bio = "Hello",
+            //        IsCreator = true,
+            //        ProfileLayoutJson = "['posts', 'music', 'store']",
+            //        UserGroups = "9"
+            //    };
+
+            //    long userId = insertUser.Execute(user);
+
+            //    if (userId <= 0)
+            //    {
+            //        int failed = 1;
+            //    }
+
+            //    // ---- STEP 2: hash password ----
+            //    string password = "password";
+
+
+
+            //    string passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
+
+            //    // ---- STEP 3: insert auth row ----
+            //    var insertAuth = new InsertUserAuthLocal();
+            //    long authId = insertAuth.Insert(userId, passwordHash);
+
+            //    if (authId <= 0)
+            //    {
+            //        int failed = 1;
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+                
+            //    return View();
+            //}
+
+
             if (Request.IsSpaRequest())
             {
                 return PartialView("_HomePartial");

@@ -4,46 +4,62 @@
 
 <div class="section pt-4">
     <div class="d-flex align-items-center mb-4 p-4 rounded"
-         style="background: linear-gradient(45deg, #111, #1a1a1a); border-left: 4px solid var(--accent-solar);">
-        <div class="me-3">
-            <div class="play-glow" style="width:50px; height:50px; font-size:1.5rem;">
+         style="background: linear-gradient(45deg, #111, #1a1a1a); border-left: 4px solid var(--accent-solar); box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+        <div class="me-4">
+            <div class="play-glow" style="width:60px; height:60px; font-size:1.8rem;">
                 <i class="fas fa-headphones"></i>
             </div>
         </div>
         <div>
-            <h2 class="m-0 text-white">Audio Discovery</h2>
-            <p class="text-muted m-0 small">Fresh tracks dropped by creators worldwide.</p>
+            <h2 class="m-0 text-white" style="font-family: var(--font-display);">Audio Discovery</h2>
+            <p class="text-muted m-0 small">Fresh tracks dropped by creators worldwide. Strictly music.</p>
         </div>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="section-heading mb-0">Browse Genres</h4>
-        <input type="text" class="genre-search mb-0" style="width: 200px;" placeholder="Filter...">
+    <div class="genre-container mb-4">
+        <input type="text" class="genre-search w-100" placeholder="Filter genres..." style="max-width: 100%;">
     </div>
 
-    <div class="genre-grid-large mb-5" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">
-        @foreach (var genre in Model.Genres)
+    <div class="genre-grid-large mb-5" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px;">
+        @if (Model.Genres != null)
         {
-            <div class="genre-tile d-flex flex-column align-items-center justify-content-center p-3 rounded"
-                 style="background-color: @genre.Color; height: 120px; cursor: pointer; transition: transform 0.2s;">
-                <i class="@genre.IconClass fa-2x mb-2 text-white"></i>
-                <h5 class="text-white m-0">@genre.Name</h5>
-            </div>
+            @foreach (var genre in Model.Genres)
+            {
+                <div class="genre-tile d-flex flex-column align-items-center justify-content-center p-3 rounded position-relative overflow-hidden"
+                     style="background-color: @genre.Color; height: 110px; cursor: pointer; transition: transform 0.2s;">
+                    <div style="position: absolute; inset:0; background: rgba(0,0,0,0.2);"></div>
+                    <div style="position: relative; z-index: 2; text-align:center;">
+                        <i class="@genre.IconClass fa-2x mb-2 text-white" style="opacity: 0.9;"></i>
+                        <h5 class="text-white m-0" style="font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">@genre.Name</h5>
+                    </div>
+                </div>
+            }
         }
     </div>
 
     <h4 class="section-heading">Latest Tracks</h4>
+
     <div id="feed-stream-container" class="feed-stream feed-wrapper">
         <div class="text-center text-muted py-5">
-            <i class="fas fa-circle-notch fa-spin"></i> Loading tracks...
+            <i class="fas fa-circle-notch fa-spin"></i> Loading audio feed...
         </div>
     </div>
 </div>
 
 <script>
-    // Initialize Audio-Only Feed when this partial loads
-    if (window.loadFeedHistory) {
-        // 'discover' triggers the GetAudioDiscoveryFeed logic in PostController
-        window.loadFeedHistory('discover', '0');
+    // FIX: Wait for DOMContentLoaded to ensure feed.js is ready
+    function initDiscoverFeed() {
+        if (window.loadFeedHistory) {
+            window.loadFeedHistory('discover', '0');
+        } else {
+            // Safety Retry
+            setTimeout(initDiscoverFeed, 50);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDiscoverFeed);
+    } else {
+        initDiscoverFeed();
     }
 </script>

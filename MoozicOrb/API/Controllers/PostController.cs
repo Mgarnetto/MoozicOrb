@@ -56,6 +56,7 @@ namespace MoozicOrb.API.Controllers
                 "user" => $"user_{id}",
                 "creator" => $"user_{id}",
                 "feed" => "feed_global",
+                "discover" => "page_discover", // Added for Discover Page updates
                 _ => "feed_global"
             };
         }
