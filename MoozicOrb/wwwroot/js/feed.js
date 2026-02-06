@@ -554,7 +554,7 @@ function appendHistoricalPost(post, container) {
                 <button class="btn-post-action btn-like" data-id="${post.id}">
                     <i class="${post.isLiked ? 'fas text-danger' : 'far'} fa-heart"></i> Like ${post.likesCount > 0 ? `(${post.likesCount})` : ''}
                 </button>
-                <button class="btn-post-action btn-comment-toggle" data-id="${post.id}">
+                <button style="white-space: nowrap;" class="btn-post-action btn-comment-toggle" data-id="${post.id}">
                     <i class="far fa-comment"></i> Comment ${post.commentsCount > 0 ? `(${post.commentsCount})` : ''}
                 </button>
                 <button class="btn-post-action"><i class="far fa-share-square"></i> Share</button>

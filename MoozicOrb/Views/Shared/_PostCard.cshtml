@@ -116,7 +116,7 @@
             }
             Like @(Model.LikesCount > 0 ? $"({Model.LikesCount})" : "")
         </button>
-        <button class="btn-post-action btn-comment-toggle" data-id="@Model.Id">
+        <button style ="white-space: nowrap;" class="btn-post-action btn-comment-toggle" data-id="@Model.Id">
             <i class="far fa-comment"></i> Comment @(Model.CommentsCount > 0 ? $"({Model.CommentsCount})" : "")
         </button>
         <button class="btn-post-action"><i class="far fa-share-square"></i> Share</button>
