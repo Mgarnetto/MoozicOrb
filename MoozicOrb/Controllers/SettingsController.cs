@@ -79,8 +79,7 @@ namespace MoozicOrb.Controllers
             {
                 DisplayName = user.DisplayName,
                 Email = user.Email,
-                // Pass current pic to view if needed, though usually handled via JS or separate fetch
-                // Adding ProfilePic to ViewModel might be good, but we can fetch it via sidebar-info logic
+                ProfilePic = user.ProfilePic
             };
 
             if (Request.IsSpaRequest()) return PartialView("_AccountSettingsPartial", model);

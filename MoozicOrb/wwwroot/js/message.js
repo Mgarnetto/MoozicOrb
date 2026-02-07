@@ -151,8 +151,18 @@
             const partnerId = (msg.senderId == AuthState.userId) ? msg.receiverId : msg.senderId;
             const partnerName = (msg.senderId == AuthState.userId) ? (msg.receiverName || msg.ReceiverName) : (msg.senderName || msg.SenderName);
 
+            // NEW: Extract image so we can pass it to ensureThread
+            // This ensures that when the chat is created/moved to top, it has the right pic
+            const partnerImg = (msg.senderId == AuthState.userId) ? (msg.receiverProfilePicUrl || msg.ReceiverProfilePicUrl) : (msg.senderProfilePicUrl || msg.SenderProfilePicUrl);
+
+            // Trigger Sidebar Update (Create or Move to Top)
             if (window.AuthState?.ensureThread) {
-                window.AuthState.ensureThread({ id: partnerId, name: partnerName || `User ${partnerId}`, type: "direct" });
+                window.AuthState.ensureThread({
+                    id: partnerId,
+                    name: partnerName || `User ${partnerId}`,
+                    type: "direct",
+                    img: partnerImg
+                });
             }
             appendMessage(msg);
         }
@@ -162,6 +172,7 @@
         const res = await fetch(`/api/groups/${groupId}/messages/${messageId}`, { headers: { "X-Session-Id": AuthState.sessionId } });
         if (res.ok) {
             const msg = await res.json();
+            // Trigger Sidebar Update (Create or Move to Top)
             if (window.AuthState?.ensureThread) {
                 window.AuthState.ensureThread({ id: groupId, name: `Group ${groupId}`, type: "group" });
             }
@@ -387,7 +398,8 @@
         }
     };
 
-    // NEW: Uses API to get User Info instead of scraping DOM
+    // NEW: Uses API to get User Info for the Header only
+    // DOES NOT force the thread into the sidebar list until a message is sent
     async function startChat(userId) {
         // 1. Auth Check
         if (typeof AuthState === 'undefined' || !AuthState.loggedIn) {
@@ -397,9 +409,8 @@
         }
 
         let name = `User ${userId}`;
-        let img = "/img/profile_default.jpg";
 
-        // 2. Fetch User Info from API (Cleaner!)
+        // 2. Fetch User Info from API (For Window Title)
         try {
             const res = await fetch(`/api/direct/messages/user-info/${userId}`, {
                 headers: { "X-Session-Id": AuthState.sessionId }
@@ -407,23 +418,15 @@
             if (res.ok) {
                 const info = await res.json();
                 name = info.name;
-                img = info.img;
             }
         } catch (e) {
             console.error("Failed to fetch user info for chat header", e);
         }
 
-        // 3. Ensure Sidebar Thread Exists
-        if (AuthState.ensureThread) {
-            AuthState.ensureThread({
-                id: userId,
-                name: name,
-                type: "direct",
-                img: img
-            });
-        }
+        // NOTE: We REMOVED ensureThread() here. 
+        // The chat will appear in the sidebar only after 'OnDirectMessage' fires.
 
-        // 4. UI Overlay Logic
+        // 3. UI Overlay Logic
         const chatOverlay = document.getElementById("chatOverlay");
         const sidebar = document.getElementById('sidebar');
 
@@ -431,7 +434,7 @@
         document.body.classList.remove('sidebar-open');
         if (chatOverlay) chatOverlay.classList.add("active");
 
-        // 5. Load the conversation
+        // 4. Load the conversation
         await loadDirectMessages(userId, name);
     }
 

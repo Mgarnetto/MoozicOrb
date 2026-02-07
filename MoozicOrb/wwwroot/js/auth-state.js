@@ -12,8 +12,6 @@
             this.userId = userId;
             this.sessionId = sessionId;
 
-            window.CurrentUserId = userId;
-
             document.body.classList.add("auth-on");
             document.body.classList.remove("auth-off");
 
@@ -128,7 +126,7 @@
                     }
                 }
 
-                // --- STEP B: Fetch DMs ---
+                // --- STEP B: Fetch DMs & SORT THEM ---
                 const resDms = await fetch("/api/direct/messages", {
                     headers: { "X-Session-Id": this.sessionId }
                 });
@@ -137,8 +135,32 @@
                     const dataDms = await resDms.json();
                     const conversations = dataDms.messages || dataDms.Messages || {};
 
-                    for (const otherUserId in conversations) {
-                        const msgs = conversations[otherUserId];
+                    // 1. Convert Dictionary to Array for Sorting
+                    // We map each conversation to an object containing the UserID, Messages, and LastTimestamp
+                    const sortedConvos = Object.keys(conversations).map(userId => {
+                        const msgs = conversations[userId];
+                        let lastTime = 0;
+                        // Find the latest timestamp
+                        if (msgs && msgs.length > 0) {
+                            // Handle both casing (Created vs created)
+                            const lastMsg = msgs[msgs.length - 1];
+                            const dateStr = lastMsg.created || lastMsg.Created;
+                            if (dateStr) lastTime = new Date(dateStr).getTime();
+                        }
+                        return { userId, msgs, lastTime };
+                    });
+
+                    // 2. Sort ASCENDING (Oldest -> Newest)
+                    // Why Ascending? Because ensureThread() uses 'prepend' (adds to top).
+                    // We want to add the Oldest first (bottom), and the Newest last (top).
+                    sortedConvos.sort((a, b) => a.lastTime - b.lastTime);
+
+                    // 3. Render
+                    for (const item of sortedConvos) {
+                        const otherUserId = item.userId;
+                        const msgs = item.msgs;
+
+                        // Name/Pic resolution logic
                         let displayName = `User ${otherUserId}`;
                         let displayPic = "/images/default-user.png";
 
@@ -184,10 +206,17 @@
         ensureThread({ id, name, type, img }) {
             const domId = `thread-${type}-${id}`;
             const existing = document.getElementById(domId);
+            const chatList = document.getElementById("chatList");
 
             if (existing) {
+                // Update Name
                 const titleEl = existing.querySelector("h4");
                 if (titleEl) titleEl.innerText = name;
+
+                // NEW: Move to Top of List (Reorder on new activity)
+                if (chatList) {
+                    chatList.prepend(existing);
+                }
                 return;
             }
 
@@ -250,7 +279,8 @@
                 }
             });
 
-            chatList.appendChild(li);
+            // NEW: Always add new items to the TOP
+            chatList.prepend(li);
         }
     };
 
@@ -262,29 +292,23 @@
     document.addEventListener("DOMContentLoaded", async () => {
 
         // --- 1. FORCE HOME REDIRECT (Simple Auth Gate) ---
-        // If the user refreshes on any page that is NOT home, kick them back to home.
         const path = window.location.pathname.toLowerCase();
         if (path !== "/" && path !== "/home/index" && path !== "/home") {
             window.location.replace("/");
-            return; // Stop execution
+            return;
         }
 
         const savedSession = localStorage.getItem("moozic_session");
 
-        // DEFAULT: Disable profile link immediately on load
         AuthState.toggleProfileLink(false);
 
         if (savedSession) {
             try {
                 const data = JSON.parse(savedSession);
-
-                // --- 2. VALIDATE WITH SERVER ---
-                // Trust but verify.
                 const isValid = await AuthState.checkSessionValid(data.sessionId);
 
                 if (isValid) {
                     AuthState.setLoggedIn(data.userId, data.sessionId);
-                    window.CurrentUserId = AuthState.userId;
                     await AuthState.bootstrap();
                 } else {
                     console.warn("Session expired on server. Logging out.");
@@ -314,17 +338,14 @@
     // 6. MOBILE LIFECYCLE (WAKE-UP HANDLER)
     // ============================================
     document.addEventListener("visibilitychange", async () => {
-        // When user comes back to the tab/app
         if (document.visibilityState === "visible") {
             console.log("[AuthState] App Waking Up...");
 
             if (AuthState.loggedIn && AuthState.sessionId) {
-                // 1. Re-verify session (it might have expired while backgrounded)
                 const isValid = await AuthState.checkSessionValid(AuthState.sessionId);
 
                 if (isValid) {
                     console.log("[AuthState] Session still valid. Re-syncing data...");
-                    // 2. Re-fetch updates that happened while sleeping
                     await AuthState.bootstrap();
                 } else {
                     console.log("[AuthState] Session expired during sleep.");
