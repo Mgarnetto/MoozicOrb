@@ -12,6 +12,8 @@
             this.userId = userId;
             this.sessionId = sessionId;
 
+            window.CurrentUserId = userId;
+
             document.body.classList.add("auth-on");
             document.body.classList.remove("auth-off");
 
@@ -282,6 +284,7 @@
 
                 if (isValid) {
                     AuthState.setLoggedIn(data.userId, data.sessionId);
+                    window.CurrentUserId = AuthState.userId;
                     await AuthState.bootstrap();
                 } else {
                     console.warn("Session expired on server. Logging out.");
