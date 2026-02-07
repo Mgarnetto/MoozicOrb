@@ -59,7 +59,7 @@
                         allowPosting = Model.IsCurrentUser,
                         inputType = "standard"
                         })
-        </div>
+            </div>
                 }
                 else
         {
@@ -77,28 +77,28 @@
                         allowPosting = Model.IsCurrentUser,
                         inputType = "standard"
                         })
-                        }
-                        else if (layoutItem == "music")
-                {
-                    <h4 class="section-heading">Discography</h4>
-                    <div class="profile-card text-center text-muted py-5">
-                        <i class="fas fa-compact-disc mb-3 fa-3x" style="opacity: 0.5;"></i>
-                        <p>No tracks uploaded yet.</p>
-                    </div>
-                }
-                else if (layoutItem == "store")
-                {
-                    <h4 class="section-heading">Merch Store</h4>
-                    <div class="profile-card">
-                        @await Component.InvokeAsync("PostFeed", new {
-                        contextType = "user_store",
-                                contextId = Model.UserId.ToString(),
-                                allowPosting = Model.IsCurrentUser,
-                                inputType = "classified"
-                                })
-            </div>
-                        }
-        </div>
+                    }
+                     else if (layoutItem == "music")
+                    {
+                        <h4 class="section-heading">Discography</h4>
+                        <div class="profile-card text-center text-muted py-5">
+                            <i class="fas fa-compact-disc mb-3 fa-3x" style="opacity: 0.5;"></i>
+                            <p>No tracks uploaded yet.</p>
+                        </div>
+                    }
+                    else if (layoutItem == "store")
+                    {
+                        <h4 class="section-heading">Merch Store</h4>
+                        <div class="profile-card">
+                            @await Component.InvokeAsync("PostFeed", new {
+                            contextType = "user_store",
+                                    contextId = Model.UserId.ToString(),
+                                    allowPosting = Model.IsCurrentUser,
+                                    inputType = "classified"
+                                    })
+                        </div>
+                    }
+                </div>
                 }
                 }
     </div>

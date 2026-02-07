@@ -4,6 +4,7 @@ using MoozicOrb.Api.Models;
 using MoozicOrb.Api.Services.Interfaces;
 using MoozicOrb.Hubs;
 using MoozicOrb.Services;
+using MoozicOrb.IO; // Added for UserQuery
 using System.Text.Json;
 
 [ApiController]
@@ -14,6 +15,7 @@ public class DirectMessagesController : ControllerBase
     private readonly IHttpContextAccessor _http;
     private readonly IHubContext<MessageHub> _hub;
     private readonly UserConnectionManager _connections;
+    private readonly UserQuery _userQuery; // Added
 
     public DirectMessagesController(
         IDirectMessageApiService service,
@@ -25,6 +27,7 @@ public class DirectMessagesController : ControllerBase
         _http = http;
         _hub = hub;
         _connections = connections;
+        _userQuery = new UserQuery(); // Initialize
     }
 
     // =========================================
@@ -39,6 +42,27 @@ public class DirectMessagesController : ControllerBase
             throw new UnauthorizedAccessException();
 
         return session.UserId;
+    }
+
+    // =========================================
+    // GET: User Info for Chat Header
+    // NEW: Fetches name/pic for the "Start Chat" action
+    // =========================================
+    [HttpGet("user-info/{targetUserId:int}")]
+    public IActionResult GetUserInfo(int targetUserId)
+    {
+        // Ensure requestor is logged in
+        GetUserId();
+
+        var user = _userQuery.GetUserById(targetUserId);
+        if (user == null) return NotFound();
+
+        return Ok(new
+        {
+            id = user.UserId,
+            name = !string.IsNullOrEmpty(user.DisplayName) ? user.DisplayName : user.UserName,
+            img = !string.IsNullOrEmpty(user.ProfilePic) ? user.ProfilePic : "/img/profile_default.jpg"
+        });
     }
 
     // =========================================
@@ -69,9 +93,6 @@ public class DirectMessagesController : ControllerBase
 
         if (msg.SenderId != me && msg.ReceiverId != me)
             return Forbid();
-
-        //var sender = new MoozicOrb.IO.UserQuery().GetUserById(msg.SenderId);
-        //msg.SenderName = sender.FirstName + " " + sender.LastName;
 
         return Ok(msg);
     }

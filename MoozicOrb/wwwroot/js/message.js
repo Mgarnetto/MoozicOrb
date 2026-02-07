@@ -387,6 +387,54 @@
         }
     };
 
+    // NEW: Uses API to get User Info instead of scraping DOM
+    async function startChat(userId) {
+        // 1. Auth Check
+        if (typeof AuthState === 'undefined' || !AuthState.loggedIn) {
+            const loginBtn = document.getElementById("loginToggleBtn");
+            if (loginBtn) loginBtn.click();
+            return;
+        }
+
+        let name = `User ${userId}`;
+        let img = "/img/profile_default.jpg";
+
+        // 2. Fetch User Info from API (Cleaner!)
+        try {
+            const res = await fetch(`/api/direct/messages/user-info/${userId}`, {
+                headers: { "X-Session-Id": AuthState.sessionId }
+            });
+            if (res.ok) {
+                const info = await res.json();
+                name = info.name;
+                img = info.img;
+            }
+        } catch (e) {
+            console.error("Failed to fetch user info for chat header", e);
+        }
+
+        // 3. Ensure Sidebar Thread Exists
+        if (AuthState.ensureThread) {
+            AuthState.ensureThread({
+                id: userId,
+                name: name,
+                type: "direct",
+                img: img
+            });
+        }
+
+        // 4. UI Overlay Logic
+        const chatOverlay = document.getElementById("chatOverlay");
+        const sidebar = document.getElementById('sidebar');
+
+        if (sidebar) sidebar.classList.remove('active');
+        document.body.classList.remove('sidebar-open');
+        if (chatOverlay) chatOverlay.classList.add("active");
+
+        // 5. Load the conversation
+        await loadDirectMessages(userId, name);
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         // Send Msg
         const input = document.getElementById("msgInput");
@@ -430,4 +478,5 @@
     window.appendMessage = appendMessage;
     window.startCall = startCall;
     window.hangupCall = hangupCall;
+    window.startChat = startChat; // <-- EXPORTED HERE
 })();

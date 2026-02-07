@@ -21,15 +21,15 @@ namespace MoozicOrb.Controllers
 
             //    var user = new MoozicOrb.Models.User()
             //    {
-            //        FirstName = "Nikki",
+            //        FirstName = "Junior",
             //        MiddleName = "",
-            //        LastName = "Richardson",
-            //        UserName = "Nikki",
-            //        Email = "Nikki@placeholder.com",
-            //        DisplayName = "Nikki",
+            //        LastName = "Green",
+            //        UserName = "Junior",
+            //        Email = "Junior@placeholder.com",
+            //        DisplayName = "JG",
             //        ProfilePic = "",
             //        CoverImageUrl = "",
-            //        Bio = "Hello",
+            //        Bio = "Creator",
             //        IsCreator = true,
             //        ProfileLayoutJson = "['posts', 'music', 'store']",
             //        UserGroups = "9"
@@ -60,7 +60,7 @@ namespace MoozicOrb.Controllers
             //}
             //catch (Exception ex)
             //{
-                
+
             //    return View();
             //}
 
