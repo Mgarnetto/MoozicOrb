@@ -1115,7 +1115,7 @@ input[type="radio"] {
     z-index: 2;
 }
 
-.video-controls {
+.call-controls {
     display: flex;
     justify-content: center;
     gap: 20px;

@@ -150,7 +150,8 @@
                         if (msgs && msgs.length > 0) {
                             // Handle both casing (Created vs created)
                             const lastMsg = msgs[msgs.length - 1];
-                            const dateStr = lastMsg.created || lastMsg.Created;
+                            // FIX: Added Timestamp check here
+                            const dateStr = lastMsg.Timestamp || lastMsg.timestamp || lastMsg.created || lastMsg.Created;
                             if (dateStr) lastTime = new Date(dateStr).getTime();
                         }
                         return { userId, msgs, lastTime };
