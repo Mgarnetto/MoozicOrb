@@ -157,35 +157,40 @@
         </div>
     </div>
 
-    <div class="modal fade" id="editPostModal" tabindex="-1" aria-hidden="true">
+    <div id="editPostModal" class="modal">
         <div class="modal-dialog">
-            <div class="modal-content bg-dark text-white border-secondary">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title">Edit Post</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-content">
+                <div class="modal-header border-bottom border-secondary p-3">
+                    <h5 class="modal-title m-0">Edit Post</h5>
+                    <button type="button" class="btn-close" onclick="closeAllModals()">×</button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body p-3">
                     <input type="hidden" id="editPostId">
-                    <div class="mb-3"><label class="form-label text-muted small">Title</label><input type="text" id="editPostTitle" class="form-control bg-black text-white border-secondary"></div>
-                    <div class="mb-3"><label class="form-label text-muted small">Content</label><textarea id="editPostText" class="form-control bg-black text-white border-secondary" rows="4"></textarea></div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Title</label>
+                        <input type="text" id="editPostTitle" class="form-control bg-black text-white border-secondary">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small">Content</label>
+                        <textarea id="editPostText" class="form-control bg-black text-white border-secondary" rows="4"></textarea>
+                    </div>
                     <div id="editMediaList" class="d-flex flex-wrap gap-2"></div>
                 </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <div class="modal-footer border-top border-secondary p-3 text-end">
+                    <button type="button" class="btn btn-secondary me-2" onclick="closeAllModals()">Cancel</button>
                     <button type="button" class="btn btn-primary" onclick="window.FeedService.submitEdit()">Save Changes</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="singlePostModal" tabindex="-1" aria-hidden="true" style="background: rgba(0,0,0,0.8);">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content bg-transparent border-0">
-                <div class="d-flex justify-content-end mb-2">
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
+    <div id="singlePostModal" class="modal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <button type="button" class="btn-close" onclick="closeAllModals()"></button> 
 
-                <div id="singlePostContainer"></div>
+                <div id="singlePostContainer" class="p-3">
+                </div>
             </div>
         </div>
     </div>

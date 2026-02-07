@@ -84,9 +84,11 @@ window.FeedService.openPostModal = async (postId, autoComment = false) => {
     }
 
     // 1. Show Modal (Custom CSS Toggle)
+    // We strictly use the class 'active' to control visibility via site.css
     modalEl.classList.add('active');
-    modalEl.style.display = 'block'; // Override bootstrap hidden
-    modalEl.style.opacity = '1';     // Override bootstrap fade
+
+    // REMOVED: modalEl.style.display = 'block'; (Breaks flex centering)
+    // REMOVED: modalEl.style.opacity = '1';
 
     // 2. Show Loading State
     container.innerHTML = '<div class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-white"></i></div>';
@@ -143,6 +145,7 @@ window.FeedService.openEditModal = async (id) => {
         // Toggle CSS class instead of using Bootstrap JS
         const modal = document.getElementById('editPostModal');
         modal.classList.add('active');
+        // If your edit modal works with these, leave them, otherwise remove if centering is an issue there too.
         modal.style.display = 'block';
         modal.style.opacity = '1';
 
@@ -204,8 +207,8 @@ window.deleteMedia = async (postId, mediaId, btnElement) => {
 // --- GLOBAL MODAL CLOSER (UPDATED) ---
 // Handles closing ANY modal with class 'active' when clicking background or close buttons
 document.addEventListener('click', function (e) {
-    // 1. Close Button Click (looks for data-bs-dismiss attribute)
-    if (e.target.matches('[data-bs-dismiss="modal"]') || e.target.closest('[data-bs-dismiss="modal"]')) {
+    // 1. Close Button Click (looks for data-bs-dismiss attribute or close-btn class)
+    if (e.target.matches('.btn-close') || e.target.matches('[data-bs-dismiss="modal"]') || e.target.closest('[data-bs-dismiss="modal"]')) {
         closeAllModals();
     }
 
@@ -222,7 +225,7 @@ function closeAllModals() {
     const modals = document.querySelectorAll('.modal.active');
     modals.forEach(m => {
         m.classList.remove('active');
-        // Reset manual styles we applied
+        // Reset manual styles we applied (just in case they were set elsewhere)
         m.style.display = '';
         m.style.opacity = '';
     });

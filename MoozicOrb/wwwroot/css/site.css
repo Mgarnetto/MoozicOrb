@@ -3077,3 +3077,92 @@ textarea.form-control {
         transform: translateX(0);
     }
 }
+
+/* =========================================
+   20. MANUAL NOTIFICATION MODAL (No Bootstrap)
+   ========================================= */
+
+#singlePostModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9); /* Dark overlay */
+    z-index: 5000; /* High z-index to sit over Navbar */
+    display: none; /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+    overflow-y: auto; /* Allow scrolling if post is long */
+}
+
+    /* When JS adds the .active class, show it with Flexbox for centering */
+    #singlePostModal.active {
+        display: flex !important;
+    }
+
+    /* Style the inner box */
+    #singlePostModal .modal-dialog {
+        width: 100%;
+        max-width: 700px;
+        margin: 20px;
+        pointer-events: all;
+    }
+
+    #singlePostModal .modal-content {
+        background: var(--bg-card);
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 0; /* Let content dictate padding */
+        box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Close button positioning */
+    #singlePostModal .btn-close {
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 1.5rem;
+        position: absolute;
+        top: 15px;
+        right: 20px;
+        cursor: pointer;
+        z-index: 10;
+    }
+
+        #singlePostModal .btn-close::before {
+            content: "\00d7"; /* X character */
+        }
+
+/* =========================================
+   21. MINI GRID SYSTEM (Replacements for Bootstrap col-*)
+   ========================================= */
+/* Since _PostCard.cshtml uses .row and .col-*, we define them manually here */
+
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -10px;
+    margin-left: -10px;
+}
+
+.g-2 {
+    gap: 10px;
+}
+/* Gap utility */
+
+.col-12, .col-6 {
+    position: relative;
+    width: 100%;
+    padding-right: 10px;
+    padding-left: 10px;
+}
+
+.col-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+}
