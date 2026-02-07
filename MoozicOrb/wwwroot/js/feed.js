@@ -58,7 +58,7 @@ feedConnection.on("RemovePost", function (msg) {
     }
 });
 
-// --- NEW SERVICE METHODS ---
+// --- SERVICE METHODS ---
 
 window.FeedService.deletePost = async (id) => {
     if (!confirm("Are you sure you want to delete this post?")) return;
@@ -72,7 +72,50 @@ window.FeedService.deletePost = async (id) => {
     } catch (err) { console.error(err); }
 };
 
-// --- UPDATED: EDIT MODAL LOGIC (CSS Class Toggle) ---
+// --- NEW: SINGLE POST MODAL (Notifications) ---
+// UPDATED: Removed Bootstrap dependency. Uses simple CSS class toggling.
+window.FeedService.openPostModal = async (postId, autoComment = false) => {
+    const modalEl = document.getElementById('singlePostModal');
+    const container = document.getElementById('singlePostContainer');
+
+    if (!modalEl || !container) {
+        console.error("Modal elements not found in Layout");
+        return;
+    }
+
+    // 1. Show Modal (Custom CSS Toggle)
+    modalEl.classList.add('active');
+    modalEl.style.display = 'block'; // Override bootstrap hidden
+    modalEl.style.opacity = '1';     // Override bootstrap fade
+
+    // 2. Show Loading State
+    container.innerHTML = '<div class="text-center p-5"><i class="fas fa-spinner fa-spin fa-2x text-white"></i></div>';
+
+    try {
+        // 3. Fetch Partial HTML from Controller
+        const res = await fetch(`/api/posts/${postId}/card`, {
+            headers: { "X-Session-Id": window.AuthState?.sessionId || "" }
+        });
+
+        if (!res.ok) throw new Error("Post not found");
+
+        const html = await res.text();
+        container.innerHTML = html;
+
+        // 4. Auto-Open Comments if requested
+        if (autoComment) {
+            setTimeout(() => {
+                const commentBtn = container.querySelector('.btn-comment-toggle');
+                if (commentBtn) commentBtn.click();
+            }, 300);
+        }
+    } catch (err) {
+        console.error(err);
+        container.innerHTML = '<div class="text-center p-4 text-danger">Failed to load post. It may have been deleted.</div>';
+    }
+};
+
+// --- EDIT MODAL LOGIC (CSS Class Toggle) ---
 
 window.FeedService.openEditModal = async (id) => {
     try {
@@ -98,7 +141,10 @@ window.FeedService.openEditModal = async (id) => {
         });
 
         // Toggle CSS class instead of using Bootstrap JS
-        document.getElementById('editPostModal').classList.add('active');
+        const modal = document.getElementById('editPostModal');
+        modal.classList.add('active');
+        modal.style.display = 'block';
+        modal.style.opacity = '1';
 
     } catch (err) { console.error(err); }
 };
@@ -122,14 +168,14 @@ window.FeedService.submitEdit = async () => {
     });
 
     if (res.ok) {
-        // Toggle CSS class to hide
-        document.getElementById('editPostModal').classList.remove('active');
+        // Close Modal
+        closeAllModals();
     } else {
         alert("Update failed");
     }
 };
 
-// --- ADDED: Missing Function for Edit Modal ---
+// --- Helper for Edit Modal ---
 window.deleteMedia = async (postId, mediaId, btnElement) => {
     if (!confirm("Remove this attachment?")) return;
 
@@ -155,18 +201,32 @@ window.deleteMedia = async (postId, mediaId, btnElement) => {
     }
 };
 
-// --- ADDED: Global Listener to Close Modal (Cancel / Overlay) ---
+// --- GLOBAL MODAL CLOSER (UPDATED) ---
+// Handles closing ANY modal with class 'active' when clicking background or close buttons
 document.addEventListener('click', function (e) {
-    // 1. Close if clicking "Cancel" or "X" (data-bs-dismiss is still in HTML)
+    // 1. Close Button Click (looks for data-bs-dismiss attribute)
     if (e.target.matches('[data-bs-dismiss="modal"]') || e.target.closest('[data-bs-dismiss="modal"]')) {
-        const modal = document.getElementById('editPostModal');
-        if (modal) modal.classList.remove('active');
+        closeAllModals();
     }
-    // 2. Close if clicking the dark overlay background
-    if (e.target.id === 'editPostModal') {
-        e.target.classList.remove('active');
+
+    // 2. Click Outside (Overlay)
+    // We check if the click target IS the modal wrapper itself (the dark overlay)
+    // AND if it has the 'active' class
+    if (e.target.classList.contains('modal') && e.target.classList.contains('active')) {
+        closeAllModals();
     }
 });
+
+// Helper to cleanly close all custom modals
+function closeAllModals() {
+    const modals = document.querySelectorAll('.modal.active');
+    modals.forEach(m => {
+        m.classList.remove('active');
+        // Reset manual styles we applied
+        m.style.display = '';
+        m.style.opacity = '';
+    });
+}
 
 
 // 4. POST RENDERING (Match Server HTML)

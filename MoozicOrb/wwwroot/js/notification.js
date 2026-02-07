@@ -5,7 +5,6 @@
         // Called by AuthState.bootstrap()
         init() {
             if (this.initialized) {
-                // If re-initializing (e.g. wake up), just refresh
                 this.fetchNotifications();
                 return;
             }
@@ -14,7 +13,6 @@
             const dropdown = document.getElementById("notifDropdown");
             const markReadBtn = document.getElementById("markAllReadBtn");
 
-            // If UI elements aren't there, abort
             if (!btn || !dropdown) return;
 
             // 1. Initial Fetch
@@ -49,11 +47,9 @@
             if (!dropdown) return;
 
             dropdown.style.display = "block";
-            // Tiny delay to allow CSS transition if needed
             setTimeout(() => dropdown.classList.add("show"), 10);
             if (btn) btn.classList.add("active");
 
-            // Refresh list on open
             this.fetchNotifications();
         },
 
@@ -72,7 +68,6 @@
 
             const list = document.getElementById("notification-list");
 
-            // Show loading spinner only if the list is currently empty
             if (list && list.children.length === 0) {
                 list.innerHTML = '<div style="padding:20px;text-align:center;color:#666;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
             }
@@ -106,7 +101,6 @@
                     headers: { "X-Session-Id": window.AuthState.sessionId }
                 });
 
-                // Update UI immediately
                 if (badge) {
                     badge.innerText = "0";
                     badge.style.display = "none";
@@ -146,10 +140,18 @@
                 const li = document.createElement("a");
                 li.className = `notif-item ${n.isRead ? '' : 'unread'}`;
 
-                // Determine Link Destination
+                // --- MODIFIED LINK LOGIC ---
                 let href = "#";
-                if (n.type === "post_new" || n.type === "like" || n.type === "comment") {
-                    href = `/home/feed?highlight=${n.referenceId}`;
+                let isModalAction = false;
+                let autoComment = false;
+
+                if (n.type === "post_new" || n.type === "like") {
+                    // Open Modal
+                    isModalAction = true;
+                } else if (n.type === "comment" || n.type === "comment_reply") {
+                    // Open Modal AND Comments
+                    isModalAction = true;
+                    autoComment = true;
                 } else if (n.type === "follow") {
                     href = `/creator/${n.actorId}`;
                 }
@@ -166,20 +168,35 @@
                     </div>
                 `;
 
-                // Handle Message Clicks (open chat instead of navigating)
-                if (n.type === "message") {
-                    li.onclick = (e) => {
+                li.onclick = (e) => {
+                    // 1. Message Click
+                    if (n.type === "message") {
                         e.preventDefault();
                         if (window.startChat) window.startChat(n.actorId);
                         this.closeDropdown();
-                    };
-                }
+                        return;
+                    }
+
+                    // 2. Post Click (Modal)
+                    if (isModalAction) {
+                        e.preventDefault();
+                        // Calls the FeedService to open the modal using the NEW PostController endpoint
+                        if (window.FeedService && window.FeedService.openPostModal) {
+                            window.FeedService.openPostModal(n.referenceId, autoComment);
+                        }
+                        this.closeDropdown();
+                        return;
+                    }
+
+                    // 3. Normal navigation (Follow, etc)
+                    // Let default href behavior happen, but close dropdown
+                    this.closeDropdown();
+                };
 
                 list.appendChild(li);
             });
         }
     };
 
-    // Expose Global Service
     window.NotificationService = NotificationService;
 })();

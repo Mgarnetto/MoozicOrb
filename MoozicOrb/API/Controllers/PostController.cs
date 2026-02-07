@@ -14,18 +14,18 @@ namespace MoozicOrb.API.Controllers
 {
     [ApiController]
     [Route("api/posts")]
-    public class PostController : ControllerBase
+    public class PostController : Controller
     {
         private readonly IHubContext<PostHub> _hub;
         private readonly IHttpContextAccessor _http;
         private readonly IUserService _userService;
-        private readonly NotificationService _notify; // <--- ADDED
+        private readonly NotificationService _notify;
 
         public PostController(
             IHubContext<PostHub> hub,
             IHttpContextAccessor http,
             IUserService userService,
-            NotificationService notify) // <--- INJECTED
+            NotificationService notify)
         {
             _hub = hub;
             _http = http;
@@ -98,6 +98,7 @@ namespace MoozicOrb.API.Controllers
                 {
                     Id = postId,
                     AuthorId = userId,
+                    ViewerId = userId, // <--- SET VIEWER ID (Creator is viewer)
                     AuthorName = authorName,
                     AuthorPic = authorPic,
                     ContextType = req.ContextType,
@@ -128,9 +129,8 @@ namespace MoozicOrb.API.Controllers
                     data = livePost
                 });
 
-                // 6. NOTIFY FOLLOWERS (NEW)
+                // 6. NOTIFY FOLLOWERS
                 string preview = req.Title ?? (req.Text?.Length > 20 ? req.Text.Substring(0, 20) + "..." : "New Post");
-                // Fire and forget (or await if you prefer safety)
                 await _notify.NotifyFollowers(userId, postId, preview);
 
                 return Ok(new { id = postId });
@@ -149,20 +149,27 @@ namespace MoozicOrb.API.Controllers
             {
                 int viewerId = GetViewerId();
                 var io = new GetPost();
+                List<PostDto> posts;
 
                 if (contextType == "global" || contextType == "feed_global")
                 {
-                    var randomPosts = io.GetDiscoveryFeed(viewerId);
-                    return Ok(randomPosts);
+                    posts = io.GetDiscoveryFeed(viewerId);
                 }
-
-                if (contextType == "discover")
+                else if (contextType == "discover")
                 {
-                    var audioPosts = io.GetAudioDiscoveryFeed(viewerId);
-                    return Ok(audioPosts);
+                    posts = io.GetAudioDiscoveryFeed(viewerId);
+                }
+                else
+                {
+                    posts = io.Execute(contextType, contextId, viewerId, page);
                 }
 
-                var posts = io.Execute(contextType, contextId, viewerId, page);
+                // <--- SET VIEWER ID FOR ALL POSTS
+                if (posts != null)
+                {
+                    foreach (var p in posts) p.ViewerId = viewerId;
+                }
+
                 return Ok(posts);
             }
             catch (Exception ex) { return BadRequest(ex.Message); }
@@ -178,7 +185,31 @@ namespace MoozicOrb.API.Controllers
                 var post = io.Execute(id, viewerId);
 
                 if (post == null) return NotFound("Post not found");
+
+                // <--- SET VIEWER ID
+                post.ViewerId = viewerId;
+
                 return Ok(post);
+            }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        // Endpoint to render the Partial View for the Modal
+        [HttpGet("{id}/card")]
+        public IActionResult GetSingleCard(long id)
+        {
+            try
+            {
+                int viewerId = GetViewerId();
+                var io = new GetPost();
+                var post = io.Execute(id, viewerId);
+
+                if (post == null) return NotFound("Post not found");
+
+                // <--- SET VIEWER ID (Crucial for Edit/Delete buttons in modal)
+                post.ViewerId = viewerId;
+
+                return PartialView("~/Views/Shared/_PostCard.cshtml", post);
             }
             catch (Exception ex) { return BadRequest(ex.Message); }
         }
@@ -186,7 +217,7 @@ namespace MoozicOrb.API.Controllers
         // --- COMMENTS ---------------------------------------------------
 
         [HttpPost("comment")]
-        public async Task<IActionResult> AddComment([FromBody] CreateCommentDto req) // Changed to async Task
+        public async Task<IActionResult> AddComment([FromBody] CreateCommentDto req)
         {
             try
             {
@@ -194,11 +225,10 @@ namespace MoozicOrb.API.Controllers
                 var io = new InsertComment();
                 long id = io.Execute(userId, req);
 
-                // NOTIFY POST AUTHOR (NEW)
+                // NOTIFY POST AUTHOR
                 var postIo = new GetPost();
                 var post = postIo.Execute(req.PostId, userId);
 
-                // Don't notify if commenting on own post
                 if (post != null && post.AuthorId != userId)
                 {
                     string commentPreview = req.Content.Length > 20 ? req.Content.Substring(0, 20) + "..." : req.Content;
@@ -226,7 +256,7 @@ namespace MoozicOrb.API.Controllers
         // --- LIKES ------------------------------------------------------
 
         [HttpPost("{id}/like")]
-        public async Task<IActionResult> LikePost(long id) // Changed to async Task
+        public async Task<IActionResult> LikePost(long id)
         {
             try
             {
@@ -234,13 +264,12 @@ namespace MoozicOrb.API.Controllers
                 var io = new ToggleLike();
                 bool liked = io.Execute(userId, id);
 
-                // NOTIFY POST AUTHOR (NEW)
+                // NOTIFY POST AUTHOR
                 if (liked)
                 {
                     var postIo = new GetPost();
                     var post = postIo.Execute(id, userId);
 
-                    // Don't notify if liking own post
                     if (post != null && post.AuthorId != userId)
                     {
                         await _notify.NotifyUser(post.AuthorId, userId, "like", id, "liked your post");
@@ -269,6 +298,9 @@ namespace MoozicOrb.API.Controllers
 
                 if (updatedPost != null)
                 {
+                    // Ensure viewer ID is set for real-time update payload
+                    updatedPost.ViewerId = userId;
+
                     string targetGroup = GetSignalRGroupName(updatedPost.ContextType, updatedPost.ContextId);
                     await _hub.Clients.Group(targetGroup).SendAsync("UpdatePost", new
                     {
