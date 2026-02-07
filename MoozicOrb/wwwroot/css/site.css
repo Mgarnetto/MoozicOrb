@@ -1713,6 +1713,7 @@ textarea.form-control {
     gap: 8px;
     flex: 1; /* Equal width actions */
     justify-content: center;
+    white-space: nowrap;
 }
 
     .btn-post-action:hover {
@@ -2766,4 +2767,29 @@ textarea.form-control {
         background: var(--accent-secondary);
         border-color: var(--accent-secondary);
         color: #000;
+    }
+
+/* =========================================
+   17. AUDIO LINK STYLING (Fix for Purple/Underline)
+   ========================================= */
+.audio-artist-link {
+    color: #b0b0b0 !important; /* Forces light gray, overrides 'purple' visited state */
+    text-decoration: none !important; /* Strictly removes underline */
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    display: block; /* Helps with truncation */
+}
+
+    /* Hover State - Neon Blue Glow */
+    .audio-artist-link:hover {
+        color: var(--accent-secondary) !important;
+        text-shadow: 0 0 8px rgba(0, 174, 239, 0.4);
+        text-decoration: none !important;
+        transform: translateX(2px); /* Subtle movement */
+    }
+
+    /* Ensure visited links don't turn purple again */
+    .audio-artist-link:visited {
+        color: #b0b0b0 !important;
     }
