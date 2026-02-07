@@ -222,5 +222,82 @@ namespace MoozicOrb.API.Controllers
             catch (UnauthorizedAccessException) { return Unauthorized(); }
             catch (Exception ex) { return BadRequest(ex.Message); }
         }
+
+        // --- UPDATE / DELETE --------------------------------------------
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdatePost(long id, [FromBody] UpdatePostDto req)
+        {
+            try
+            {
+                int userId = GetUserId();
+
+                // 1. Update DB
+                var io = new UpdatePost();
+                io.Execute(userId, id, req);
+
+                // 2. Fetch updated post to broadcast (so UI matches server exactly)
+                var getIo = new GetPost();
+                var updatedPost = getIo.Execute(id, userId);
+
+                if (updatedPost != null)
+                {
+                    // 3. Broadcast Update
+                    string targetGroup = GetSignalRGroupName(updatedPost.ContextType, updatedPost.ContextId);
+                    await _hub.Clients.Group(targetGroup).SendAsync("UpdatePost", new
+                    {
+                        postId = id,
+                        data = updatedPost
+                    });
+                }
+
+                return Ok(new { success = true });
+            }
+            catch (UnauthorizedAccessException) { return Unauthorized(); }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePost(long id)
+        {
+            try
+            {
+                int userId = GetUserId();
+
+                // 1. Get Context info before deleting (needed for SignalR group)
+                var getIo = new GetPost();
+                var existing = getIo.Execute(id, userId);
+                if (existing == null) return NotFound();
+
+                // 2. Delete from DB
+                var delIo = new DeletePost();
+                bool success = delIo.Execute(userId, id);
+
+                if (success)
+                {
+                    // 3. Broadcast Delete
+                    string targetGroup = GetSignalRGroupName(existing.ContextType, existing.ContextId);
+                    await _hub.Clients.Group(targetGroup).SendAsync("RemovePost", new { postId = id });
+                    return Ok(new { success = true });
+                }
+                return BadRequest("Could not delete post.");
+            }
+            catch (UnauthorizedAccessException) { return Unauthorized(); }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
+
+        [HttpDelete("{id}/media/{mediaId}")]
+        public IActionResult DeleteMedia(long id, long mediaId)
+        {
+            try
+            {
+                int userId = GetUserId();
+                var io = new DeletePostMedia();
+                io.Execute(userId, id, mediaId);
+                return Ok(new { success = true });
+            }
+            catch (UnauthorizedAccessException) { return Unauthorized(); }
+            catch (Exception ex) { return BadRequest(ex.Message); }
+        }
     }
 }

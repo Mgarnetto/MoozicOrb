@@ -63,6 +63,7 @@
     {
         @foreach (var post in Model.InitialPosts)
         {
+            post.ViewerId = Model.ViewerId;
             <partial name="_PostCard" model="post" />
         }
     }

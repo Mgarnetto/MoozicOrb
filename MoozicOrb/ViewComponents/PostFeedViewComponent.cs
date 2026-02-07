@@ -40,7 +40,8 @@ namespace MoozicOrb.ViewComponents
                 ContextId = contextId,
                 AllowPosting = allowPosting,
                 InputType = inputType,
-                InitialPosts = posts ?? new List<PostDto>()
+                InitialPosts = posts ?? new List<PostDto>(),
+                ViewerId = viewerId 
             };
 
             return View(model);

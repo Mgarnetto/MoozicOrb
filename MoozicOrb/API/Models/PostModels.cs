@@ -18,6 +18,8 @@ namespace MoozicOrb.API.Models
         // --- Core Identity ---
         public long Id { get; set; }
         public int AuthorId { get; set; }
+
+        public int? ViewerId { get; set; } // The ID of the user viewing this post (for Like status)
         public string AuthorName { get; set; }
         public string AuthorPic { get; set; }
 
@@ -139,5 +141,14 @@ namespace MoozicOrb.API.Models
     {
         public long PostId { get; set; }
         public bool Liked { get; set; }
+    }
+
+    public class UpdatePostDto
+    {
+        public string? Title { get; set; }
+        public string? Text { get; set; }
+        public decimal? Price { get; set; }
+        public string? LocationLabel { get; set; }
+        public string? DifficultyLevel { get; set; }
     }
 }

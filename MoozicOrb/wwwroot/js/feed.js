@@ -31,6 +31,104 @@ feedConnection.on("ReceivePost", function (message) {
     }
 });
 
+// --- EXISTING SIGNALR LISTENERS ---
+// Add these NEXT to your "ReceivePost" listener
+
+feedConnection.on("UpdatePost", function (msg) {
+    // 1. Find the existing post card
+    const card = document.getElementById(`post-${msg.postId}`);
+    if (card) {
+        // Option A: Full Replace (Easiest)
+        // You might need to re-render the HTML using your renderNewPost logic, 
+        // but adapted to return string instead of appending to container.
+        // For now, let's update text:
+        const titleEl = card.querySelector('.post-title');
+        const textEl = card.querySelector('.post-text');
+
+        if (titleEl && msg.data.title) titleEl.innerText = msg.data.title;
+        if (textEl && msg.data.text) textEl.innerHTML = msg.data.text; // careful with XSS here if not sanitized
+
+        // Flash effect
+        card.style.transition = "background-color 0.5s";
+        card.style.backgroundColor = "#2a2a2a";
+        setTimeout(() => card.style.backgroundColor = "", 500);
+    }
+});
+
+feedConnection.on("RemovePost", function (msg) {
+    const card = document.getElementById(`post-${msg.postId}`);
+    if (card) {
+        card.style.opacity = '0';
+        setTimeout(() => card.remove(), 300); // Smooth fade out
+    }
+});
+
+// --- NEW SERVICE METHODS ---
+
+window.FeedService.deletePost = async (id) => {
+    if (!confirm("Are you sure you want to delete this post?")) return;
+
+    try {
+        const res = await fetch(`/api/posts/${id}`, {
+            method: 'DELETE',
+            headers: { "X-Session-Id": window.AuthState?.sessionId || "" }
+        });
+        if (!res.ok) alert("Failed to delete post.");
+    } catch (err) { console.error(err); }
+};
+
+window.FeedService.openEditModal = async (id) => {
+    // 1. Get current data (or scrape from DOM)
+    // Better to fetch fresh to ensure we have media IDs
+    try {
+        const res = await fetch(`/api/posts/${id}`, { headers: { "X-Session-Id": window.AuthState?.sessionId || "" } });
+        const post = await res.json();
+
+        document.getElementById('editPostId').value = post.id;
+        document.getElementById('editPostTitle').value = post.title || "";
+        document.getElementById('editPostText').value = post.text || "";
+
+        // Render Media for Deletion
+        const mediaContainer = document.getElementById('editMediaList');
+        mediaContainer.innerHTML = '';
+        post.media?.forEach(m => {
+            const div = document.createElement('div');
+            div.className = "position-relative";
+            // Check type to render img or audio icon
+            div.innerHTML = `
+                <img src="${m.url}" class="rounded" style="width:60px;height:60px;object-fit:cover;">
+                <button onclick="deleteMedia(${post.id}, ${m.id}, this)" class="btn btn-sm btn-danger position-absolute top-0 start-100 translate-middle badge rounded-pill">X</button>
+            `;
+            mediaContainer.appendChild(div);
+        });
+
+        new bootstrap.Modal(document.getElementById('editPostModal')).show();
+    } catch (err) { console.error(err); }
+};
+
+window.FeedService.submitEdit = async () => {
+    const id = document.getElementById('editPostId').value;
+    const body = {
+        title: document.getElementById('editPostTitle').value,
+        text: document.getElementById('editPostText').value
+    };
+
+    const res = await fetch(`/api/posts/${id}`, {
+        method: 'PUT',
+        headers: {
+            "Content-Type": "application/json",
+            "X-Session-Id": window.AuthState?.sessionId || ""
+        },
+        body: JSON.stringify(body)
+    });
+
+    if (res.ok) {
+        bootstrap.Modal.getInstance(document.getElementById('editPostModal')).hide();
+    } else {
+        alert("Update failed");
+    }
+};
+
 // 4. POST RENDERING (Match Server HTML)
 function renderNewPost(post) {
     const container = document.getElementById('feed-stream-container');

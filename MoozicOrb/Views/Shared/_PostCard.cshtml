@@ -29,9 +29,18 @@
             <ul class="post-options-menu">
                 <li><a href="#"><i class="fas fa-flag me-2"></i> Report Post</a></li>
                 <li><a href="#"><i class="fas fa-link me-2"></i> Copy Link</a></li>
-                @if (Model.AuthorId == 0) // Or check IsCurrentUser logic
+                @if (Model.AuthorId == Model.ViewerId) // You need to implement GetUserId helper in View or Model
                 {
-                    <li><a href="#" class="text-danger"><i class="fas fa-trash me-2"></i> Delete</a></li>
+                    <li>
+                        <a href="#" class="dropdown-item" onclick="window.FeedService.openEditModal(@Model.Id); return false;">
+                            <i class="fas fa-edit me-2"></i> Edit
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="dropdown-item text-danger" onclick="window.FeedService.deletePost(@Model.Id); return false;">
+                            <i class="fas fa-trash me-2"></i> Delete
+                        </a>
+                    </li>
                 }
             </ul>
         </div>

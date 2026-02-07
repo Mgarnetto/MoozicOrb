@@ -6,6 +6,7 @@ namespace MoozicOrb.API.Models
     public class PostFeedViewModel
     {
         // Context: "Where are we?" (e.g., User Profile 105, State Page GA)
+        public int ViewerId { get; set; } = 0; // This user's ID (0 if not logged in)
         public string ContextType { get; set; }
         public string ContextId { get; set; }
 
