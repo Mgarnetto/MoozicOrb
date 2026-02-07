@@ -398,6 +398,72 @@
         }
     };
 
+    // =============================
+    // 8. NOTIFICATIONS (NEW)
+    // =============================
+    messageConn.on("OnNotification", (n) => {
+        console.log("Notification received:", n);
+
+        // 1. Play Sound (Optional, currently disabled so it doesn't loop)
+        // RingtoneService.start(); 
+
+        // 2. Show Toast / Visual Alert
+        showNotificationToast(n);
+
+        // 3. Update Badge (Assumes you have an element with ID 'nav-notif-badge')
+        const badge = document.getElementById("nav-notif-badge");
+        if (badge) {
+            let count = parseInt(badge.innerText) || 0;
+            badge.innerText = count + 1;
+            badge.style.display = "block";
+        }
+    });
+
+    function showNotificationToast(n) {
+        // Create a simple floating toast
+        const div = document.createElement("div");
+        div.className = "notif-toast";
+        div.innerHTML = `
+            <div class="d-flex align-items-center">
+                <img src="${n.actorPic}" class="rounded-circle me-2" width="30" height="30" style="object-fit:cover;">
+                <div>
+                    <strong>${n.actorName}</strong> ${n.message}
+                </div>
+            </div>
+        `;
+
+        div.style.cssText = `
+            position: fixed; top: 80px; right: 20px; z-index: 9999;
+            background: #222; color: #fff; padding: 10px 15px;
+            border-left: 4px solid #00AEEF; border-radius: 4px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: slideIn 0.3s;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif; font-size: 13px;
+        `;
+
+        // Click Action
+        div.onclick = () => {
+            if (n.type === "message") {
+                // Open Chat
+                if (window.startChat) window.startChat(n.actorId);
+            } else if (n.type === "post_new") {
+                // Go to Feed/Post
+                window.location.href = `/home/feed?highlight=${n.referenceId}`;
+            } else if (n.type === "follow") {
+                // Go to Creator Profile
+                window.location.href = `/creator/${n.actorId}`;
+            }
+            div.remove();
+        };
+
+        document.body.appendChild(div);
+
+        // Auto remove after 4s
+        setTimeout(() => {
+            if (div.parentNode) div.remove();
+        }, 4000);
+    }
+
     // NEW: Uses API to get User Info for the Header only
     // DOES NOT force the thread into the sidebar list until a message is sent
     async function startChat(userId) {

@@ -100,7 +100,13 @@
                 catch (e) { console.error("SignalR start failed", e); }
             }
 
-            // 2. Clear List
+            // 2. Start Notifications (NEW)
+            if (window.NotificationService) {
+                try { window.NotificationService.init(); }
+                catch (e) { console.error("Notification init failed", e); }
+            }
+
+            // 3. Clear List
             const chatList = document.getElementById("chatList");
             if (chatList) chatList.innerHTML = "";
 

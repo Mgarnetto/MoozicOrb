@@ -19,15 +19,18 @@ namespace MoozicOrb.API.Controllers
         private readonly IHubContext<PostHub> _hub;
         private readonly IHttpContextAccessor _http;
         private readonly IUserService _userService;
+        private readonly NotificationService _notify; // <--- ADDED
 
         public PostController(
             IHubContext<PostHub> hub,
             IHttpContextAccessor http,
-            IUserService userService)
+            IUserService userService,
+            NotificationService notify) // <--- INJECTED
         {
             _hub = hub;
             _http = http;
             _userService = userService;
+            _notify = notify;
         }
 
         // --- HELPERS ----------------------------------------------------
@@ -56,7 +59,7 @@ namespace MoozicOrb.API.Controllers
                 "user" => $"user_{id}",
                 "creator" => $"user_{id}",
                 "feed" => "feed_global",
-                "discover" => "page_discover", // DISCOVERY PAGE CHANNEL
+                "discover" => "page_discover",
                 _ => "feed_global"
             };
         }
@@ -125,6 +128,11 @@ namespace MoozicOrb.API.Controllers
                     data = livePost
                 });
 
+                // 6. NOTIFY FOLLOWERS (NEW)
+                string preview = req.Title ?? (req.Text?.Length > 20 ? req.Text.Substring(0, 20) + "..." : "New Post");
+                // Fire and forget (or await if you prefer safety)
+                await _notify.NotifyFollowers(userId, postId, preview);
+
                 return Ok(new { id = postId });
             }
             catch (UnauthorizedAccessException) { return Unauthorized(); }
@@ -142,22 +150,18 @@ namespace MoozicOrb.API.Controllers
                 int viewerId = GetViewerId();
                 var io = new GetPost();
 
-                // 1. SOCIAL FEED: Random mix of everything
                 if (contextType == "global" || contextType == "feed_global")
                 {
                     var randomPosts = io.GetDiscoveryFeed(viewerId);
                     return Ok(randomPosts);
                 }
 
-                // 2. DISCOVERY PAGE: Random Audio Tracks ONLY
                 if (contextType == "discover")
                 {
-                    // This fetches using the logic: WHERE media_type = 1
                     var audioPosts = io.GetAudioDiscoveryFeed(viewerId);
                     return Ok(audioPosts);
                 }
 
-                // 3. STANDARD FETCH (User Page, Location Page, etc.)
                 var posts = io.Execute(contextType, contextId, viewerId, page);
                 return Ok(posts);
             }
@@ -182,13 +186,25 @@ namespace MoozicOrb.API.Controllers
         // --- COMMENTS ---------------------------------------------------
 
         [HttpPost("comment")]
-        public IActionResult AddComment([FromBody] CreateCommentDto req)
+        public async Task<IActionResult> AddComment([FromBody] CreateCommentDto req) // Changed to async Task
         {
             try
             {
                 int userId = GetUserId();
                 var io = new InsertComment();
                 long id = io.Execute(userId, req);
+
+                // NOTIFY POST AUTHOR (NEW)
+                var postIo = new GetPost();
+                var post = postIo.Execute(req.PostId, userId);
+
+                // Don't notify if commenting on own post
+                if (post != null && post.AuthorId != userId)
+                {
+                    string commentPreview = req.Content.Length > 20 ? req.Content.Substring(0, 20) + "..." : req.Content;
+                    await _notify.NotifyUser(post.AuthorId, userId, "comment", req.PostId, $"commented: {commentPreview}");
+                }
+
                 return Ok(new { id });
             }
             catch (UnauthorizedAccessException) { return Unauthorized(); }
@@ -210,13 +226,27 @@ namespace MoozicOrb.API.Controllers
         // --- LIKES ------------------------------------------------------
 
         [HttpPost("{id}/like")]
-        public IActionResult LikePost(long id)
+        public async Task<IActionResult> LikePost(long id) // Changed to async Task
         {
             try
             {
                 int userId = GetUserId();
                 var io = new ToggleLike();
                 bool liked = io.Execute(userId, id);
+
+                // NOTIFY POST AUTHOR (NEW)
+                if (liked)
+                {
+                    var postIo = new GetPost();
+                    var post = postIo.Execute(id, userId);
+
+                    // Don't notify if liking own post
+                    if (post != null && post.AuthorId != userId)
+                    {
+                        await _notify.NotifyUser(post.AuthorId, userId, "like", id, "liked your post");
+                    }
+                }
+
                 return Ok(new { liked });
             }
             catch (UnauthorizedAccessException) { return Unauthorized(); }
@@ -231,18 +261,14 @@ namespace MoozicOrb.API.Controllers
             try
             {
                 int userId = GetUserId();
-
-                // 1. Update DB
                 var io = new UpdatePost();
                 io.Execute(userId, id, req);
 
-                // 2. Fetch updated post to broadcast (so UI matches server exactly)
                 var getIo = new GetPost();
                 var updatedPost = getIo.Execute(id, userId);
 
                 if (updatedPost != null)
                 {
-                    // 3. Broadcast Update
                     string targetGroup = GetSignalRGroupName(updatedPost.ContextType, updatedPost.ContextId);
                     await _hub.Clients.Group(targetGroup).SendAsync("UpdatePost", new
                     {
@@ -263,19 +289,15 @@ namespace MoozicOrb.API.Controllers
             try
             {
                 int userId = GetUserId();
-
-                // 1. Get Context info before deleting (needed for SignalR group)
                 var getIo = new GetPost();
                 var existing = getIo.Execute(id, userId);
                 if (existing == null) return NotFound();
 
-                // 2. Delete from DB
                 var delIo = new DeletePost();
                 bool success = delIo.Execute(userId, id);
 
                 if (success)
                 {
-                    // 3. Broadcast Delete
                     string targetGroup = GetSignalRGroupName(existing.ContextType, existing.ContextId);
                     await _hub.Clients.Group(targetGroup).SendAsync("RemovePost", new { postId = id });
                     return Ok(new { success = true });

@@ -33,7 +33,25 @@
             <div id="auth-guest">
                 <button class="btn-login" id="loginToggleBtn">LOGIN</button>
             </div>
+
             <div id="auth-user" style="display:none;">
+                <div class="notif-wrapper">
+                    <button class="notif-btn" id="notifToggleBtn">
+                        <i class="fa-solid fa-bell"></i>
+                        <span class="notif-badge" id="nav-notif-badge" style="display:none;">0</span>
+                    </button>
+
+                    <div class="notif-dropdown" id="notifDropdown">
+                        <div class="notif-header">
+                            <h4>Notifications</h4>
+                            <button class="btn-mark-read" id="markAllReadBtn">Mark all read</button>
+                        </div>
+                        <div class="notif-list" id="notification-list">
+                            <div class="notif-empty">No new notifications</div>
+                        </div>
+                    </div>
+                </div>
+
                 <button class="btn-login" id="logoutBtn">LOGOUT</button>
             </div>
 
@@ -46,37 +64,22 @@
                         <label for="signupRadio" class="slide signup">Signup</label>
                         <div class="slider-tab"></div>
                     </div>
-
                     <div class="form-inner">
                         <form id="loginForm" onsubmit="return false;">
-                            <div class="field">
-                                <input type="text" id="loginUser" placeholder="Username" required>
-                            </div>
-                            <div class="field">
-                                <input type="password" id="loginPass" placeholder="Password" required>
-                            </div>
+                            <div class="field"><input type="text" id="loginUser" placeholder="Username" required></div>
+                            <div class="field"><input type="password" id="loginPass" placeholder="Password" required></div>
                             <div class="pass-link"><a href="#">Forgot password?</a></div>
-                            <div class="field btn">
-                                <div class="btn-layer"></div>
-                                <input type="submit" value="Login" id="loginSubmitBtn">
-                            </div>
+                            <div class="field btn"><div class="btn-layer"></div><input type="submit" value="Login" id="loginSubmitBtn"></div>
                             <div class="signup-link">Not a member? <a href="#" id="switchToSignup">Signup now</a></div>
                             <div id="loginStatus" class="status-msg"></div>
                         </form>
-
                         <form id="signupForm" onsubmit="return false;">
                             <div class="field"><input type="text" placeholder="Full Name" required></div>
                             <div class="field"><input type="email" placeholder="Email Address" required></div>
                             <div class="field"><input type="password" placeholder="Password" required></div>
                             <div class="field"><input type="password" placeholder="Confirm Password" required></div>
-                            <div class="age-gate">
-                                <input type="checkbox" id="ageCheck" required>
-                                <label for="ageCheck">I am 18 years or older</label>
-                            </div>
-                            <div class="field btn">
-                                <div class="btn-layer"></div>
-                                <input type="submit" value="Signup">
-                            </div>
+                            <div class="age-gate"><input type="checkbox" id="ageCheck" required><label for="ageCheck">I am 18 years or older</label></div>
+                            <div class="field btn"><div class="btn-layer"></div><input type="submit" value="Signup"></div>
                         </form>
                     </div>
                 </div>
@@ -89,43 +92,24 @@
             <a href="/creator/profile" class="text-decoration-none">
                 <div id="sidebar-img" class="profile-img" style="background-image: url('/img/profile_default.jpg');"></div>
             </a>
-
-            <div id="sidebar-name" class="text-white fw-bold" style="font-size: 1.1rem; margin-bottom: 5px;">
-                User
-            </div>
-
+            <div id="sidebar-name" class="text-white fw-bold" style="font-size: 1.1rem; margin-bottom: 5px;">User</div>
             <div class="profile-stats">
                 <span id="sidebar-followers"><strong>0</strong> Followers</span>
                 <span id="sidebar-following"><strong>0</strong> Following</span>
             </div>
-
             <div class="mt-2">
-                <a href="/settings/page" class="text-muted small text-decoration-none hover-white">
-                    <i class="fas fa-cog"></i> Settings
-                </a>
+                <a href="/settings/page" class="text-muted small text-decoration-none hover-white"><i class="fas fa-cog"></i> Settings</a>
             </div>
         </div>
-
         <div class="sidebar-search-group">
             <input type="text" id="globalSearchInput" placeholder="Search..." onkeydown="handleGlobalSearch(event)">
-            <button type="button" onclick="triggerGlobalSearch()" class="btn-search-go">
-                GO
-            </button>
+            <button type="button" onclick="triggerGlobalSearch()" class="btn-search-go">GO</button>
         </div>
-
         <ul class="sidebar-nav">
             <li><a href="/" class="nav-link"><i class="fa fa-home"></i> Home</a></li>
             <li><a href="/feed" class="nav-link"><i class="fa fa-rss"></i> Social Feed</a></li>
-            <li>
-                <a href="#" class="nav-link auth-trigger" id="messages-trigger">
-                    <i class="fa fa-envelope"></i> Messages
-                </a>
-            </li>
-            <li>
-                <a href="/discover/audio" class="spa-route">
-                    <i class="fas fa-music"></i><span>Discover</span>
-                </a>
-            </li>
+            <li><a href="#" class="nav-link auth-trigger" id="messages-trigger"><i class="fa fa-envelope"></i> Messages</a></li>
+            <li><a href="/discover/audio" class="spa-route"><i class="fas fa-music"></i><span>Discover</span></a></li>
             <li><a href="#"><i class="fa fa-list"></i> Playlist</a></li>
             <li><a href="/radio" class="nav-link"><i class="fa fa-radio"></i> RadioOrb</a></li>
             <li class="separator"></li>
@@ -150,16 +134,12 @@
                 </header>
                 <ul class="chat-list" id="chatList"></ul>
             </aside>
-
             <main class="chat-window" id="chatWindow">
                 <header class="chat-window-header">
                     <div class="header-left">
                         <button class="icon-btn back-btn" id="chatBackBtn"><i class="fas fa-chevron-left"></i></button>
                         <img id="chatAvatar" src="" class="avatar-sm" style="display:none;">
-                        <div>
-                            <h3 id="chatTitle">Select a Chat</h3>
-                            <span class="status" id="chatStatus"></span>
-                        </div>
+                        <div><h3 id="chatTitle">Select a Chat</h3><span class="status" id="chatStatus"></span></div>
                     </div>
                     <div class="header-right">
                         <button class="icon-btn" id="startVideoCallBtn"><i class="fas fa-video"></i></button>
@@ -167,9 +147,7 @@
                         <button class="icon-btn close-overlay" id="closeOverlayWindow"><i class="fas fa-times"></i></button>
                     </div>
                 </header>
-
                 <div class="chat-messages" id="chatMessages"></div>
-
                 <footer class="chat-input-area">
                     <button class="icon-btn"><i class="fas fa-microphone"></i></button>
                     <input type="text" placeholder="Type a message..." id="msgInput">
@@ -188,16 +166,9 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="editPostId">
-                    <div class="mb-3">
-                        <label class="form-label text-muted small">Title</label>
-                        <input type="text" id="editPostTitle" class="form-control bg-black text-white border-secondary">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted small">Content</label>
-                        <textarea id="editPostText" class="form-control bg-black text-white border-secondary" rows="4"></textarea>
-                    </div>
-                    <div id="editMediaList" class="d-flex flex-wrap gap-2">
-                    </div>
+                    <div class="mb-3"><label class="form-label text-muted small">Title</label><input type="text" id="editPostTitle" class="form-control bg-black text-white border-secondary"></div>
+                    <div class="mb-3"><label class="form-label text-muted small">Content</label><textarea id="editPostText" class="form-control bg-black text-white border-secondary" rows="4"></textarea></div>
+                    <div id="editMediaList" class="d-flex flex-wrap gap-2"></div>
                 </div>
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -223,19 +194,11 @@
 
     <div id="incomingCallModal" class="incoming-modal">
         <div class="incoming-content">
-            <div class="incoming-avatar">
-                <i class="fas fa-user"></i>
-            </div>
-            <h3 id="incomingCallerName">Unknown Caller</h3>
-            <p>Incoming Call...</p>
-
+            <div class="incoming-avatar"><i class="fas fa-user"></i></div>
+            <h3 id="incomingCallerName">Unknown Caller</h3><p>Incoming Call...</p>
             <div class="incoming-actions">
-                <button id="btnRejectCall" class="btn-action reject">
-                    <i class="fas fa-phone-slash"></i>
-                </button>
-                <button id="btnAcceptCall" class="btn-action accept">
-                    <i class="fas fa-phone"></i>
-                </button>
+                <button id="btnRejectCall" class="btn-action reject"><i class="fas fa-phone-slash"></i></button>
+                <button id="btnAcceptCall" class="btn-action accept"><i class="fas fa-phone"></i></button>
             </div>
         </div>
     </div>
@@ -258,11 +221,12 @@
     <script src="~/js/LoginService.js" asp-append-version="true"></script>
     <script src="~/js/Login-Init.js" asp-append-version="true"></script>
     <script src="~/js/message.js" asp-append-version="true"></script>
+    <script src="~/js/notification.js" asp-append-version="true"></script>
+
     <script src="~/js/router.js" asp-append-version="true"></script>
     <script src="~/js/main.js" asp-append-version="true"></script>
     <script src="~/js/player.js" asp-append-version="true"></script>
     <script src="~/js/feed.js" asp-append-version="true"></script>
-
     <script src="~/js/sidebar.js" asp-append-version="true"></script>
     <script src="~/js/settings.js" asp-append-version="true"></script>
     <script src="~/js/video-player.js" asp-append-version="true"></script>

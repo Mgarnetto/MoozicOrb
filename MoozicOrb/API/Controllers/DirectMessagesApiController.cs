@@ -4,8 +4,11 @@ using MoozicOrb.Api.Models;
 using MoozicOrb.Api.Services.Interfaces;
 using MoozicOrb.Hubs;
 using MoozicOrb.Services;
-using MoozicOrb.IO; // Added for UserQuery
+using MoozicOrb.IO; 
 using System.Text.Json;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System;
 
 [ApiController]
 [Route("api/direct/messages")]
@@ -15,19 +18,22 @@ public class DirectMessagesController : ControllerBase
     private readonly IHttpContextAccessor _http;
     private readonly IHubContext<MessageHub> _hub;
     private readonly UserConnectionManager _connections;
-    private readonly UserQuery _userQuery; // Added
+    private readonly UserQuery _userQuery;
+    private readonly NotificationService _notify; // <--- ADDED
 
     public DirectMessagesController(
         IDirectMessageApiService service,
         IHttpContextAccessor http,
         IHubContext<MessageHub> hub,
-        UserConnectionManager connections)
+        UserConnectionManager connections,
+        NotificationService notify) // <--- INJECTED
     {
         _service = service;
         _http = http;
         _hub = hub;
         _connections = connections;
-        _userQuery = new UserQuery(); // Initialize
+        _userQuery = new UserQuery();
+        _notify = notify;
     }
 
     // =========================================
@@ -46,13 +52,11 @@ public class DirectMessagesController : ControllerBase
 
     // =========================================
     // GET: User Info for Chat Header
-    // NEW: Fetches name/pic for the "Start Chat" action
     // =========================================
     [HttpGet("user-info/{targetUserId:int}")]
     public IActionResult GetUserInfo(int targetUserId)
     {
-        // Ensure requestor is logged in
-        GetUserId();
+        GetUserId(); // Auth check
 
         var user = _userQuery.GetUserById(targetUserId);
         if (user == null) return NotFound();
@@ -66,34 +70,26 @@ public class DirectMessagesController : ControllerBase
     }
 
     // =========================================
-    // GET: Conversation with user
-    // Used by: loadDirectMessages(userId)
+    // GET: Conversation
     // =========================================
     [HttpGet("with/{otherUserId:int}")]
-    public ActionResult<IEnumerable<DirectMessageDto>> GetConversation(
-        int otherUserId)
+    public ActionResult<IEnumerable<DirectMessageDto>> GetConversation(int otherUserId)
     {
         int me = GetUserId();
-
         var messages = _service.GetDirectMessages(me, otherUserId);
         return Ok(messages);
     }
 
     // =========================================
-    // GET: Single message (SignalR fetch)
+    // GET: Single message
     // =========================================
     [HttpGet("single/{messageId:long}")]
     public ActionResult<DirectMessageDto> GetMessage(long messageId)
     {
         int me = GetUserId();
-
         var msg = _service.GetDirectMessage(messageId);
-        if (msg == null)
-            return NotFound();
-
-        if (msg.SenderId != me && msg.ReceiverId != me)
-            return Forbid();
-
+        if (msg == null) return NotFound();
+        if (msg.SenderId != me && msg.ReceiverId != me) return Forbid();
         return Ok(msg);
     }
 
@@ -101,8 +97,7 @@ public class DirectMessagesController : ControllerBase
     // POST: Send DM
     // =========================================
     [HttpPost]
-    public async Task<IActionResult> CreateMessage(
-        [FromBody] JsonElement body)
+    public async Task<IActionResult> CreateMessage([FromBody] JsonElement body)
     {
         if (!body.TryGetProperty("receiverId", out var r) ||
             !body.TryGetProperty("text", out var t))
@@ -112,47 +107,35 @@ public class DirectMessagesController : ControllerBase
         int receiverId = r.GetInt32();
         string text = t.GetString();
 
-        var messageId =
-            _service.CreateDirectMessage(senderId, receiverId, text);
+        var messageId = _service.CreateDirectMessage(senderId, receiverId, text);
 
-        // 🔔 Notify receiver
+        // 1. 🔔 Notify recipient via SignalR (Live Chat)
         foreach (var conn in _connections.GetConnections(receiverId))
         {
-            await _hub.Clients.Client(conn)
-                .SendAsync("OnDirectMessage", new
-                {
-                    senderId,
-                    messageId
-                });
+            await _hub.Clients.Client(conn).SendAsync("OnDirectMessage", new { senderId, messageId });
         }
 
-        // 🔔 Notify sender (multi-tab support)
+        // 2. 🔔 Notify sender (Live Chat - Multi-tab)
         foreach (var conn in _connections.GetConnections(senderId))
         {
-            await _hub.Clients.Client(conn)
-                .SendAsync("OnDirectMessage", new
-                {
-                    senderId,
-                    messageId
-                });
+            await _hub.Clients.Client(conn).SendAsync("OnDirectMessage", new { senderId, messageId });
         }
+
+        // 3. 🔔 SYSTEM NOTIFICATION (New Badge/Toast for recipient)
+        // This ensures they see it even if they aren't looking at the chat window
+        await _notify.NotifyUser(receiverId, senderId, "message", senderId, "sent you a message");
 
         return Ok(new { messageId });
     }
 
     // =========================================
-    // GET: Bootstrap — ALL direct messages
-    // Used once at login
+    // GET: Bootstrap
     // =========================================
     [HttpGet]
     public ActionResult GetAllDirectMessages()
     {
         int me = GetUserId();
-
-        // Returns:
-        // Dictionary<int, List<DirectMessageDto>>
         var conversations = _service.GetAllDirectMessages(me);
-
         return Ok(new
         {
             users = conversations.Keys,

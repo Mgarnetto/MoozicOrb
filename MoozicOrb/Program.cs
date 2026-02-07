@@ -28,6 +28,8 @@ builder.Services.AddScoped<IDirectMessageApiService, DirectMessageApiService>();
 
 builder.Services.AddScoped<ILoginService, LoginService>();
 
+builder.Services.AddScoped<MoozicOrb.Services.NotificationService>();
+
 // 2. Register the Broadcaster (The Sink)
 builder.Services.AddSingleton<IAudioBroadcaster, SignalRAudioBroadcaster>();
 
