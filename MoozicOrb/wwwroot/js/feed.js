@@ -32,21 +32,16 @@ feedConnection.on("ReceivePost", function (message) {
 });
 
 // --- EXISTING SIGNALR LISTENERS ---
-// Add these NEXT to your "ReceivePost" listener
 
 feedConnection.on("UpdatePost", function (msg) {
     // 1. Find the existing post card
     const card = document.getElementById(`post-${msg.postId}`);
     if (card) {
-        // Option A: Full Replace (Easiest)
-        // You might need to re-render the HTML using your renderNewPost logic, 
-        // but adapted to return string instead of appending to container.
-        // For now, let's update text:
         const titleEl = card.querySelector('.post-title');
         const textEl = card.querySelector('.post-text');
 
         if (titleEl && msg.data.title) titleEl.innerText = msg.data.title;
-        if (textEl && msg.data.text) textEl.innerHTML = msg.data.text; // careful with XSS here if not sanitized
+        if (textEl && msg.data.text) textEl.innerHTML = msg.data.text;
 
         // Flash effect
         card.style.transition = "background-color 0.5s";
@@ -77,9 +72,9 @@ window.FeedService.deletePost = async (id) => {
     } catch (err) { console.error(err); }
 };
 
+// --- UPDATED: EDIT MODAL LOGIC (CSS Class Toggle) ---
+
 window.FeedService.openEditModal = async (id) => {
-    // 1. Get current data (or scrape from DOM)
-    // Better to fetch fresh to ensure we have media IDs
     try {
         const res = await fetch(`/api/posts/${id}`, { headers: { "X-Session-Id": window.AuthState?.sessionId || "" } });
         const post = await res.json();
@@ -97,20 +92,24 @@ window.FeedService.openEditModal = async (id) => {
             // Check type to render img or audio icon
             div.innerHTML = `
                 <img src="${m.url}" class="rounded" style="width:60px;height:60px;object-fit:cover;">
-                <button onclick="deleteMedia(${post.id}, ${m.id}, this)" class="btn btn-sm btn-danger position-absolute top-0 start-100 translate-middle badge rounded-pill">X</button>
+                <button onclick="window.deleteMedia(${post.id}, ${m.id}, this)" class="btn btn-sm btn-danger position-absolute top-0 start-100 translate-middle badge rounded-pill">X</button>
             `;
             mediaContainer.appendChild(div);
         });
 
-        new bootstrap.Modal(document.getElementById('editPostModal')).show();
+        // Toggle CSS class instead of using Bootstrap JS
+        document.getElementById('editPostModal').classList.add('active');
+
     } catch (err) { console.error(err); }
 };
 
 window.FeedService.submitEdit = async () => {
     const id = document.getElementById('editPostId').value;
+
+    // CHANGED: Keys capitalized to strictly match C# UpdatePostDto
     const body = {
-        title: document.getElementById('editPostTitle').value,
-        text: document.getElementById('editPostText').value
+        Title: document.getElementById('editPostTitle').value,
+        Text: document.getElementById('editPostText').value
     };
 
     const res = await fetch(`/api/posts/${id}`, {
@@ -123,11 +122,52 @@ window.FeedService.submitEdit = async () => {
     });
 
     if (res.ok) {
-        bootstrap.Modal.getInstance(document.getElementById('editPostModal')).hide();
+        // Toggle CSS class to hide
+        document.getElementById('editPostModal').classList.remove('active');
     } else {
         alert("Update failed");
     }
 };
+
+// --- ADDED: Missing Function for Edit Modal ---
+window.deleteMedia = async (postId, mediaId, btnElement) => {
+    if (!confirm("Remove this attachment?")) return;
+
+    // UI feedback
+    const wrapper = btnElement.closest('.position-relative');
+    wrapper.style.opacity = '0.5';
+
+    try {
+        const res = await fetch(`/api/posts/${postId}/media/${mediaId}`, {
+            method: 'DELETE',
+            headers: { "X-Session-Id": window.AuthState?.sessionId || "" }
+        });
+
+        if (res.ok) {
+            wrapper.remove();
+        } else {
+            alert("Failed to delete media.");
+            wrapper.style.opacity = '1';
+        }
+    } catch (err) {
+        console.error(err);
+        wrapper.style.opacity = '1';
+    }
+};
+
+// --- ADDED: Global Listener to Close Modal (Cancel / Overlay) ---
+document.addEventListener('click', function (e) {
+    // 1. Close if clicking "Cancel" or "X" (data-bs-dismiss is still in HTML)
+    if (e.target.matches('[data-bs-dismiss="modal"]') || e.target.closest('[data-bs-dismiss="modal"]')) {
+        const modal = document.getElementById('editPostModal');
+        if (modal) modal.classList.remove('active');
+    }
+    // 2. Close if clicking the dark overlay background
+    if (e.target.id === 'editPostModal') {
+        e.target.classList.remove('active');
+    }
+});
+
 
 // 4. POST RENDERING (Match Server HTML)
 function renderNewPost(post) {
@@ -139,6 +179,9 @@ function renderNewPost(post) {
     if (emptyMsg) emptyMsg.remove();
 
     const authorPic = post.authorPic && post.authorPic !== "null" ? post.authorPic : "/img/profile_default.jpg";
+
+    // Logic to check ownership
+    const isOwner = window.AuthState && String(window.AuthState.userId) === String(post.authorId);
 
     const div = document.createElement('div');
 
@@ -161,6 +204,17 @@ function renderNewPost(post) {
                     <ul class="post-options-menu">
                         <li><a href="#"><i class="fas fa-flag me-2"></i> Report Post</a></li>
                         <li><a href="#"><i class="fas fa-link me-2"></i> Copy Link</a></li>
+                        ${isOwner ? `
+                        <li>
+                            <a href="#" class="dropdown-item" onclick="window.FeedService.openEditModal(${post.id}); return false;">
+                                <i class="fas fa-edit me-2"></i> Edit
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="dropdown-item text-danger" onclick="window.FeedService.deletePost(${post.id}); return false;">
+                                <i class="fas fa-trash me-2"></i> Delete
+                            </a>
+                        </li>` : ''}
                     </ul>
                 </div>
             </div>
@@ -616,6 +670,10 @@ window.loadFeedHistory = async function (contextType, contextId) {
 
 function appendHistoricalPost(post, container) {
     const authorPic = post.authorPic && post.authorPic !== "null" ? post.authorPic : "/img/profile_default.jpg";
+
+    // Logic to check ownership
+    const isOwner = window.AuthState && String(window.AuthState.userId) === String(post.authorId);
+
     const div = document.createElement('div');
 
     div.innerHTML = `
@@ -637,6 +695,17 @@ function appendHistoricalPost(post, container) {
                     <ul class="post-options-menu">
                         <li><a href="#"><i class="fas fa-flag me-2"></i> Report Post</a></li>
                         <li><a href="#"><i class="fas fa-link me-2"></i> Copy Link</a></li>
+                        ${isOwner ? `
+                        <li>
+                            <a href="#" class="dropdown-item" onclick="window.FeedService.openEditModal(${post.id}); return false;">
+                                <i class="fas fa-edit me-2"></i> Edit
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="dropdown-item text-danger" onclick="window.FeedService.deletePost(${post.id}); return false;">
+                                <i class="fas fa-trash me-2"></i> Delete
+                            </a>
+                        </li>` : ''}
                     </ul>
                 </div>
             </div>

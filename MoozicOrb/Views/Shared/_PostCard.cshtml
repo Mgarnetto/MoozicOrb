@@ -31,6 +31,7 @@
                 <li><a href="#"><i class="fas fa-link me-2"></i> Copy Link</a></li>
                 @if (Model.AuthorId == Model.ViewerId) // You need to implement GetUserId helper in View or Model
                 {
+                    
                     <li>
                         <a href="#" class="dropdown-item" onclick="window.FeedService.openEditModal(@Model.Id); return false;">
                             <i class="fas fa-edit me-2"></i> Edit

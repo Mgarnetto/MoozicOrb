@@ -2793,3 +2793,82 @@ textarea.form-control {
     .audio-artist-link:visited {
         color: #b0b0b0 !important;
     }
+
+/* =========================================
+   18. MANUAL EDIT MODAL (No Bootstrap Required)
+   ========================================= */
+#editPostModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 5000; /* High enough to sit on top */
+    display: none; /* HIDDEN BY DEFAULT */
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
+    /* This class is toggled by JS to show the modal */
+    #editPostModal.active {
+        display: flex;
+    }
+
+    #editPostModal .modal-content {
+        background: var(--bg-card);
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 25px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    /* Style the inputs manually since we aren't using Bootstrap classes */
+    #editPostModal input[type="text"],
+    #editPostModal textarea {
+        width: 100%;
+        background: #000;
+        border: 1px solid #333;
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        outline: none;
+        font-family: var(--font-body);
+    }
+
+        #editPostModal input:focus,
+        #editPostModal textarea:focus {
+            border-color: var(--accent-secondary);
+        }
+
+    /* Fix the buttons */
+    #editPostModal .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    #editPostModal .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        border: none;
+        font-weight: bold;
+    }
+
+    #editPostModal .btn-secondary {
+        background: #333;
+        color: #ccc;
+    }
+
+    #editPostModal .btn-primary {
+        background: var(--accent-secondary);
+        color: #000;
+    }
