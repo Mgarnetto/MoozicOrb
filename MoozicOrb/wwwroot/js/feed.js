@@ -812,13 +812,6 @@ window.loadAudioPlaylist = async () => {
     const container = document.getElementById('audio-feed-list');
     if (!container) return;
 
-    // Fancy Loading State
-    container.innerHTML = `
-        <div class="text-center py-5">
-            <i class="fas fa-compact-disc fa-spin fa-3x mb-3" style="color: var(--accent-secondary);"></i>
-            <p class="text-muted">Digging for tracks...</p>
-        </div>`;
-
     try {
         const res = await fetch('/api/posts?contextType=discover&contextId=0', {
             headers: {
@@ -912,4 +905,30 @@ window.playTrackInFeed = function (url, title, element) {
     if (currentRow) {
         currentRow.classList.add('playing');
     }
+};
+
+// ============================================
+// 10. SHUFFLE ANIMATION & TRIGGER - FINAL FIX
+// ============================================
+
+window.triggerShuffleAnimation = async function () {
+    const disc = document.getElementById('shuffle-disc');
+
+    // 1. Start Spin (Pure rotation, no color change)
+    if (disc) disc.classList.add('fa-spin');
+
+    // 2. Define the tasks: Data Load AND Minimum Timer (1s)
+    const minTimer = new Promise(resolve => setTimeout(resolve, 1000));
+    // Check if the loader exists, otherwise resolve immediately to avoid errors
+    const dataLoad = window.loadAudioPlaylist ? window.loadAudioPlaylist() : Promise.resolve();
+
+    // 3. Wait for BOTH tasks to finish
+    try {
+        await Promise.all([dataLoad, minTimer]);
+    } catch (e) {
+        console.error("Shuffle failed", e);
+    }
+
+    // 4. Stop Spin
+    if (disc) disc.classList.remove('fa-spin');
 };

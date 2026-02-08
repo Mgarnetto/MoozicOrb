@@ -109,6 +109,10 @@
                     const items = list.querySelectorAll(".notif-item.unread");
                     items.forEach(i => i.classList.remove("unread"));
                 }
+
+                // FIX: Close dropdown after marking read
+                this.closeDropdown();
+
             } catch (e) {
                 console.error("Failed to mark read", e);
             }

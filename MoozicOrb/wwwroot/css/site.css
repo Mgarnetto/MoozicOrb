@@ -2460,17 +2460,45 @@ textarea.form-control {
 #audio-feed-list {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 0;
 }
 
 .audio-row {
-    background-color: rgba(255, 255, 255, 0.02);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 6px;
-    margin-bottom: 2px;
-    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-    min-height: 70px; /* Ensure consistent height */
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    padding: 12px 15px;
+    border-bottom: none;
+    transition: background 0.2s, transform 0.2s;
+    min-height: 70px;
+    gap: 0;
 }
+
+    /* ZEBRA STRIPING - BALANCED CONTRAST */
+    /* Odd Rows: Very subtle base */
+    .audio-row:nth-child(odd) {
+        background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Even Rows: Lighter (0.08 opacity) */
+    .audio-row:nth-child(even) {
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    /* HOVER EFFECT */
+    .audio-row:hover {
+        background-color: rgba(255, 255, 255, 0.15) !important;
+        transform: translateX(5px);
+        border-left: 3px solid var(--accent-secondary);
+        z-index: 2;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    /* PLAYING STATE */
+    .audio-row.playing {
+        background-color: rgba(0, 174, 239, 0.15) !important;
+        border-left: 3px solid var(--accent-secondary);
+    }
 
     /* Scoped Column Alignment - SAFETY FIX */
     .audio-row > div[class*='col-'] {
@@ -2478,27 +2506,55 @@ textarea.form-control {
         align-items: center;
     }
 
-    .audio-row:hover {
-        background-color: rgba(255, 255, 255, 0.08);
-        transform: translateX(5px);
-        border-left: 3px solid var(--accent-secondary);
-    }
-
     /* Override .btn-track-play specifically for this list view */
     .audio-row .btn-track-play {
         width: 38px;
         height: 38px;
         font-size: 0.9rem;
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(0, 0, 0, 0.4);
         box-shadow: none;
+        margin-right: 15px;
+        color: #ccc;
+        border: 1px solid rgba(255,255,255,0.15);
     }
 
     .audio-row:hover .btn-track-play {
         background: var(--accent-secondary);
         color: #000;
+        border-color: var(--accent-secondary);
         transform: scale(1.1);
         box-shadow: 0 0 15px rgba(0, 174, 239, 0.5);
     }
+
+    /* ACTIVE STATE - PLAY BUTTON */
+    .audio-row.playing .btn-track-play {
+        background: var(--accent-secondary) !important;
+        color: #000 !important;
+        border-color: var(--accent-secondary) !important;
+        box-shadow: 0 0 15px rgba(0, 174, 239, 0.5);
+    }
+
+    /* TITLE STYLING (Overrides Bootstrap utilities in JS) */
+    .audio-row .text-white {
+        font-weight: 800 !important; /* Extra Bold */
+        font-size: 1.05rem;
+        color: #fff !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+
+    /* ARTIST LINK STYLING (Overrides Bootstrap utilities in JS) */
+    .audio-row a.text-muted {
+        color: #bbb !important; /* Fix purple visited links */
+        text-decoration: none !important; /* Remove underline */
+        font-size: 0.9rem;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+
+        .audio-row a.text-muted:hover {
+            color: #fff !important; /* White on hover */
+            text-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
 
 .track-title-text {
     font-family: var(--font-body);
@@ -2517,17 +2573,147 @@ textarea.form-control {
 /* =========================================
    17. AUDIO DISCOVERY (Refined)
    ========================================= */
-/* The Header Card (Matches Social Feed) */
+/* The Header Card - THIN LAYOUT */
 .audio-header-card {
     background: linear-gradient(135deg, #111 0%, #050505 100%);
     border: 1px solid #222;
-    border-left: 5px solid var(--accent-secondary); /* Blue accent */
+    border-left: 5px solid var(--accent-secondary);
     border-radius: 12px;
-    padding: 2.5rem 2rem;
+    padding: 10px 20px;
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     position: relative;
-    overflow: hidden;
-    margin-bottom: 2rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: visible;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* Typography & Layout Helpers for Shuffle Header */
+.audio-title-text {
+    color: white;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.5rem;
+    white-space: nowrap;
+    margin-bottom: 0;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.shuffle-text-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1;
+    user-select: none;
+}
+
+.shuffle-label {
+    color: white;
+    font-weight: 800;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+}
+
+.shuffle-arrow {
+    font-size: 1rem;
+    margin-right: 2px;
+}
+
+.disc-wrapper {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 10;
+}
+
+/* SHUFFLE DISC & ANIMATIONS */
+#shuffle-disc {
+    font-size: 3rem;
+    color: var(--accent-secondary);
+    transition: all 0.3s ease;
+    /* Pulsing Animation Default */
+    animation: discRadiate 2s infinite ease-in-out;
+}
+
+    /* Force Rotate Animation when .fa-spin is active */
+    #shuffle-disc.fa-spin {
+        animation: fa-spin 1s infinite linear !important;
+        color: var(--accent-secondary) !important;
+        /* REMOVED: transform: none !important; <--- THIS WAS THE CULPRIT */
+        text-shadow: 0 0 20px var(--accent-secondary);
+    }
+
+/* Keyframes for Pulse */
+@keyframes discRadiate {
+    0% {
+        transform: scale(1);
+        text-shadow: 0 0 0 rgba(0, 174, 239, 0);
+    }
+
+    50% {
+        transform: scale(1.08);
+        text-shadow: 0 0 10px rgba(0, 174, 239, 1), 0 0 25px rgba(0, 174, 239, 0.6);
+    }
+
+    100% {
+        transform: scale(1);
+        text-shadow: 0 0 0 rgba(0, 174, 239, 0);
+    }
+}
+
+/* Keyframes for Rotation (Explicitly defined to ensure it works) */
+@keyframes fa-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* The .fa-spin class standard definition */
+.fa-spin {
+    animation: fa-spin 2s infinite linear;
+}
+
+/* Mobile Adjustments for Header */
+@media (max-width: 600px) {
+    .audio-header-card {
+        padding: 10px 10px;
+    }
+
+    .audio-title-text {
+        font-size: 1.1rem;
+    }
+
+    .shuffle-label {
+        font-size: 0.65rem;
+        letter-spacing: 0px;
+    }
+
+    .shuffle-arrow {
+        font-size: 0.8rem;
+    }
+
+    #shuffle-disc {
+        font-size: 2.2rem;
+    }
+
+    .header-right {
+        gap: 10px;
+    }
 }
 
 .audio-header-glow {
@@ -2543,165 +2729,19 @@ textarea.form-control {
     pointer-events: none;
 }
 
-/* The Track Row Item */
-.audio-track-row {
-    display: flex;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.02); /* Glassy background */
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-    padding: 12px 20px;
-    margin-bottom: 10px;
-    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-    border-left: 3px solid transparent;
-}
-
-    .audio-track-row:hover {
-        background: rgba(255, 255, 255, 0.07);
-        transform: translateX(5px) scale(1.005);
-        border-left-color: var(--accent-secondary);
-        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-        border-color: rgba(255,255,255,0.1);
-    }
-
-/* Index Number */
-.audio-index {
-    color: #444;
-    font-family: var(--font-display);
-    font-size: 1.2rem;
-    width: 40px;
-    text-align: center;
-    transition: 0.2s;
-}
-
-.audio-track-row:hover .audio-index {
-    color: var(--accent-secondary);
-    text-shadow: 0 0 10px var(--accent-secondary);
-}
-
-/* Play Button (Neon Style) */
-.audio-play-btn {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: #151515;
-    border: 1px solid #333;
-    color: #888;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
-    transition: 0.3s;
-    cursor: pointer;
-    margin-right: 20px;
-    padding-left: 4px; /* Optical center */
-}
-
-.audio-track-row:hover .audio-play-btn {
-    background: var(--accent-secondary);
-    color: #000;
-    border-color: var(--accent-secondary);
-    transform: scale(1.1);
-    box-shadow: 0 0 20px rgba(0, 174, 239, 0.5);
-}
-
-/* Profile Image in List */
-.audio-artist-img {
-    width: 50px;
-    height: 50px;
-    border-radius: 12px; /* Soft square */
-    object-fit: cover;
-    border: 1px solid #333;
-    margin-right: 15px;
-    transition: transform 0.2s;
-}
-
-.audio-track-row:hover .audio-artist-img {
-    border-color: var(--accent-secondary);
-    transform: scale(1.05);
-}
-
-/* Text Info */
-.audio-info {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    overflow: hidden;
-}
-
-.audio-title {
-    color: white;
-    font-weight: 700;
-    font-size: 1.05rem;
-    margin-bottom: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-family: var(--font-body);
-}
-
-.audio-artist {
-    color: #888;
-    font-size: 0.85rem;
-    text-decoration: none;
-    transition: 0.2s;
-    display: inline-block;
-}
-
-    .audio-artist:hover {
-        color: var(--accent-secondary);
-        text-shadow: 0 0 8px rgba(0, 174, 239, 0.3);
-    }
-
-/* Timestamp */
-.audio-time {
-    color: #444;
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-left: 15px;
-    white-space: nowrap;
-}
-
-.audio-track-row:hover .audio-time {
-    color: #aaa;
-}
-
-/* =========================================
-   17. AUDIO FEED (Oscilloscope & Layout)
-   ========================================= */
-
-/* The Row Container - Forced Single Line */
-.audio-row {
-    display: flex;
-    align-items: center; /* Vertically Centers Everything */
-    flex-wrap: nowrap; /* Prevents stacking/wrapping */
-    gap: 15px; /* Consistent spacing between items */
-    padding: 12px 15px;
-    background: rgba(255, 255, 255, 0.02);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    margin-bottom: 4px;
-    transition: background 0.2s;
-}
-
-    .audio-row:hover {
-        background: rgba(255, 255, 255, 0.05);
-    }
-
-    .audio-row.playing {
-        background: rgba(0, 174, 239, 0.05); /* Slight blue tint when playing */
-        border-left: 3px solid var(--accent-secondary);
-    }
-
-/* The Meter - Static by default */
+/* The Meter - HIDDEN by default */
 .audio-meter {
     display: flex;
     align-items: flex-end;
     justify-content: center;
     height: 20px;
-    width: 20px;
+    /* collapsed state */
+    width: 0;
+    opacity: 0;
+    overflow: hidden;
+    margin-right: 0;
     gap: 2px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
     .audio-meter span {
@@ -2712,28 +2752,35 @@ textarea.form-control {
         transition: all 0.2s;
     }
 
-/* The Meter - Animated ONLY when parent has .playing class */
-.audio-row.playing .audio-meter span {
-    background: var(--accent-secondary);
-    animation: meterBounce 1.2s infinite ease-in-out;
+/* The Meter - EXPANDED when playing */
+.audio-row.playing .audio-meter {
+    width: 20px;
+    opacity: 1;
+    margin-right: 15px; /* Pushes the button to the right */
 }
 
-    /* Stagger animations for wave effect */
-    .audio-row.playing .audio-meter span:nth-child(1) {
-        animation-duration: 0.8s;
+    /* The Meter - Animated ONLY when parent has .playing class */
+    .audio-row.playing .audio-meter span {
+        background: var(--accent-secondary);
+        animation: meterBounce 1.2s infinite ease-in-out;
     }
 
-    .audio-row.playing .audio-meter span:nth-child(2) {
-        animation-duration: 1.1s;
-    }
+        /* Stagger animations for wave effect */
+        .audio-row.playing .audio-meter span:nth-child(1) {
+            animation-duration: 0.8s;
+        }
 
-    .audio-row.playing .audio-meter span:nth-child(3) {
-        animation-duration: 1.3s;
-    }
+        .audio-row.playing .audio-meter span:nth-child(2) {
+            animation-duration: 1.1s;
+        }
 
-    .audio-row.playing .audio-meter span:nth-child(4) {
-        animation-duration: 0.9s;
-    }
+        .audio-row.playing .audio-meter span:nth-child(3) {
+            animation-duration: 1.3s;
+        }
+
+        .audio-row.playing .audio-meter span:nth-child(4) {
+            animation-duration: 0.9s;
+        }
 
 @keyframes meterBounce {
     0%, 100% {
@@ -2767,31 +2814,6 @@ textarea.form-control {
         background: var(--accent-secondary);
         border-color: var(--accent-secondary);
         color: #000;
-    }
-
-/* =========================================
-   17. AUDIO LINK STYLING (Fix for Purple/Underline)
-   ========================================= */
-.audio-artist-link {
-    color: #b0b0b0 !important; /* Forces light gray, overrides 'purple' visited state */
-    text-decoration: none !important; /* Strictly removes underline */
-    font-weight: 500;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-    display: block; /* Helps with truncation */
-}
-
-    /* Hover State - Neon Blue Glow */
-    .audio-artist-link:hover {
-        color: var(--accent-secondary) !important;
-        text-shadow: 0 0 8px rgba(0, 174, 239, 0.4);
-        text-decoration: none !important;
-        transform: translateX(2px); /* Subtle movement */
-    }
-
-    /* Ensure visited links don't turn purple again */
-    .audio-artist-link:visited {
-        color: #b0b0b0 !important;
     }
 
 /* =========================================
