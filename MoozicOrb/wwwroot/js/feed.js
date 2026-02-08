@@ -814,9 +814,7 @@ window.loadAudioPlaylist = async () => {
 
     try {
         const res = await fetch('/api/posts?contextType=discover&contextId=0', {
-            headers: {
-                "X-Session-Id": window.AuthState?.sessionId || ""
-            }
+            headers: { "X-Session-Id": window.AuthState?.sessionId || "" }
         });
 
         if (!res.ok) throw new Error("Failed to load audio");
@@ -828,63 +826,48 @@ window.loadAudioPlaylist = async () => {
         }
 
         let html = '';
-
-        posts.forEach((post, index) => {
+        posts.forEach((post) => {
             const audio = post.attachments && post.attachments.find(a => a.mediaType === 1);
             if (!audio) return;
 
             const trackSrc = audio.url;
             const imageSrc = post.authorPic && post.authorPic !== "null" ? post.authorPic : '/img/profile_default.jpg';
-
             const title = post.title || 'Untitled Track';
             const titleEscaped = title.replace(/'/g, "\\'");
             const artist = post.authorName || 'Unknown Artist';
-            const artistId = post.authorId;
+            const profileLink = `/creator/${post.authorId}`;
             const timeAgo = post.createdAgo || 'Just now';
-            const profileLink = `/creator/${artistId}`;
 
-            // NOTE: We replaced Grid classes (col-*) with Flexbox (d-flex) to fix the "jumbled" layout.
             html += `
-            <div class="audio-row">
-                
-                <div class="audio-meter" style="flex-shrink:0;">
-                    <span></span><span></span><span></span><span></span>
-                </div>
+<div class="audio-row">
+    <div class="audio-meter"><span></span><span></span><span></span><span></span></div>
 
-                <button class="btn-track-play" 
-                        onclick="window.playTrackInFeed('${trackSrc}', '${titleEscaped}', this)">
-                    <i class="fas fa-play"></i>
-                </button>
+    <button class="btn-track-play" 
+            onclick="window.playTrackInFeed('${trackSrc}', '${titleEscaped}', this)">
+        <i class="fas fa-play"></i>
+    </button>
 
-                <div class="d-flex align-items-center flex-grow-1 overflow-hidden">
-                    <a href="${profileLink}" class="d-none d-sm-block me-3 flex-shrink-0">
-                        <img src="${imageSrc}" class="rounded-circle border border-secondary" width="45" height="45" style="object-fit: cover;">
-                    </a>
-                    
-                    <div class="overflow-hidden">
-                        <div class="text-white fw-bold text-truncate" style="font-size:1.05rem;" title="${title}">${title}</div>
-                        <a href="${profileLink}" class="text-muted small text-decoration-none hover-underline text-truncate d-block">
-                            ${artist}
-                        </a>
-                    </div>
-                </div>
+    <div class="audio-track-info">
+        <div class="text-white fw-bold text-truncate" title="${title}">${title}</div>
+        <a href="${profileLink}" class="text-muted small">${artist}</a>
+    </div>
 
-                <div class="text-muted small d-none d-md-block flex-shrink-0" style="width: 100px; text-align: right;">
-                    <i class="far fa-clock me-1"></i> ${timeAgo}
-                </div>
+    <div class="audio-time-stamp text-muted small d-none d-md-block">
+        <i class="far fa-clock me-1"></i> ${timeAgo}
+    </div>
 
-            </div>`;
+    <div class="audio-right-artwork">
+        <a href="${profileLink}">
+            <img src="${imageSrc}" alt="${artist}">
+        </a>
+    </div>
+</div>`;
         });
 
         container.innerHTML = html;
-
     } catch (err) {
         console.error(err);
-        container.innerHTML = `
-            <div class="text-center py-5 text-danger">
-                <i class="fas fa-exclamation-circle fa-2x mb-2"></i><br>
-                Error loading playlist.
-            </div>`;
+        container.innerHTML = `<div class="text-center py-5 text-danger">Error loading playlist.</div>`;
     }
 };
 

@@ -2464,23 +2464,24 @@ textarea.form-control {
 }
 
 .audio-row {
-    display: flex;
+    /* Relative positioning allows the artwork to stick to the right side absolutely */
+    position: relative;
+    display: flex !important;
     align-items: center;
-    flex-wrap: nowrap;
-    padding: 12px 15px;
+    width: 100%;
+    /* Vertical padding keeps text centered. Right padding reserves space for the image. */
+    padding: 12px 90px 12px 15px;
     border-bottom: none;
     transition: background 0.2s, transform 0.2s;
-    min-height: 70px;
-    gap: 0;
+    min-height: 75px;
+    overflow: hidden;
 }
 
-    /* ZEBRA STRIPING - BALANCED CONTRAST */
-    /* Odd Rows: Very subtle base */
+    /* ZEBRA STRIPING */
     .audio-row:nth-child(odd) {
         background-color: rgba(255, 255, 255, 0.02);
     }
 
-    /* Even Rows: Lighter (0.08 opacity) */
     .audio-row:nth-child(even) {
         background-color: rgba(255, 255, 255, 0.08);
     }
@@ -2500,76 +2501,142 @@ textarea.form-control {
         border-left: 3px solid var(--accent-secondary);
     }
 
-    /* Scoped Column Alignment - SAFETY FIX */
-    .audio-row > div[class*='col-'] {
-        display: flex;
-        align-items: center;
+/* Track Info - Takes up remaining space */
+.audio-track-info {
+    flex-grow: 1;
+    overflow: hidden;
+    padding-left: 15px;
+    min-width: 0; /* Critical for text truncation */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Time Stamp - Previously missing */
+.audio-time-stamp {
+    flex-shrink: 0;
+    width: 80px;
+    text-align: right;
+    margin-right: 10px;
+    font-size: 0.8rem;
+    color: #888;
+}
+
+/* ARTWORK - ABSOLUTE POSITIONING */
+/* This forces the image to fill the row height completely */
+.audio-right-artwork {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    height: 100%;
+    /* Enforces square aspect ratio based on whatever the row height is */
+    aspect-ratio: 1 / 1;
+    background: #000;
+}
+
+    .audio-right-artwork a {
+        display: block;
+        width: 100%;
+        height: 100%;
     }
 
-    /* Override .btn-track-play specifically for this list view */
-    .audio-row .btn-track-play {
-        width: 38px;
-        height: 38px;
-        font-size: 0.9rem;
-        background: rgba(0, 0, 0, 0.4);
-        box-shadow: none;
-        margin-right: 15px;
-        color: #ccc;
-        border: 1px solid rgba(255,255,255,0.15);
+    .audio-right-artwork img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Ensures image covers the square without distortion */
+        display: block;
+        border-left: 1px solid #333;
+        border-radius: 0 !important; /* Force square corners */
     }
 
-    .audio-row:hover .btn-track-play {
-        background: var(--accent-secondary);
-        color: #000;
-        border-color: var(--accent-secondary);
-        transform: scale(1.1);
-        box-shadow: 0 0 15px rgba(0, 174, 239, 0.5);
-    }
-
-    /* ACTIVE STATE - PLAY BUTTON */
-    .audio-row.playing .btn-track-play {
-        background: var(--accent-secondary) !important;
-        color: #000 !important;
-        border-color: var(--accent-secondary) !important;
-        box-shadow: 0 0 15px rgba(0, 174, 239, 0.5);
-    }
-
-    /* TITLE STYLING (Overrides Bootstrap utilities in JS) */
-    .audio-row .text-white {
-        font-weight: 800 !important; /* Extra Bold */
-        font-size: 1.05rem;
-        color: #fff !important;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-    }
-
-    /* ARTIST LINK STYLING (Overrides Bootstrap utilities in JS) */
-    .audio-row a.text-muted {
-        color: #bbb !important; /* Fix purple visited links */
-        text-decoration: none !important; /* Remove underline */
-        font-size: 0.9rem;
-        font-weight: 500;
-        transition: color 0.2s ease;
-    }
-
-        .audio-row a.text-muted:hover {
-            color: #fff !important; /* White on hover */
-            text-shadow: 0 0 5px rgba(255,255,255,0.5);
-        }
-
-.track-title-text {
-    font-family: var(--font-body);
+/* Play Button */
+.audio-row .btn-track-play {
+    width: 40px;
+    height: 40px;
     font-size: 1rem;
-    font-weight: 600;
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: none;
     color: #ccc;
-    letter-spacing: 0.3px;
+    border: 1px solid rgba(255,255,255,0.15);
+    flex-shrink: 0;
+}
+
+.audio-row:hover .btn-track-play {
+    background: var(--accent-secondary);
+    color: #000;
+    border-color: var(--accent-secondary);
+    transform: scale(1.1);
+}
+
+.audio-row.playing .btn-track-play {
+    background: var(--accent-secondary) !important;
+    color: #000 !important;
+    border-color: var(--accent-secondary) !important;
+}
+
+/* Text Styling */
+.audio-row .text-white {
+    font-weight: 800 !important;
+    font-size: 1.05rem;
+    color: #fff !important;
+    margin-bottom: 2px;
+}
+
+.audio-row a.text-muted {
+    color: #bbb !important;
+    text-decoration: none !important;
+    font-size: 0.9rem;
+    font-weight: 500;
     transition: color 0.2s ease;
 }
 
-.audio-row:hover .track-title-text {
-    color: #fff;
-    text-shadow: 0 0 10px rgba(0,0,0,0.5);
+    .audio-row a.text-muted:hover {
+        color: #fff !important;
+    }
+
+/* Meter Animation (Optional but good to keep) */
+.audio-meter {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    height: 20px;
+    width: 0;
+    opacity: 0;
+    overflow: hidden;
+    margin-right: 0;
+    gap: 2px;
+    transition: all 0.3s;
 }
 
+.audio-row.playing .audio-meter {
+    width: 20px;
+    opacity: 1;
+    margin-right: 15px;
+}
+
+    .audio-row.playing .audio-meter span {
+        width: 3px;
+        background: var(--accent-secondary);
+        border-radius: 2px;
+        animation: meterBounce 1.2s infinite ease-in-out;
+    }
+
+        .audio-row.playing .audio-meter span:nth-child(1) {
+            animation-duration: 0.8s;
+        }
+
+        .audio-row.playing .audio-meter span:nth-child(2) {
+            animation-duration: 1.1s;
+        }
+
+        .audio-row.playing .audio-meter span:nth-child(3) {
+            animation-duration: 1.3s;
+        }
+
+        .audio-row.playing .audio-meter span:nth-child(4) {
+            animation-duration: 0.9s;
+        }
 /* =========================================
    17. AUDIO DISCOVERY (Refined)
    ========================================= */
