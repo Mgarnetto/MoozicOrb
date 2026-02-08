@@ -21,15 +21,15 @@ namespace MoozicOrb.Controllers
 
             //    var user = new MoozicOrb.Models.User()
             //    {
-            //        FirstName = "Junior",
+            //        FirstName = "Ken",
             //        MiddleName = "",
-            //        LastName = "Green",
-            //        UserName = "Junior",
-            //        Email = "Junior@placeholder.com",
-            //        DisplayName = "JG",
+            //        LastName = "Adams",
+            //        UserName = "Tater",
+            //        Email = "ken@placeholder.com",
+            //        DisplayName = "Janky Ra",
             //        ProfilePic = "",
             //        CoverImageUrl = "",
-            //        Bio = "Creator",
+            //        Bio = "Jank",
             //        IsCreator = true,
             //        ProfileLayoutJson = "['posts', 'music', 'store']",
             //        UserGroups = "9"
