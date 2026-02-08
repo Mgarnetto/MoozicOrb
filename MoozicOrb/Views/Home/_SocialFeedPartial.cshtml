@@ -6,32 +6,29 @@
 
 <input type="hidden" id="page-signalr-context" value="feed_global" />
 
-<div class="mx-auto" style="max-width: 800px;">
+<div class="container-fluid fade-in" style="max-width: 800px; margin: 0 auto; padding-top: 10px;">
 
-    <div class="mb-5 p-4 rounded-3 shadow-lg" style="background: linear-gradient(135deg, #111 0%, #050505 100%); border: 1px solid #222; border-left: 5px solid var(--accent-secondary); position: relative; overflow: hidden;">
-        <div style="position: relative; z-index: 2;">
-            <h2 style="font-family: 'Outfit', sans-serif; font-weight: 700; color: white; margin: 0;">
-                <i class="fas fa-globe-americas me-2" style="color: var(--accent-secondary);"></i> Global Discovery
+    <div class="audio-header-card">
+
+        <div class="header-left">
+            <h2 class="audio-title-text mb-0">
+                <i class="fas fa-globe-americas me-2 text-info"></i> Global Discovery
             </h2>
-            <p class="text-muted mb-0 mt-2" style="font-size: 0.95rem;">
-                Tuning into random signals from across the Orb.
-            </p>
-        </div>
-        <div style="position: absolute; top: -20px; right: -20px; width: 150px; height: 150px; background: var(--accent-secondary); filter: blur(80px); opacity: 0.15; border-radius: 50%;"></div>
-    </div>
-
-    <div class="d-flex align-items-center justify-content-between mb-4 px-2">
-        <div class="text-muted small d-flex align-items-center gap-2">
-            <span class="d-inline-block rounded-circle bg-success" style="width: 8px; height: 8px;"></span>
-            <span>Populating random feeds...</span>
         </div>
 
-        <button class="btn btn-sm d-flex align-items-center gap-2 px-3 py-2 btn-shuffle-glow"
-                onclick="window.loadFeedHistory('global', '0')"
-                style="background: transparent; border: 1px solid var(--accent-secondary); color: var(--accent-secondary); border-radius: 20px; transition: all 0.3s ease;">
-            <i class="fas fa-random"></i>
-            <span style="font-weight: 600; letter-spacing: 0.5px;">SHUFFLE FEED</span>
-        </button>
+        <div class="header-right">
+
+            <div class="shuffle-text-group">
+                <span class="shuffle-label">SHUFFLE FEED</span>
+                <i class="fas fa-long-arrow-alt-right text-info shuffle-arrow"></i>
+            </div>
+
+            <div class="disc-wrapper" onclick="window.triggerSocialShuffle()" title="Shuffle Feed">
+                <i id="social-globe-icon" class="fas fa-globe-americas"></i>
+            </div>
+
+        </div>
+
     </div>
 
     <div id="feed-stream-container" class="pb-5">
@@ -42,20 +39,6 @@
     </div>
 
 </div>
-
-<style>
-    .btn-shuffle-glow:hover {
-        background: var(--accent-secondary) !important;
-        color: #000 !important;
-        box-shadow: 0 0 15px rgba(0, 174, 239, 0.4);
-        transform: translateY(-2px);
-    }
-
-    .btn-shuffle-glow:active {
-        transform: translateY(0);
-        box-shadow: 0 0 5px rgba(0, 174, 239, 0.4);
-    }
-</style>
 
 <script>
     // Trigger Initial Load

@@ -2584,7 +2584,12 @@ textarea.form-control {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    position: relative;
+    /* CHANGED: Switch from relative to sticky */
+    position: sticky;
+    /* NEW: Stick it below the 70px navbar + 10px container padding */
+    top: calc(var(--navbar-height) + 10px);
+    /* NEW: Ensure it sits on top of the scrolling list items */
+    z-index: 100;
     overflow: visible;
     margin-bottom: 20px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
@@ -2637,21 +2642,28 @@ textarea.form-control {
     z-index: 10;
 }
 
-/* SHUFFLE DISC & ANIMATIONS */
-#shuffle-disc {
+/* SHUFFLE DISC & GLOBE SHARED STYLES */
+#shuffle-disc, #social-globe-icon {
     font-size: 3rem;
     color: var(--accent-secondary);
     transition: all 0.3s ease;
-    /* Pulsing Animation Default */
+    /* Pulsing Animation Default for BOTH */
     animation: discRadiate 2s infinite ease-in-out;
 }
 
-    /* Force Rotate Animation when .fa-spin is active */
+    /* Force Z-Axis Rotate (Disc) when active */
     #shuffle-disc.fa-spin {
         animation: fa-spin 1s infinite linear !important;
         color: var(--accent-secondary) !important;
-        /* REMOVED: transform: none !important; <--- THIS WAS THE CULPRIT */
         text-shadow: 0 0 20px var(--accent-secondary);
+    }
+
+    /* Force Y-Axis Rotate (Globe) when active */
+    #social-globe-icon.spin-y-axis {
+        animation: spin-y 1s linear infinite !important;
+        color: var(--accent-secondary) !important;
+        text-shadow: 0 0 20px var(--accent-secondary);
+        transform: none; /* Reset any other transforms */
     }
 
 /* Keyframes for Pulse */
@@ -2672,7 +2684,7 @@ textarea.form-control {
     }
 }
 
-/* Keyframes for Rotation (Explicitly defined to ensure it works) */
+/* Keyframes for Z-Axis Rotation (Disc) */
 @keyframes fa-spin {
     0% {
         transform: rotate(0deg);
@@ -2680,6 +2692,17 @@ textarea.form-control {
 
     100% {
         transform: rotate(360deg);
+    }
+}
+
+/* Keyframes for Y-Axis Rotation (Globe) */
+@keyframes spin-y {
+    0% {
+        transform: rotateY(0deg);
+    }
+
+    100% {
+        transform: rotateY(360deg);
     }
 }
 
@@ -3188,4 +3211,24 @@ textarea.form-control {
 .col-6 {
     flex: 0 0 50%;
     max-width: 50%;
+}
+
+/* =========================================
+   CUSTOM ANIMATIONS
+   ========================================= */
+
+/* Rotates the element on the Y-axis (like the Earth) */
+@keyframes spin-y {
+    0% {
+        transform: rotateY(0deg);
+    }
+
+    100% {
+        transform: rotateY(360deg);
+    }
+}
+
+.spin-y-axis {
+    animation: spin-y 2s linear infinite; /* 2s speed - adjust if needed */
+    display: inline-block;
 }

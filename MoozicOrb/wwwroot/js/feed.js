@@ -914,6 +914,9 @@ window.playTrackInFeed = function (url, title, element) {
 window.triggerShuffleAnimation = async function () {
     const disc = document.getElementById('shuffle-disc');
 
+    // FIX: Scroll to top immediately when clicked
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     // 1. Start Spin (Pure rotation, no color change)
     if (disc) disc.classList.add('fa-spin');
 
@@ -931,4 +934,35 @@ window.triggerShuffleAnimation = async function () {
 
     // 4. Stop Spin
     if (disc) disc.classList.remove('fa-spin');
+};
+
+// ============================================
+// 11. SOCIAL FEED SHUFFLE ANIMATION
+// ============================================
+
+window.triggerSocialShuffle = async function () {
+    // 1. Scroll to top immediately
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    const globe = document.getElementById('social-globe-icon');
+
+    // 2. Start Spin (Y-Axis rotation using custom CSS class)
+    if (globe) globe.classList.add('spin-y-axis');
+
+    // 3. Define tasks: Minimum animation time (0.8s) AND Data Load
+    const minTimer = new Promise(resolve => setTimeout(resolve, 800));
+
+    // Call the existing load history function
+    // Note: We use 'global' and '0' as defined in your Partial View context
+    const dataLoad = window.loadFeedHistory ? window.loadFeedHistory('global', '0') : Promise.resolve();
+
+    // 4. Wait for both to finish
+    try {
+        await Promise.all([dataLoad, minTimer]);
+    } catch (e) {
+        console.error("Social shuffle failed", e);
+    }
+
+    // 5. Stop Spin
+    if (globe) globe.classList.remove('spin-y-axis');
 };
