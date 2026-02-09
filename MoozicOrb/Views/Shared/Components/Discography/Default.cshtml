@@ -1,0 +1,298 @@
+﻿@model MoozicOrb.ViewComponents.DiscographyViewModel
+
+<div class="discography-wrapper">
+    @if (Model.Collections.Count > 0)
+    {
+        foreach (var collection in Model.Collections)
+        {
+            <div class="collection-box mb-4">
+
+                <div class="collection-header" onclick="toggleCollection(this)">
+                    <div class="header-content">
+                        <div class="collection-art-container">
+                            <img src="@collection.ArtUrl" alt="@collection.Title" class="collection-art">
+                            <div class="art-overlay"><i class="fas fa-chevron-down"></i></div>
+                        </div>
+
+                        <div class="collection-info">
+                            <h4 class="collection-title">@collection.Title</h4>
+                            <div class="collection-meta">
+                                <span class="badge-track-count">@collection.Items.Count Tracks</span>
+                                <span class="meta-desc">@collection.Description</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn-quick-play" onclick="playCollection(event, '@collection.Id')">
+                        <i class="fas fa-play"></i>
+                    </button>
+                </div>
+
+                <div class="collection-tracks-wrapper">
+                    <div class="tracks-inner">
+                        @foreach (var item in collection.Items)
+                        {
+                            <div class="track-row"
+                                 onclick="window.AudioPlayer.playTrack('@item.Url', { title: '@item.Title', artist: '@item.ArtistName', cover: '@item.ArtUrl' })">
+
+                                <div class="track-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+
+                                <div class="track-data">
+                                    <div class="track-name">@item.Title</div>
+                                    <div class="track-artist">@item.ArtistName</div>
+                                </div>
+
+                                <div class="track-duration">
+                                    <i class="fas fa-waveform text-muted"></i>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-compact-disc"></i>
+            <p>No collections found.</p>
+        </div>
+    }
+</div>
+
+<style>
+    /* --- CSS VARIABLES FOR EASY TWEAKING --- */
+    :root {
+        --disco-bg: #121212;
+        --disco-card-bg: #1e1e1e;
+        /* UPDATED: Matches your Site's Blue/Cyan Accent (inferred from play-glow) */
+        --disco-accent: #00d2ff;
+        --disco-accent-glow: rgba(0, 210, 255, 0.4);
+        --disco-text-main: #ffffff;
+        --disco-text-sub: #aaaaaa;
+    }
+
+    /* --- LAYOUT & CONTAINERS --- */
+    .discography-wrapper {
+        width: 100%;
+        color: var(--disco-text-main);
+    }
+
+    .collection-box {
+        background: var(--disco-card-bg);
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #333;
+        transition: border-color 0.2s;
+    }
+
+        .collection-box:hover {
+            border-color: #555;
+        }
+
+    /* --- HEADER STYLES --- */
+    .collection-header {
+        padding: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
+        transition: background 0.2s;
+    }
+
+        .collection-header:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-grow: 1;
+    }
+
+    /* ALBUM ART styling */
+    .collection-art-container {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        overflow: hidden;
+        flex-shrink: 0;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .collection-art {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s;
+    }
+
+    .art-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+        .art-overlay i {
+            font-size: 1.5rem;
+            color: white;
+        }
+
+    .collection-header:hover .art-overlay {
+        opacity: 1;
+    }
+
+    .collection-header:hover .collection-art {
+        transform: scale(1.1);
+    }
+
+    /* TEXT INFO */
+    .collection-title {
+        margin: 0 0 5px 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    .collection-meta {
+        font-size: 0.9rem;
+        color: var(--disco-text-sub);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .badge-track-count {
+        background: #333;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    /* PLAY BUTTON (UPDATED COLOR) */
+    .btn-quick-play {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        /* BLUE ACCENT BACKGROUND */
+        background: var(--disco-accent);
+        border: none;
+        color: #000; /* Dark icon for contrast on bright blue */
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        margin-left: 15px;
+    }
+
+        .btn-quick-play:hover {
+            transform: scale(1.1);
+            /* BLUE GLOW */
+            box-shadow: 0 0 20px var(--disco-accent-glow);
+        }
+
+    /* --- DROPDOWN ANIMATION --- */
+    .collection-tracks-wrapper {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #181818;
+    }
+
+    /* Class added via JS to expand */
+    .collection-box.expanded .collection-tracks-wrapper {
+        max-height: 1000px; /* Arbitrary large height */
+    }
+
+    .collection-box.expanded .art-overlay i {
+        transform: rotate(180deg);
+    }
+
+    /* --- TRACK LIST --- */
+    .tracks-inner {
+        padding: 10px 0;
+        border-top: 1px solid #333;
+    }
+
+    .track-row {
+        display: flex;
+        align-items: center;
+        padding: 12px 20px;
+        cursor: pointer;
+        transition: background 0.1s;
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+
+        .track-row:last-child {
+            border-bottom: none;
+        }
+
+        .track-row:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+    .track-icon {
+        width: 30px;
+        color: #555;
+        display: flex;
+        justify-content: center;
+    }
+    /* Hover Icon Color -> Matches Accent */
+    .track-row:hover .track-icon {
+        color: var(--disco-accent);
+    }
+
+    .track-data {
+        flex-grow: 1;
+        margin-left: 15px;
+    }
+
+    .track-name {
+        font-weight: 500;
+        color: white;
+    }
+
+    .track-artist {
+        font-size: 0.85rem;
+        color: #888;
+    }
+
+    .track-duration {
+        color: #555;
+    }
+
+    /* --- EMPTY STATE --- */
+    .empty-state {
+        text-align: center;
+        padding: 60px;
+        color: #444;
+    }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+</style>
+
+<!--
+    --- JS FUNCTIONS ---
+    1. toggleCollection: Toggles the expanded state of a collection box to show/hide tracks.
+    2. playCollection: Placeholder function to handle quick play of an entire collection (implementation depends on your audio player setup).
+    located in player.js
+-->

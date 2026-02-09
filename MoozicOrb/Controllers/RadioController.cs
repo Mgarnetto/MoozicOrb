@@ -14,7 +14,7 @@ namespace MoozicOrb.Controllers
 
             if (Request.IsSpaRequest()) return PartialView("_RadioOrbPartial", model);
 
-            return View("Index", model);
+            return RedirectToAction("Index", "Home");
         }
     }
 }

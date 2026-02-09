@@ -256,3 +256,35 @@ document.addEventListener('DOMContentLoaded', () => {
     AudioPlayer.init();
     window.AudioPlayer = AudioPlayer;
 });
+
+/* =========================================
+DISCOGRAPHY UI HELPERS
+(Required because ViewComponents injected via SPA cannot run inline scripts)
+========================================= */
+
+window.toggleCollection = function (header) {
+    // 1. Find the parent box
+    const box = header.closest('.collection-box');
+    if (box) {
+        // 2. Toggle the expanded class
+        box.classList.toggle('expanded');
+    }
+};
+
+window.playCollection = function (event, collectionId) {
+    // 1. Stop the click from bubbling up (preventing the toggle)
+    event.stopPropagation();
+
+    // 2. Find the container
+    const box = event.target.closest('.collection-box');
+    if (!box) return;
+
+    // 3. Find the first track in this collection
+    const firstTrack = box.querySelector('.track-row');
+
+    if (firstTrack) {
+        // 4. Simulate a click on the first track to start playing
+        // (This triggers the existing onclick logic on the track row)
+        firstTrack.click();
+    }
+};

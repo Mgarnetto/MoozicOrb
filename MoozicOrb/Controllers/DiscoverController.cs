@@ -36,7 +36,7 @@ namespace MoozicOrb.Controllers
             };
 
             if (Request.IsSpaRequest()) return PartialView("_GenresPartial", model);
-            return View(model);
+            return RedirectToAction("Index", "Home");
         }
 
         [HttpGet("audio")]
@@ -45,7 +45,7 @@ namespace MoozicOrb.Controllers
             // This returns the empty wrapper which will load the JS to fetch JSON data
             // Consistent with the 'Playlist' visual style requested
             if (Request.IsSpaRequest()) return PartialView("_AudioPartial");
-            return View("Audio");
+            return RedirectToAction("Index", "Home");
         }
 
         [HttpGet("search")]
@@ -70,7 +70,7 @@ namespace MoozicOrb.Controllers
             }
 
             if (Request.IsSpaRequest()) return PartialView("_SearchPartial", model);
-            return View("Search", model);
+            return RedirectToAction("Index", "Home");
         }
     }
 

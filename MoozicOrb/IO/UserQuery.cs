@@ -78,6 +78,7 @@ namespace MoozicOrb.IO
                 CoverImageUrl = HasColumn(rdr, "cover_image_url") ? rdr["cover_image_url"].ToString() : "",
                 Bio = HasColumn(rdr, "bio") ? rdr["bio"].ToString() : "",
                 IsCreator = HasColumn(rdr, "is_creator") && (Convert.ToInt32(rdr["is_creator"]) == 1),
+                ProfileLayoutJson = HasColumn(rdr, "profile_layout") ? rdr["profile_layout"].ToString() : "[]",
                 UserGroups = rdr["user_groups"].ToString()
             };
         }

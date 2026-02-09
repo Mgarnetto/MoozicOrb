@@ -77,8 +77,8 @@ namespace MoozicOrb.Models
         public string CoverImage { get; set; }
         public string BookingEmail { get; set; }
 
-        // Add if you want to support layout saving in the same model
-        public List<string> LayoutOrder { get; set; }
+        // Add this:
+        public List<string> LayoutOrder { get; set; } = new List<string>();
     }
 
     // ==========================================
@@ -97,9 +97,26 @@ namespace MoozicOrb.Models
 
     public class CollectionDto
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public string Title { get; set; }
+        public string Description { get; set; }
         public string ArtUrl { get; set; }
+        public int Type { get; set; } // 0=Album, 1=Playlist, etc.
+        public long CoverImageId { get; set; }
+
+        // ADDED: The list of tracks
+        public List<CollectionItemDto> Items { get; set; } = new List<CollectionItemDto>();
+    }
+
+    // ADDED: The Track/Item Definition
+    public class CollectionItemDto
+    {
+        public long TargetId { get; set; }
+        public int TargetType { get; set; } // 1=Audio
+        public string Title { get; set; }
+        public string Url { get; set; }     // File path
+        public string ArtUrl { get; set; }
+        public string ArtistName { get; set; }
     }
 
     public class GenreDto

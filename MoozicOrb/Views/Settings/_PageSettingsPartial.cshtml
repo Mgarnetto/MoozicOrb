@@ -41,6 +41,38 @@
                     <input type="text" id="inputEmail" class="form-control" value="@Model.BookingEmail" style="background: #000; color: white; border: 1px solid #333;">
                 </div>
 
+                <br /><br />
+
+                <div class="form-group mb-4">
+                    <label class="form-label text-muted small text-uppercase fw-bold mb-3">Page Layout (Drag to Reorder)</label>
+                    <div id="layoutSortContainer" class="layout-sort-container">
+                        @{
+                            var displayNames = new Dictionary<string, string> {
+                                                { "posts", "Updates & Posts" },
+                                                { "music", "Discography" },
+                                                { "store", "Merch Store" }
+                                                };
+                        }
+
+                        @if (Model.LayoutOrder != null && Model.LayoutOrder.Any())
+                        {
+                            foreach (var itemKey in Model.LayoutOrder)
+                            {
+                                if (displayNames.ContainsKey(itemKey))
+                                {
+                                    <div class="sort-item d-flex align-items-center mb-2 p-3"
+                                         draggable="true"
+                                         data-key="@itemKey"
+                                         style="background: #111; border: 1px solid #333; border-radius: 5px; cursor: grab; user-select: none;">
+                                        <i class="fas fa-grip-lines text-muted me-3"></i>
+                                        <span class="text-white">@displayNames[itemKey]</span>
+                                    </div>
+                                }
+                            }
+                        }
+                    </div>
+                </div>
+
                 <div class="form-actions text-end">
                     <button type="submit" class="btn-sidebar-fill px-4">Save Changes</button>
                 </div>

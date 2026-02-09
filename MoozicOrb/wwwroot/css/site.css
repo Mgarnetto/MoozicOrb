@@ -2464,13 +2464,16 @@ textarea.form-control {
 }
 
 .audio-row {
-    /* Relative positioning allows the artwork to stick to the right side absolutely */
+    /* Relative positioning is the anchor for the artwork */
     position: relative;
     display: flex !important;
     align-items: center;
     width: 100%;
-    /* Vertical padding keeps text centered. Right padding reserves space for the image. */
-    padding: 12px 90px 12px 15px;
+    /* Vertical padding keeps text vertically centered */
+    padding: 12px 0 12px 15px;
+    /* Right padding ensures text doesn't overlap the image area.
+       85px = Image Width (~60px) + Gap (15px) + Safety (10px) */
+    padding-right: 85px;
     border-bottom: none;
     transition: background 0.2s, transform 0.2s;
     min-height: 75px;
@@ -2501,18 +2504,18 @@ textarea.form-control {
         border-left: 3px solid var(--accent-secondary);
     }
 
-/* Track Info - Takes up remaining space */
+/* Track Info */
 .audio-track-info {
     flex-grow: 1;
     overflow: hidden;
     padding-left: 15px;
-    min-width: 0; /* Critical for text truncation */
+    min-width: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
 }
 
-/* Time Stamp - Previously missing */
+/* Time Stamp */
 .audio-time-stamp {
     flex-shrink: 0;
     width: 80px;
@@ -2522,17 +2525,18 @@ textarea.form-control {
     color: #888;
 }
 
-/* ARTWORK - ABSOLUTE POSITIONING */
-/* This forces the image to fill the row height completely */
+/* ARTWORK - FLOATING RIGHT WITH PADDING */
 .audio-right-artwork {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    right: 0;
-    height: 100%;
-    /* Enforces square aspect ratio based on whatever the row height is */
+    /* Spacing from the edges of the row */
+    top: 6px;
+    bottom: 6px;
+    right: 15px;
+    /* Let top/bottom define the height, then aspect-ratio forces width */
+    height: auto;
     aspect-ratio: 1 / 1;
-    background: #000;
+    /* Shadow for depth since it's floating now */
+    box-shadow: -5px 0 15px rgba(0,0,0,0.5);
 }
 
     .audio-right-artwork a {
@@ -2544,10 +2548,11 @@ textarea.form-control {
     .audio-right-artwork img {
         width: 100%;
         height: 100%;
-        object-fit: cover; /* Ensures image covers the square without distortion */
+        object-fit: cover;
         display: block;
-        border-left: 1px solid #333;
-        border-radius: 0 !important; /* Force square corners */
+        /* Restored border radius since it's "floating" inside the row now */
+        border-radius: 6px !important;
+        border: 1px solid #333;
     }
 
 /* Play Button */
@@ -2595,7 +2600,7 @@ textarea.form-control {
         color: #fff !important;
     }
 
-/* Meter Animation (Optional but good to keep) */
+/* Meter Animation */
 .audio-meter {
     display: flex;
     align-items: flex-end;

@@ -44,11 +44,12 @@ namespace MoozicOrb.Controllers
             {
                 Bio = user.Bio,
                 CoverImage = user.CoverImageUrl,
-                BookingEmail = user.Email
+                BookingEmail = user.Email,
+                LayoutOrder = user.LayoutOrder
             };
 
             if (Request.IsSpaRequest()) return PartialView("_PageSettingsPartial", model);
-            return View("Page", model);
+            return RedirectToAction("Index", "Home");
         }
 
         [HttpPost("update-page")]
@@ -58,10 +59,15 @@ namespace MoozicOrb.Controllers
             if (userId == 0) return Unauthorized();
 
             var updateIo = new UpdateUser();
-            bool success = updateIo.UpdatePageSettings(userId, model.Bio, model.CoverImage, model.BookingEmail);
+
+            string json = model.LayoutOrder != null ?
+                          System.Text.Json.JsonSerializer.Serialize(model.LayoutOrder) :
+                          "[]";
+
+            bool success = updateIo.UpdatePageSettings(userId, model.Bio, model.CoverImage, model.BookingEmail, json);
 
             if (success) return Ok(new { success = true });
-            return BadRequest("Failed to update settings.");
+            return BadRequest("Failed.");
         }
 
         // ------------------------------------
@@ -83,7 +89,8 @@ namespace MoozicOrb.Controllers
             };
 
             if (Request.IsSpaRequest()) return PartialView("_AccountSettingsPartial", model);
-            return View("Account", model);
+            //return View("Account", model);
+            return RedirectToAction("Index", "Home"); 
         }
 
         [HttpPost("update-account")]

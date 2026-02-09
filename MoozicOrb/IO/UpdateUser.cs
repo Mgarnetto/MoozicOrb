@@ -6,15 +6,15 @@ namespace MoozicOrb.IO
     public class UpdateUser
     {
         // Update Creator Page Info
-        public bool UpdatePageSettings(int userId, string bio, string coverImage, string bookingEmail)
+        public bool UpdatePageSettings(int userId, string bio, string coverImage, string bookingEmail, string layoutJson)
         {
-            // Note: cover_image_url might default to existing if null passed, handle carefully in JS
             string sql = @"
-                UPDATE user 
-                SET bio = @bio, 
-                    cover_image_url = @cover,
-                    email = @email
-                WHERE user_id = @uid";
+        UPDATE user 
+        SET bio = @bio, 
+            cover_image_url = @cover,
+            email = @email,
+            profile_layout = @layout
+        WHERE user_id = @uid";
 
             using (var conn = new MySqlConnection(DBConn1.ConnectionString))
             {
@@ -24,6 +24,8 @@ namespace MoozicOrb.IO
                     cmd.Parameters.AddWithValue("@bio", bio ?? "");
                     cmd.Parameters.AddWithValue("@cover", coverImage ?? "");
                     cmd.Parameters.AddWithValue("@email", bookingEmail ?? "");
+                    // Handle null/empty here:
+                    cmd.Parameters.AddWithValue("@layout", string.IsNullOrEmpty(layoutJson) ? "[\"posts\",\"music\",\"store\"]" : layoutJson);
                     cmd.Parameters.AddWithValue("@uid", userId);
 
                     return cmd.ExecuteNonQuery() > 0;
